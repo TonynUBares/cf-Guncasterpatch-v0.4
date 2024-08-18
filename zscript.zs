@@ -15,64 +15,20 @@ Class ClusterCaster : EventHandler
 	"CFArachnoSpawner","CFMancubusSpawner","CFRevenantSpawner","CFKnightSpawner","CFBaronSpawner",
 	"CFVileSpawner","CFMastermindSpawner","CFCyberSpawner","CFNaziSpawner"};
 
- int spawnertype,spindex;
- Array<int> SpecieAmount;
- Array<int> SpawneeTids;
- Array<string> RealSpawnerNames;
-
  override void OnRegister()
  {
   if(level.LevelName ~== "TitleMap") {return;}
-  spindex=0;
-  spawnertype = CVar.GetCvar("cf_spawnerpro").GetInt();
-  int f;
-  while(f < SpawnerNames.Size()) {RealSpawnerNames.Push(SpawnerNames[f]); f++;}
- }
-
- override void WorldThingSpawned(WorldEvent e)
- {
-  if(spawnertype==4)
-  {
-   if(!e.thing) {return;}
-   if(!e.thing.bISMONSTER && e.thing.GetParentClass().GetClassName() == 'CFMonsterSpawnerBase')
-   {
-     SpecieAmount.Push(RealSpawnerNames.Find(e.thing.GetClassName()));
-     SpawneeTids.Push(0);
-     e.thing.GiveInventory("CFproSpawnerfix",1);
-     let ad = CFproSpawnerfix(e.thing.FindInventory("CFproSpawnerfix"));
-     if(ad) {ad.tidindex = spindex;}
-     spindex++;
-   }
-
-   else if(e.thing.bISMONSTER) {e.thing.GiveInventory("CFproSpawnerFix2",1);}
-  }
-
-  else
-  {
-   if(!e.thing || !e.thing.bISMONSTER || e.thing.GetParentClass().GetClassName() == 'CFMonsterSpawnerBase') {return;}
- 
-   int x=0; 
-   while(x < SpecieCheck.Size())
-    {
-     if(e.thing && e.thing.CountInv("IsCF"..SpecieCheck[x])) 
-      {
-       e.thing.GiveInventory("CFSpecies",x+1); 
-       break;
-      }
-     x++;
-    }
-  }
  }
 
  override void WorldThingDamaged(WorldEvent e)
  {
-  if(!e.thing || !e.thing.bISMONSTER || e.thing.health > 0 || //e.thing.CountInv("IsBoss") ||
-      (e.DamageSource && !e.DamageSource.player)) {return;}
+  if(!e.thing || !e.thing.bISMONSTER || e.thing.health > 0 || 
+     (e.DamageSource && !e.DamageSource.player)) {return;}
 
   int spawnitemflags = SXF_ABSOLUTEVELOCITY|SXF_TRANSFERPOINTERS|SXF_TRANSFERSPRITEFRAME;
   int spawnitemflags2 = SXF_CLIENTSIDE|SXF_SETTARGET|SXF_ORIGINATOR;
   string setter = "CFCsetter";
-  int whichspecie = e.thing.CountInv("CFSpecies");
+  int whichspecie = e.thing.CountInv("IsCFSpecies");
 
   if(whichspecie) //summoned monsters have no IsCF item
    {
@@ -90,12 +46,12 @@ Class ClusterCaster : EventHandler
       }
     }
    }
+  else {whichspecie = random(1,SpecieCheck.Size());}
 
   switch(e.DamageType)
    {
-    Case 'MidasCloseCombat':   Case 'SuperMidasCloseCombat':   
+    default: Case 'MidasCloseCombat':   Case 'SuperMidasCloseCombat':   
     Case 'MidasShoelaces':   Case 'SuperMidasShoelaces':  
-      if(!whichspecie || whichspecie > SpecieCheck.Size()) {whichspecie = random(0,SpecieCheck.Size()-1);}
       string s = "Midas_Statue_"..StatueNames[whichspecie-1];    bool b; actor a;
       [b,a] = e.thing.A_SpawnItemEx(s,0,0,0,e.thing.vel.x,e.thing.vel.y,e.thing.vel.z,0,spawnitemflags);
       if(a)
@@ -105,6 +61,7 @@ Class ClusterCaster : EventHandler
         a.bNODAMAGE = true;
         a.GiveInventory("CFCtempinvul",1); //avoids the statue to be insta-destroyed
        }
+      e.thing.A_NoBlocking();
       e.thing.Destroy();
       break;
 
@@ -154,78 +111,6 @@ Class ClusterCaster : EventHandler
   }  
 }
 
-
-class CFproSpawnerfix : Inventory
-{
- Default
- {
-  Inventory.Amount 1;
-  Inventory.MaxAmount 1;
- }
-
- int tidindex;
- int usertid;
- EventHandler handler;
-
- States
- {
-  Held:
-	TNT1 A 1;
-  HeldLoop:
-	TNT1 A 20 
-	{
-	 let handler = ClusterCaster(EventHandler.Find("ClusterCaster"));
-	 if(!owner || !handler) {return;}
-	 usertid = owner.ACS_ScriptCall("prospawnerfix");
-	 if(usertid) 
-	 {
-	  handler.SpawneeTids[tidindex] = usertid; 
-	  self.Destroy();
-	 }
-	}
-	Loop;
- } 
-}
-
-class CFproSpawnerfix2 : Inventory
-{
- Default
- {
-  Inventory.Amount 1;
-  Inventory.MaxAmount 1;
- }
-
- int togive;
-
- States
- {
-  Held:
-	TNT1 A 1;
-  HeldLoop:
-	TNT1 A 20 
-	{
-	 let handler = ClusterCaster(EventHandler.Find("ClusterCaster"));
-	 if(!owner || !owner.tid || !handler) {return;} 
-
-	 togive = handler.SpawneeTids.Find(owner.tid);
-	 if(togive != handler.SpawneeTids.Size())
-	 {
-	  owner.GiveInventory("CFSpecies",handler.SpecieAmount[togive]+1);
-	  self.Destroy();
-	 }
-	}
-	Loop;
- } 
-}
-
-class CFSpecies : Inventory
-{
- Default
- {
-  Inventory.Amount 1;
-  Inventory.MaxAmount 18;
- }
-}
 
 class CFCtempinvul : Inventory
 {
@@ -297,5 +182,4 @@ class CFCsetter : Inventory
 	Loop;
  }
 }
-
 
