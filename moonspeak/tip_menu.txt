@@ -1,0 +1,184 @@
+/*
+
+KeksDose / MemeDose (kd / md)
+
+Displays a tip in the menu.
+
+*/
+
+class Gc_TipMenu : OptionMenu {
+	int old_selection;
+	
+	vector2 resolution;
+	
+	const vertical_resolution = 400;
+	
+	Array <String> tip_lines;
+	Array <int> tip_x_offset;
+	
+	int tip_line_count;
+	bool is_tip_shown;
+	bool was_tip_shown;
+	int tip_height;
+	int flash_tics;
+	int fade_tics;
+	int line_height;
+	
+	transient Font tip_font;
+	
+	// const tip_color = Font.cr_default;
+	// const flash_color = Font.cr_fire;
+	const flash_frames = 10;
+	const fade_frames = 15;
+	const tip_clearance = 6;
+	
+	bool IsMenuKey (int i) const {
+		return 0 <= i && i < mdesc.mitems.size();
+	}
+	
+	string ActionKeyAt (int i) const {
+		if(IsMenuKey(i)) {
+			return mdesc.mitems [i].GetAction();
+		}
+		
+		return "Not an action";
+	}
+	
+	string ActionKeyToText (string key) const {
+		return StringTable.Localize("$" .. key .. "_tip");
+	}
+	
+	int Selection () const {
+		return mdesc.mselecteditem;
+	}
+	
+	int OldSelection () const {
+		return old_selection;
+	}
+	
+	bool HasSelectionChanged () const {
+		let selection = Selection();
+		let old_selection = OldSelection();
+		return 0 < selection && (0 == old_selection || old_selection != selection);
+	}
+	
+	// kd: flat code society
+	void OnSelect () {
+		let i = Selection();
+		
+		if(!IsMenuKey(i)) {
+			is_tip_shown = false;
+		}
+		
+		let action_key	= ActionKeyAt(i);
+		let action_text	= ActionKeyToText(action_key);
+		tip_font		= newsmallfont;
+		let lines		= tip_font.BreakLines(action_text, int(resolution.x) - 2 * tip_clearance);
+		let line_count	= lines.count();
+		
+		if(log_menu_language) {
+			console.printf(action_key .. "_tip" .. " = \"\";");
+		}
+		
+		if(0 < line_count) {
+			line_height = tip_font.GetHeight();
+			
+			is_tip_shown = true;
+			tip_lines.clear();
+			tip_x_offset.clear();
+			tip_lines.reserve(line_count);
+			tip_x_offset.reserve(line_count);
+			
+			tip_line_count = line_count;
+			
+			// kd: Don't trust BrokenLines. It admits to being broken.
+			for(let i = 0; i < line_count; i++) {
+				tip_lines [i] = lines.StringAt(i);
+				tip_x_offset [i] = -0.5 * tip_font.StringWidth(tip_lines [i]);
+				tip_height += line_height;
+			}
+		}
+		
+		else {
+			is_tip_shown = false;
+		}
+		
+		// kd: Flash the tip.
+		flash_tics = flash_frames;
+	}
+	
+	override void Ticker () {
+		resolution		= 0.5 * (Screen.GetWidth(), Screen.GetHeight());
+		super.Ticker();
+		
+		if(0 < flash_tics) {
+			flash_tics--;
+		}
+		
+		// kd: Cache the new string, size, resolution and stuff.
+		if(HasSelectionChanged()) {
+			OnSelect();
+		}
+		
+		// kd: Fade box.
+		if(is_tip_shown && fade_tics < fade_frames) {
+			fade_tics++;
+		}
+		
+		else if(!is_tip_shown && 0 < fade_tics) {
+			fade_tics--;
+		}
+		
+		old_selection = mdesc.mselecteditem;
+		was_tip_shown = is_tip_shown;
+	}
+	
+	override void Drawer () {
+		super.Drawer();
+		
+		// let font = generic_ui || !mDesc.mFont? NewSmallFont : mDesc.mFont;
+		let fade_f = 1.0 * fade_tics / fade_frames;
+		let flash_f = 1.0 * flash_tics / flash_frames;
+		
+		let width = Screen.GetWidth();
+		let height = Screen.GetHeight();
+		
+		//to avoid division by 0 (in case for the first tics it is 0 here for whatever blyat reason)
+		if(resolution.y == 0) {resolution.y = 350;} 
+		let box_height = height / resolution.y * (4 + tip_line_count * line_height);
+		
+		Screen.Dim(
+			Color(0, 0, 0, 0),
+			0.3 * fade_f,
+			0,
+			height - box_height,
+			width,
+			box_height);
+		
+		let start_y = resolution.y - tip_line_count * line_height - 2;
+		
+		if(is_tip_shown)
+		for(let i = 0; i < tip_line_count; i++) {
+			// kd: Draw the base tip text.
+			Screen.DrawText(
+				tip_font,
+				Font.cr_white,
+				0.5 * resolution.x + tip_x_offset [i],
+				start_y + i * line_height + 2,
+				tip_lines [i],
+				DTA_VIRTUALWIDTHF, resolution.x,
+				DTA_VIRTUALHEIGHTF, resolution.y);
+			
+			// kd: Draw the flashy overlay when it appears.
+			Screen.DrawText(
+				tip_font,
+				Font.cr_fire,
+				0.5 * resolution.x + tip_x_offset [i],
+				start_y + i * line_height + 2,
+				tip_lines [i],
+				DTA_ALPHA, flash_f,
+				DTA_VIRTUALWIDTHF, resolution.x,
+				DTA_VIRTUALHEIGHTF, resolution.y);
+		}
+	}
+}

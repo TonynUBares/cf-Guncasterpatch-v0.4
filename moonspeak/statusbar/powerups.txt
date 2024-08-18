@@ -1,0 +1,100 @@
+/*	KeksDose / MemeDose (kd):
+	
+	Powerups should be drawn with their remaining time beneath. To achieve this,
+	we have to also associate each powerup with a text colour (it's something
+	pillow's already done). No other fluff yet.
+	
+	It's based off what gzd already does, obviously.
+	
+	*/
+
+struct Gc_SbarPowerups {
+	private Array <int>						timer_color;
+	private Array <bool>					is_timer_drawn;
+	private Array <class <Powerup> >		powerup_class;
+	private Array <TextureId>				powerup_sprite;
+	private int								size;
+	
+	void Init (String timer_font_name = "indexfont") {
+		timer_color.clear();
+		powerup_class.clear();
+		powerup_sprite.clear();
+		
+		size = 0;
+	}
+	
+	void Add (
+	class <Powerup>	inv_class,
+	int				color		= Font.cr_sapphire,
+	bool			draw_timer	= true) {
+		powerup_class.push(inv_class);
+		timer_color.push(color);
+		is_timer_drawn.push(draw_timer);
+		
+		// here's some more award winning zs syntax
+		let sprite	= GetDefaultByType(inv_class).icon;
+		powerup_sprite.push(0);
+		powerup_sprite [size] = sprite;
+		
+		size = powerup_class.size();
+	}
+	
+	void Copy (Gc_SbarPowerups source) {
+		timer_color.	copy(source.timer_color);
+		powerup_class.	copy(source.powerup_class);
+		powerup_sprite.	copy(source.powerup_sprite);
+		is_timer_drawn.	copy(source.is_timer_drawn);
+		size		= source.size;
+	}
+	
+	int WrapWidth () const {
+		return int(0.5 * Screen.GetWidth());
+	}
+	
+	const tile_size = 40;
+	
+	ui void DrawTopRight (Gc_StatusBar bar, HudFont timer_font, int x, int y) const {
+		let mo = bar.cplayer.mo;
+		
+		if(!mo || size < 1) {
+			return;
+		}
+		
+		int init_x = x;
+		int init_y = y;
+		int wrap_width = WrapWidth() + init_x;
+		int x_offset = 0;
+		int y_offset = 0;
+		Powerup mo_power;
+		
+		for(int i = 0; i < size; i++)
+		if(mo_power = Powerup(mo.FindInventory(powerup_class [i])) ) {
+			if(!mo_power.IsBlinking()) {
+				bar.DrawTexture(
+					powerup_sprite [i], (init_x - x_offset, init_y - y_offset),
+					bar.DI_SCREEN_RIGHT_TOP | bar.DI_ITEM_CENTER);
+			}
+			
+			// Draw the duration either way:
+			if(is_timer_drawn [i]) {
+				String seconds_str = String.Format("%i",mo_power.effecttics/35);
+				// double offset = timer_font.font.GetStringWidth(seconds_str);
+				
+				bar.DrawString(
+					timer_font, seconds_str,
+					(init_x - x_offset - 0.0 * tile_size,
+					 init_y - y_offset + 0.6 * tile_size),
+					bar.DI_SCREEN_RIGHT_TOP | bar.DI_TEXT_ALIGN_CENTER,
+					timer_color [i]);
+			}
+			
+			x_offset += tile_size;
+			
+			// Wrap around:
+			if(wrap_width < x_offset) {
+				x_offset = init_x;
+				y_offset += tile_size;
+			}
+		}
+	}
+}

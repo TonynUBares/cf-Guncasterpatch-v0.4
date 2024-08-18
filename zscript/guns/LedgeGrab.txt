@@ -1,0 +1,219 @@
+class LedgeGrabWeapon : GuncasterWeapon
+{
+	Default
+	{
+		Weapon.SelectionOrder 99;
+		+WEAPON.CHEATNOTWEAPON;
+		+WEAPON.NO_AUTO_SWITCH;
+	}
+	
+	States
+	{
+	Spawn:
+		TNT1 A -1;
+		Stop;
+	Select:
+		TNT1 A 1 ACS_NamedExecuteAlways("SbarinfoFix",0,0,1,2);
+		TNT1 A 0 {
+			//A_Overlay(-9,"KickActive");
+			A_StopSound(6);
+			A_Overlay(-4,"none");
+			A_Overlay(3,"none");
+			A_Overlay(2,"none");
+			A_Overlay(-2,"none");
+			A_Overlay(-3,"none");
+			A_Overlay(-5,"none");
+			A_Overlay(-6,"none");
+			A_Overlay(-7,"none");
+			A_Overlay(-8,"none");
+			A_SetCrosshair(77);
+		}
+		TNT1 A 0 A_Raise;
+		Wait;
+	Deselect:
+		TNT1 A 1 ACS_NamedExecuteAlways("SbarinfoFix",0,1,1,2);
+		TNT1 A 0 A_Lower;
+		Loop;
+	Ready:
+		TNT1 A 0 A_JumpIf(CountInv("PowerDeadmaker"),"DeadReady");
+		TNT1 A 4 {
+			A_SpawnItemEx("ClimbPuffSpawner",-2,8,24); //Cause sadly specifying explicit angle =/= positioning the firing offsets.)
+			A_SpawnItemEx("ClimbPuffSpawnerLeft",-2,-8,24);
+			A_Overlay(2,"LedgeGrab");
+			A_Overlay(-2,"LedgeGrab");
+			A_OverlayFlags(-2,PSPF_FLIP|PSPF_MIRROR,1);
+		}
+		TNT1 A 5 {
+			A_PlaySound("Guncaster/Climb",4,0.8);
+			if(CountInv("PowerSuitToken"))
+			{
+				A_AlertMonsters(256);
+                A_PlaySound("Bishop/Kick",5,0.7);
+			}
+			else if(CountInv("PowerSuitDraugh") && !CountInv("PowerSuitProtect"))
+            {
+                A_PlaySound("Draughcaster/Move",5,0.8);
+            }
+			else
+			{
+				A_PlaySound("Move/Slide",5);
+			}
+		}
+	ReadyHangman:
+		TNT1 A 1 A_JumpIf(!CountInv("GCLiftGrabbed"),1);
+		Loop;
+		TNT1 A 0 {
+			A_TakeInventory("GCLedgeGrabbed");
+			SetPlayerProperty(0,0,2);
+			let myplayvars = Guncaster(self);
+			A_SelectWeapon(myplayvars.PreviousWeapon);
+		}
+		TNT1 A 1 {
+			A_WeaponReady(WRF_NOFIRE);
+			A_TakeInventory("LedgeGrabWeapon");
+		}
+		Loop;
+	LedgeGrab:
+		CYCR A 0 A_JumpIf(CountInv("PowerSuitToken"),5);
+		CYUR A 0 A_JumpIf(CountInv("PowerSuitProtect"),4);
+		CYYR A 0 A_JumpIf(CountInv("PowerSuitDraugh"),3);
+		CYMR A 0 {
+			let myplayvars = Guncaster(self);
+			if(myplayvars.PreviousWeapon == "DergFist" && CountInv("PowerMidasMode"))
+			{
+				return ResolveState(2);
+			}
+			Return ResolveState(Null);
+		}
+		CYGR A 0;
+		//"####" "#" 1 A_OverlayOffset(OverlayID(),249,162);
+		//"####" "#" 1 A_OverlayOffset(OverlayID(),239,138,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),224,111);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),213,93,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),196,91,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),186,94,WOF_INTERPOLATE);
+
+		C2CP A 0 A_JumpIf(CountInv("PowerSuitToken"),5);
+		C2UP A 0 A_JumpIf(CountInv("PowerSuitProtect"),4);
+		C2YP A 0 A_JumpIf(CountInv("PowerSuitDraugh"),3);
+		C2MP A 0 {
+			let myplayvars = Guncaster(self);
+			if(myplayvars.PreviousWeapon == "DergFist" && CountInv("PowerMidasMode"))
+			{
+				return ResolveState(2);
+			}
+			Return ResolveState(Null);
+		}
+		C2GP A 0;
+	LedgeHangman:
+		"####" "#" 1 { A_OverlayOffset(OverlayID(),182,120); Return A_JumpIf(!CountInv("GCLiftGrabbed"),1); }
+		Loop;
+		"####" "#" 1 A_OverlayOffset(OverlayID(),182,121,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),182,125,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),182,136,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),182,152,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),182,167,WOF_INTERPOLATE);
+		Stop;
+		
+		
+	DeadReady:
+		TNT1 A 4 {
+			A_StopSound(5);
+			A_Overlay(2,"DeadLedgeGrab");
+			A_Overlay(-2,"DeadLedgeGrab");
+			A_OverlayFlags(-2,PSPF_FLIP|PSPF_MIRROR,1);
+		}
+		TNT1 A 0 {
+			A_PlaySound("Guncaster/Climb",4,0.9);
+			if(CountInv("PowerDeadmaker") && CountInv("PowerSuitToken")) { A_StartSound("Prophet/Woosh",889,0,1.0); }
+			A_SpawnItemEx("ClimbPuffSpawner",-2,16,24);
+			A_SpawnItemEx("ClimbPuffSpawnerLeft",-2,-16,24);
+		}
+	DeadReadyHangman:
+		TNT1 A 1 A_JumpIf(!CountInv("GCLiftGrabbed"),1);
+		Loop;
+		TNT1 A 3 {
+			A_TakeInventory("GCLedgeGrabbed");
+			SetPlayerProperty(0,0,2);
+			let myplayvars = Guncaster(self);
+			A_SelectWeapon(myplayvars.PreviousWeapon);
+		}
+		TNT1 A 1 {
+			A_WeaponReady(WRF_NOFIRE);
+			A_TakeInventory("LedgeGrabWeapon");
+		}
+		Loop;
+		
+	DeadLedgeGrab:
+		OCLW A 0 A_JumpIf(CountInv("PowerSuitToken"),3);
+		DCLW A 0 A_JumpIf(CountInv("PowerSuitDraugh"),2);
+		NCLW A 0;
+		"####" B 1 A_OverlayOffset(OverlayID(),176,90);
+		"####" B 1 A_OverlayOffset(OverlayID(),163,61,WOF_INTERPOLATE);
+		"####" C 1 A_OverlayOffset(OverlayID(),168,64);
+		"####" C 1 A_OverlayOffset(OverlayID(),169,69,WOF_INTERPOLATE);
+	DeadLedgeHangman:
+		"####" C 1 { A_OverlayOffset(OverlayID(),173,84,WOF_INTERPOLATE); Return A_JumpIf(!CountInv("GCLiftGrabbed"),1); }
+		Loop;
+		"####" D 1 A_OverlayOffset(OverlayID(),181,110);
+		"####" D 1 A_OverlayOffset(OverlayID(),184,134,WOF_INTERPOLATE);
+		"####" D 1 A_OverlayOffset(OverlayID(),195,164,WOF_INTERPOLATE);
+		Stop;
+	}
+}
+
+class ClimbPuffSpawner : Actor
+{
+	Default
+	{
+		+NOINTERACTION
+		+NOCLIP
+	}
+
+	States
+	{
+	Spawn:
+		TNT1 A 0 NoDelay A_CustomBulletAttack(0,0,1,0,"ClimbPuff",36,CBAF_AIMFACING|CBAF_EXPLICITANGLE|CBAF_NORANDOMPUFFZ|CBAF_NOPITCH,AAPTR_NULL);
+		Stop;
+	}
+}
+
+class ClimbPuffSpawnerLeft : ClimbPuffSpawner
+{
+	States
+	{
+	Spawn:
+		TNT1 A 0 NoDelay A_CustomBulletAttack(0,0,1,0,"ClimbPuffLeft",36,CBAF_AIMFACING|CBAF_EXPLICITANGLE|CBAF_NORANDOMPUFFZ|CBAF_NOPITCH,AAPTR_NULL);
+		Stop;
+	}
+}
+
+class ClimbPuff : Actor
+{
+	Default
+	{
+		Decal "ClawClimbStamp";
+		+NOBLOCKMAP
+		+NOGRAVITY
+		+BLOODLESSIMPACT
+		+NOTONAUTOMAP
+		+ALLOWTHRUFLAGS
+		+THRUACTORS
+		//+NOTIMEFREEZE
+	}
+	
+	States
+	{
+	Spawn:
+		TNT1 A 1;
+		Stop;
+	}
+}
+
+class ClimbPuffLeft : ClimbPuff
+{
+	Default
+	{
+		Decal "ClawClimbStampLeft";
+	}
+}

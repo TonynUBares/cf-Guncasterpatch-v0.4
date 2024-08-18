@@ -1,0 +1,10 @@
+actor IsGCPlayer : Inventory 
+{ 
+ Inventory.Amount 1 
+ Inventory.MaxAmount 1 
+ Inventory.InterHubAmount 1 
+ +INVENTORY.UNDROPPABLE
+ +INVENTORY.PERSISTENTPOWER
+}
+
+actor IsGCAddonPlayer : IsGCPlayer {}

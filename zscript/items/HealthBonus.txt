@@ -1,0 +1,25 @@
+class GC_ExtendingHealthBonus : Health
+{
+	Default
+	{
+		Inventory.Amount 1;
+		Inventory.MaxAmount 200;
+	}
+	
+	// Checks whether pickup is valid.
+	override bool TryPickup (in out Actor other)
+	{
+		PrevHealth = other.player != NULL ? other.player.health : other.health;
+		if(other.player)
+		{
+			MaxAmount += PlayerPawn(other).GetMaxHealth(true) - GetDefaultByType(PlayerPawn(other).GetClass()).MaxHealth;
+		}
+		
+		if (other.GiveBody(Amount, MaxAmount))
+		{
+			GoAwayAndDie();
+			return true;
+		}
+		return false;
+	}
+}

@@ -1,0 +1,968 @@
+#region Spell Tomes
+//$Color 5
+
+// kd: HI MOM I'M IMPROVING YOUR REASONING SPEED
+// DON'T MIND THE DRILL TO YOUR HEAD THAT'S JUST PART OF THE NORMAL PROCEDURE
+
+//Magic active token.
+class MagicToken : Inventory
+{
+	override void AttachToOwner(Actor user)
+	{
+		Super.AttachToOwner(user);
+		
+		let po = Guncaster(user);
+		
+		if(po) {
+			String ActiveItem = GCString.Replace(GetClassName(), "Active", "tome_active");
+			if(level.time > 5) {
+				owner.A_PlaySound(ActiveItem);
+			}
+			
+			po.OnSpellActivate();
+		}
+	}
+}
+
+//Spawner stuff
+class TomeSpawner : RandomSpawner replaces Gauntlets
+{
+	Default
+	{
+		//$Title Random Tome
+		//$Sprite BOOKZ0
+		DropItem "SkullfireBringer", 256, 1;
+		DropItem "FlamewaveBringer", 256, 1;
+		DropItem "FrostbiteBringer", 256, 1;
+		DropItem "GumpopBringer", 256, 1;
+		DropItem "ThunderBringer", 256, 1;
+		DropItem "ThreadcutterBringer", 256, 1;
+		DropItem "SkypunchBringer", 256, 1;
+		DropItem "CrowsBringer", 256, 1;
+		DropItem "BreathBringer", 256, 1;
+		DropItem "CorpseBringer", 256, 1;
+		DropItem "ChillgraspBringer", 256, 1;
+		DropItem "AnnihilationBringer", 256, 1;
+		DropItem "MeteorfistBringer", 256, 1;
+		DropItem "SheepshieldBringer", 256, 1;
+		DropItem "SpiritcannonBringer", 256, 1;
+		DropItem "PrismBringer", 256, 1;
+		DropItem "ApocalypseBringer", 256, 1;
+		DropItem "DarkpathBringer", 256, 1;
+		DropItem "DragonshoutBringer", 256, 1;
+		DropItem "HammersmiteBringer", 256, 1;
+		DropItem "SigilBringer", 256, 1;
+	}
+}
+
+class TomeDoom : TomeSpawner replaces Chainsaw {}
+
+//Actor stuff
+class TomeBringer : BaseBringer
+{
+	class <Actor> particle_type;
+	name sprite_index;
+	int sprite_frame;
+	property Particle: particle_type;
+	property sprite_index : sprite_index;
+	property BookSpriteIndex: sprite_frame;
+	
+	Default
+	{
+		Inventory.PickupSound "Tome/Pickup";
+		TomeBringer.sprite_index "BOOK";
+		+FLOATBOB
+		+COUNTITEM
+	}
+	
+	override void BeginPlay () {
+		sprite = GetSpriteIndex(sprite_index);
+		frame = sprite_frame;
+	}
+	
+	override void PostBeginPlay () {
+		if(NULL == particle_type) {
+			Console.printf("\c[red]%s has an unset particle type.",self.GetClassName());
+			Destroy();
+		}
+		
+		let marker = Spawn("TomeMarker", pos);
+		
+		if(marker) {
+			marker.tracer = self;
+		}
+		
+		Super.PostBeginPlay();
+	}
+	
+	States
+	{
+	Spawn:
+		BOOK # 1 bright {
+			if(!(GC_PickupParticleChoker || A_CheckSight("Null")))
+			{
+				if(random(0, 3) < 2)
+				{
+					let mo = Spawn(particle_type, pos + (
+						frandom(-15, 15),
+						frandom(-15, 15),
+						frandom(15, 45) + GetBobOffset() - Floorclip) );
+					
+					mo.vel = (
+						frandom(-0.6, 0.6),
+						frandom(-0.6, 0.6),
+						frandom(0.4, 1.2));
+				}
+				
+				Spawn("TomeFade", pos + (0, 0, GetBobOffset() - Floorclip));
+			}
+		}
+		Loop;
+		
+	DummyStates:
+		BOOK A 0;
+		BSTK A 0;
+		Stop;
+	}
+}
+
+class SharedTome : Inventory
+{
+	class <Inventory> m_token;
+	class <Inventory> m_in_progress;
+	class <Actor> particle_type;
+	name sprite_index;
+	int sprite_frame;
+	property Token: m_token;
+	property InProgress: m_in_progress;
+	property Particle: particle_type;
+	property sprite_index : sprite_index;
+	property BookSpriteIndex: sprite_frame;
+	
+	Default
+	{
+		Inventory.MaxAmount 1;
+		SharedTome.sprite_index "BOOK";
+		Inventory.PickupSound "Tome/Pickup";
+		+FLOATBOB
+	}
+	
+	// kd: hallo fräaeulins welcome to guncaster 4: long overdue edition
+	virtual clearscope TextureId SbarIcon () const {
+		return icon;
+	}
+	
+	override void BeginPlay () {
+		sprite = GetSpriteIndex(sprite_index);
+		frame = sprite_frame;
+	}
+	
+	override void PostBeginPlay () {
+		Super.PostBeginPlay();
+	}
+	
+	States
+	{
+	Spawn:
+		BOOK # 1 bright {
+			if(!(GC_PickupParticleChoker || A_CheckSight("Null")))
+			{
+				if(random(0, 3) < 2)
+				{
+					let mo = Spawn(particle_type, pos + (
+						frandom(-15, 15),
+						frandom(-15, 15),
+						frandom(15, 45) + GetBobOffset() - Floorclip) );
+					
+					mo.vel = (
+						frandom(-0.6, 0.6),
+						frandom(-0.6, 0.6),
+						frandom(0.4, 1.2));
+				}
+				
+				Spawn("TomeFade", pos + (0, 0, GetBobOffset() - Floorclip));
+			}
+		}
+		Loop;
+		
+	DummyStates:
+		BOOK A 0;
+		BSTK A 0;
+		Stop;
+	}
+}
+
+class TomeFade : Actor
+{
+	Default
+	{
+		Renderstyle "Add";
+		+NOINTERACTION
+		+NOGRAVITY
+	}
+	
+	override void Tick ()
+	{
+		alpha -= 0.25;
+		scale += (0.05, 0.05);
+		
+		if(alpha <= 0) {
+			Destroy();
+		}
+	}
+	
+	States
+	{
+	Spawn:
+		BOOK Z 1337;
+		Loop;
+	}
+}
+
+//Firebreath
+class FirebreathBringer : TomeBringer
+{
+	Default
+	{
+		//$Title Firebreath
+		Tag "\c[orange]Tome of Firebreath";
+		Inventory.PickupMessage "$GOTFIREBREATH";
+		Inventory.Amount 300;
+		BaseBringer.ItemToBring "FirebreathTome";
+		TomeBringer.Particle "TomeParticleOrange";
+		TomeBringer.BookSpriteIndex 10;
+	}
+}
+
+class FirebreathTome : SharedTome
+{
+	Default
+	{
+		Tag "\c[orange]Tome of Firebreath";
+		SharedTome.Token "FirebreathActive";
+		SharedTome.InProgress "FirebreathInProgress";
+		SharedTome.Particle "TomeParticleOrange";
+		SharedTome.BookSpriteIndex 10;
+		Inventory.PickupMessage "$GOTFIREBREATH";
+		Inventory.Icon "BO2KK0";
+		+INVENTORY.UNDROPPABLE
+	}
+	
+	override void PostBeginPlay () {
+		super.PostBeginPlay();
+		
+		default_icon	= icon;
+		green_icon		= TexMan.CheckForTexture("tb2bk0", TexMan.type_any);
+		blue_icon		= TexMan.CheckForTexture("tb22k0", TexMan.type_any);
+	}
+	
+	override TextureId SbarIcon () const {
+		bool has_blue		= 0 < owner.CountInv("TibCore");
+		bool bishop_mode	= 0 < owner.CountInv("PowerSuitToken");
+		bool green_mode		= !has_blue && bishop_mode;
+		bool blue_mode		=  has_blue && bishop_mode;
+		
+		if(green_mode) {
+			return green_icon;
+		}
+		
+		else if(blue_mode) {
+			return blue_icon;
+		}
+		
+		return default_icon;
+	}
+	
+	TextureId default_icon;
+	TextureId green_icon;
+	TextureId blue_icon;
+}
+
+//Skullfire
+class SkullfireBringer : TomeBringer
+{
+	Default
+	{
+		//$Title Skullfire
+		Tag "\c[orange]Tome of Skullfire";
+		Inventory.PickupMessage "$GOTSKULLFIRE";
+		Inventory.Amount 500;
+		BaseBringer.ItemToBring "SkullfireTome";
+		BaseBringer.ItemToUnlock Gcs_BaseShop.skullfire;
+		TomeBringer.Particle "TomeParticleOrange";
+		TomeBringer.BookSpriteIndex 0;
+	}
+}
+
+class SkullfireTome : SharedTome
+{
+	Default
+	{
+		Tag "\c[orange]Tome of Skullfire";
+		SharedTome.Token "SkullfireActive";
+		SharedTome.InProgress "SkullfireInProgress";
+		SharedTome.Particle "TomeParticleOrange";
+		SharedTome.BookSpriteIndex 0;
+		Inventory.PickupMessage "$GOTSKULLFIRE";
+		Inventory.Icon "BO2KA0";
+	}
+}
+
+//Flamewave
+class FlamewaveBringer : TomeBringer
+{
+	Default
+	{
+		//$Title Flamewave
+		Tag "\c[orange]Tome of Flamewave";
+		Inventory.PickupMessage "$GOTFLAMEWAVE";
+		Inventory.Amount 1500;
+		BaseBringer.ItemToBring "FlamewaveTome";
+		BaseBringer.ItemToUnlock Gcs_BaseShop.flamewave;
+		TomeBringer.Particle "TomeParticleOrange";
+		TomeBringer.BookSpriteIndex 12;
+	}
+}
+
+class FlamewaveTome : SharedTome
+{
+	Default
+	{
+		Tag "\c[orange]Tome of Flamewave";
+		SharedTome.Token "FlamewaveActive";
+		SharedTome.InProgress "FlamewaveInProgress";
+		Inventory.PickupMessage "$GOTFLAMEWAVE";
+		Inventory.Icon "BO2KM0";
+		SharedTome.Particle "TomeParticleOrange";
+		SharedTome.BookSpriteIndex 12;
+	}
+}
+
+//Frostbite
+class FrostbiteBringer : TomeBringer
+{
+	Default
+	{
+		//$Title Frostbite
+		Tag "\c[lightblue]Tome of Frostbite";
+		Inventory.PickupMessage "$GOTFROSTBITE";
+		Inventory.Amount 900;
+		BaseBringer.ItemToBring "FrostbiteTome";
+		BaseBringer.ItemToUnlock Gcs_BaseShop.frostbite;
+		TomeBringer.Particle "TomeParticleCyan";
+		TomeBringer.BookSpriteIndex 1;
+	}
+}
+
+class FrostbiteTome : SharedTome
+{
+	Default
+	{
+		Tag "\c[lightblue]Tome of Frostbite";
+		SharedTome.Token "FrostbiteActive";
+		SharedTome.InProgress "FrostbiteInProgress";
+		Inventory.PickupMessage "$GOTFROSTBITE";
+		Inventory.Icon "BO2KB0";
+		SharedTome.Particle "TomeParticleCyan";
+		SharedTome.BookSpriteIndex 1;
+	}
+}
+
+//Chillgrasp
+class ChillgraspBringer : TomeBringer
+{
+	Default
+	{
+		//$Title Chillgrasp
+		Tag "\c[lightblue]Tome of Chillgrasp";
+		Inventory.PickupMessage "$GOTCHILLGRASP";
+		Inventory.Amount 4000;
+		BaseBringer.ItemToBring "ChillgraspTome";
+		BaseBringer.ItemToUnlock Gcs_BaseShop.chillgrasp;
+		TomeBringer.Particle "TomeParticlePurple";
+		TomeBringer.BookSpriteIndex 13;
+	}
+}
+
+class ChillgraspTome : SharedTome
+{
+	Default
+	{
+		Tag "\c[lightblue]Tome of Chillgrasp";
+		SharedTome.Token "ChillgraspActive";
+		SharedTome.InProgress "ChillgraspInProgress";
+		Inventory.PickupMessage "$GOTCHILLGRASP";
+		Inventory.Icon "BO2KN0";
+		SharedTome.Particle "TomeParticlePurple";
+		SharedTome.BookSpriteIndex 13;
+	}
+}
+
+//Gumpop
+class GumpopBringer : TomeBringer
+{
+	Default
+	{
+		//$Title Gumpop
+		Tag "\c[green]Tome of Gumpop";
+		Inventory.PickupMessage "$GOTGUMPOP";
+		Inventory.Amount 400;
+		BaseBringer.ItemToBring "GumpopTome";
+		BaseBringer.ItemToUnlock Gcs_BaseShop.gumpop;
+		TomeBringer.Particle "TomeParticleGreen";
+		TomeBringer.BookSpriteIndex 2;
+	}
+}
+
+class GumpopTome : SharedTome
+{
+	Default
+	{
+		Tag "\c[green]Tome of Gumpop";
+		SharedTome.Token "GumpopActive";
+		SharedTome.InProgress "GumpopInProgress";
+		Inventory.PickupMessage "$GOTGUMPOP";
+		Inventory.Icon "BO2KC0";
+		SharedTome.Particle "TomeParticleGreen";
+		SharedTome.BookSpriteIndex 2;
+	}
+}
+
+//Thunderstruck
+class ThunderBringer : TomeBringer
+{
+	Default
+	{
+		//$Title Thunderstruck
+		Tag "\c[yellow]Tome of Thunderstruck";
+		Inventory.PickupMessage "$GOTTHUNDERSTRUCK";
+		Inventory.Amount 750;
+		BaseBringer.ItemToBring "ThunderTome";
+		BaseBringer.ItemToUnlock Gcs_BaseShop.thunder;
+		TomeBringer.Particle "TomeParticleYellow";
+		TomeBringer.BookSpriteIndex 3;
+	}
+}
+
+class ThunderTome : SharedTome
+{
+	Default
+	{
+		Tag "\c[yellow]Tome of Thunderstruck";
+		SharedTome.Token "ThunderActive";
+		SharedTome.InProgress "ThunderInProgress";
+		Inventory.PickupMessage "$GOTTHUNDERSTRUCK";
+		Inventory.Icon "BO2KD0";
+		SharedTome.Particle "TomeParticleYellow";
+		SharedTome.BookSpriteIndex 3;
+	}
+}
+
+//Threadcutter
+class ThreadcutterBringer : TomeBringer
+{
+	Default
+	{
+		//$Title Threadcutter
+		Tag "\c[gcteal]Tome of Threadcutter";
+		Inventory.PickupMessage "$GOTTHREADCUTTER";
+		Inventory.Amount 750;
+		BaseBringer.ItemToBring "ThreadcutterTome";
+		BaseBringer.ItemToUnlock Gcs_BaseShop.threadcutter;
+		TomeBringer.Particle "TomeParticleKnives";
+		TomeBringer.BookSpriteIndex 4;
+	}
+}
+
+class ThreadcutterTome : SharedTome
+{
+	Default
+	{
+		Tag "\c[gcteal]Tome of Threadcutter";
+		SharedTome.Token "ThreadcutterActive";
+		SharedTome.InProgress "ThreadcutterInProgress";
+		Inventory.PickupMessage "$GOTTHREADCUTTER";
+		Inventory.Icon "BO2KE0";
+		SharedTome.Particle "TomeParticleKnives";
+		SharedTome.BookSpriteIndex 4;
+	}
+}
+
+//Skypunch
+class SkypunchBringer : TomeBringer
+{
+	Default
+	{
+		//$Title Skypunch
+		Tag "\c[cyan]Tome of Skypunch";
+		Inventory.PickupMessage "$GOTSKYPUNCH";
+		Inventory.Amount 750;
+		BaseBringer.ItemToBring "SkypunchTome";
+		BaseBringer.ItemToUnlock Gcs_BaseShop.skypunch;
+		TomeBringer.Particle "TomeParticleCyan";
+		TomeBringer.BookSpriteIndex 5;
+	}
+}
+
+class SkypunchTome : SharedTome
+{
+	Default
+	{
+		Tag "\c[cyan]Tome of Skypunch";
+		SharedTome.Token "SkypunchActive";
+		SharedTome.InProgress "SkypunchInProgress";
+		Inventory.PickupMessage "$GOTSKYPUNCH";
+		Inventory.Icon "BO2KF0";
+		SharedTome.Particle "TomeParticleCyan";
+		SharedTome.BookSpriteIndex 5;
+	}
+}
+
+//Crows
+class CrowsBringer : TomeBringer
+{
+	Default
+	{
+		//$Title Hitchcock's Birds
+		Tag "\c[black]Tome of Hitchcock's Birds";
+		Inventory.PickupMessage "$GOTCROWS";
+		Inventory.Amount 1000;
+		BaseBringer.ItemToBring "CrowsTome";
+		BaseBringer.ItemToUnlock Gcs_BaseShop.crows;
+		TomeBringer.Particle "TomeParticleRed";
+		TomeBringer.BookSpriteIndex 6;
+	}
+}
+
+class CrowsTome : SharedTome
+{
+	Default
+	{
+		Tag "\c[black]Tome of Hitchcock's Birds";
+		SharedTome.Token "CrowsActive";
+		SharedTome.InProgress "CrowsInProgress";
+		Inventory.PickupMessage "$GOTCROWS";
+		Inventory.Icon "BO2KG0";
+		SharedTome.Particle "TomeParticleRed";
+		SharedTome.BookSpriteIndex 6;
+	}
+}
+
+//Scourgebreath
+class BreathBringer : TomeBringer
+{
+	Default
+	{
+		//$Title Scourgebreath
+		Tag "\c[untranslated]Tome of Scourgebreath";
+		Inventory.PickupMessage "$GOTSCOURGE";
+		Inventory.Amount 2000;
+		BaseBringer.ItemToBring "BreathTome";
+		BaseBringer.ItemToUnlock Gcs_BaseShop.breath;
+		TomeBringer.Particle "TomeParticleRed";
+		TomeBringer.BookSpriteIndex 7;
+	}
+}
+
+class BreathTome : SharedTome
+{
+	Default
+	{
+		Tag "\c[untranslated]Tome of Scourgebreath";
+		SharedTome.Token "BreathActive";
+		SharedTome.InProgress "BreathInProgress";
+		Inventory.PickupMessage "$GOTSCOURGE";
+		Inventory.Icon "BO2KH0";
+		SharedTome.Particle "TomeParticleRed";
+		SharedTome.BookSpriteIndex 7;
+	}
+}
+
+//Corpseblast
+class CorpseBringer : TomeBringer
+{
+	Default
+	{
+		//$Title Corpseblast
+		Tag "\c[purple]Tome of Corpseblast";
+		Inventory.PickupMessage "$GOTCORPSEBLAST";
+		Inventory.Amount 1000;
+		BaseBringer.ItemToBring "CorpseTome";
+		BaseBringer.ItemToUnlock Gcs_BaseShop.corpse;
+		TomeBringer.Particle "TomeParticlePurple";
+		TomeBringer.BookSpriteIndex 8;
+	}
+}
+
+class CorpseTome : SharedTome
+{
+	Default
+	{
+		Tag "\c[purple]Tome of Corpseblast";
+		SharedTome.Token "CorpseActive";
+		SharedTome.InProgress "CorpseInProgress";
+		Inventory.PickupMessage "$GOTCORPSEBLAST";
+		Inventory.Icon "BO2KI0";
+		SharedTome.Particle "TomeParticlePurple";
+		SharedTome.BookSpriteIndex 8;
+	}
+}
+
+//Annihilation
+class AnnihilationBringer : TomeBringer
+{
+	Default
+	{
+		//$Title Annihilation
+		Tag "\c[blue]Tome of Annihilation";
+		Inventory.PickupMessage "$GOTANNIHILATION";
+		Inventory.Amount 4000;
+		BaseBringer.ItemToBring "AnnihilationTome";
+		BaseBringer.ItemToUnlock Gcs_BaseShop.annihilation;
+		TomeBringer.Particle "TomeParticleBlue";
+		TomeBringer.BookSpriteIndex 9;
+	}
+}
+
+class AnnihilationTome : SharedTome
+{
+	Default
+	{
+		Tag "\c[blue]Tome of Annihilation";
+		SharedTome.Token "AnnihilationActive";
+		SharedTome.InProgress "AnnihilationInProgress";
+		Inventory.PickupMessage "$GOTANNIHILATION";
+		Inventory.Icon "BO2KJ0";
+		SharedTome.Particle "TomeParticleBlue";
+		SharedTome.BookSpriteIndex 9;
+	}
+}
+
+//Meteorfist
+class MeteorfistBringer : TomeBringer
+{
+	Default
+	{
+		//$Title Meteorfist
+		Tag "\c[orange]Tome of Meteorfist";
+		Inventory.PickupMessage "$GOTMETEORFIST";
+		Inventory.Amount 3500;
+		BaseBringer.ItemToBring "MeteorfistTome";
+		BaseBringer.ItemToUnlock Gcs_BaseShop.meteorfist;
+		TomeBringer.Particle "TomeParticleOrange";
+		TomeBringer.BookSpriteIndex 11;
+	}
+}
+
+class MeteorfistTome : SharedTome
+{
+	Default
+	{
+		Tag "\c[orange]Tome of Meteorfist";
+		SharedTome.Token "MeteorfistActive";
+		SharedTome.InProgress "MeteorfistInProgress";
+		Inventory.PickupMessage "$GOTMETEORFIST";
+		Inventory.Icon "BO2KL0";
+		SharedTome.Particle "TomeParticleOrange";
+		SharedTome.BookSpriteIndex 11;
+	}
+}
+
+//Sheepshield
+class SheepshieldBringer : TomeBringer
+{
+	Default
+	{
+		//$Title Sheepshield
+		Tag "\c[white]Tome of Sheepshield";
+		Inventory.PickupMessage "$GOTSHEEPSHIELD";
+		Inventory.Amount 5000;
+		BaseBringer.ItemToBring "SheepshieldTome";
+		BaseBringer.ItemToUnlock Gcs_BaseShop.sheepshield;
+		TomeBringer.Particle "TomeParticleWhite";
+		TomeBringer.BookSpriteIndex 14;
+	}
+}
+
+class SheepshieldTome : SharedTome
+{
+	Default
+	{
+		Tag "\c[white]Tome of Sheepshield";
+		SharedTome.Token "SheepshieldActive";
+		SharedTome.InProgress "SheepshieldInProgress";
+		Inventory.PickupMessage "$GOTSHEEPSHIELD";
+		Inventory.Icon "BO2KO0";
+		SharedTome.Particle "TomeParticleWhite";
+		SharedTome.BookSpriteIndex 14;
+	}
+}
+
+//Spiritcannon
+class SpiritcannonBringer : TomeBringer
+{
+	Default
+	{
+		//$Title Spiritcannon
+		Tag "\c[gcskyblue]Tome of Spiritcannon";
+		Inventory.PickupMessage "$GOTSPIRITCANNON";
+		Inventory.Amount 750;
+		BaseBringer.ItemToBring "SpiritcannonTome";
+		BaseBringer.ItemToUnlock Gcs_BaseShop.spiritcannon;
+		TomeBringer.Particle "TomeParticleLightBlue";
+		TomeBringer.BookSpriteIndex 15;
+	}
+}
+
+class SpiritcannonTome : SharedTome
+{
+	Default
+	{
+		Tag "\c[gcskyblue]Tome of Spiritcannon";
+		SharedTome.Token "SpiritcannonActive";
+		SharedTome.InProgress "SpiritcannonInProgress";
+		Inventory.PickupMessage "$GOTSPIRITCANNON";
+		Inventory.Icon "BO2KP0";
+		SharedTome.Particle "TomeParticleLightBlue";
+		SharedTome.BookSpriteIndex 15;
+	}
+}
+
+//Prism
+class PrismBringer : TomeBringer
+{
+	Default
+	{
+		//$Title Prism
+		//$Sprite BOOKQ0
+		Tag "\c[white]Tome of \c[GCSkyBlue]P\c[Cyan]r\c[Green]i\c[Yellow]s\c[GCOrange]m \c[GCFury]L\c[Red]a\c[Pink]z\c[Purple]e\c[GCPurple]r";
+		Inventory.PickupMessage "$GOTPRISM";
+		Inventory.Amount 10000;
+		BaseBringer.ItemToBring "PrismTome";
+		BaseBringer.ItemToUnlock Gcs_BaseShop.prism;
+		TomeBringer.Particle "TomeParticleCyan";
+		TomeBringer.BookSpriteIndex 16;
+	}
+	
+	override void Tick () {
+		static const class <Actor> particle_types [] = {
+			"TomeParticleRed",
+			"TomeParticleOrange",
+			"TomeParticleYellow",
+			"TomeParticleGreen",
+			"TomeParticleCyan",
+			"TomeParticleBlue",
+			"TomeParticlePurple"
+		};
+		
+		particle_type = particle_types [random(0, 6)];
+		super.Tick();
+	}
+}
+
+class PrismTome : SharedTome
+{
+	Default
+	{
+		Tag "\c[white]Tome of \c[GCSkyBlue]P\c[Cyan]r\c[Green]i\c[Yellow]s\c[GCOrange]m \c[GCFury]L\c[Red]a\c[Pink]z\c[Purple]e\c[GCPurple]r";
+		SharedTome.Token "PrismActive";
+		SharedTome.InProgress "PrismInProgress";
+		Inventory.PickupMessage "$GOTPRISM";
+		Inventory.Icon "BO2KQ0";
+		SharedTome.Particle "TomeParticleCyan";
+		SharedTome.BookSpriteIndex 16;
+	}
+	
+	override void Tick () {
+		static const class <Actor> particle_types [] = {
+			"TomeParticleRed",
+			"TomeParticleOrange",
+			"TomeParticleYellow",
+			"TomeParticleGreen",
+			"TomeParticleCyan",
+			"TomeParticleBlue",
+			"TomeParticlePurple"
+		};
+		
+		particle_type = particle_types [random(0, 6)];
+		super.Tick();
+	}
+}
+
+//Apocalypse
+class ApocalypseBringer : TomeBringer
+{
+	Default
+	{
+		//$Title Apocalypse
+		Tag "\c[untranslated]Tome of Apocalypse";
+		Inventory.PickupMessage "$GOTAPOCALYPSE";
+		Inventory.Amount 5000;
+		BaseBringer.ItemToBring "ApocalypseTome";
+		BaseBringer.ItemToUnlock Gcs_BaseShop.apocalypse;
+		TomeBringer.Particle "TomeParticleRed";
+		TomeBringer.BookSpriteIndex 17;
+	}
+}
+
+class ApocalypseTome : SharedTome
+{
+	Default
+	{
+		Tag "\c[untranslated]Tome of Apocalypse";
+		SharedTome.Token "ApocalypseActive";
+		SharedTome.InProgress "ApocalypseInProgress";
+		Inventory.PickupMessage "$GOTAPOCALYPSE";
+		Inventory.Icon "BO2KR0";
+		SharedTome.Particle "TomeParticleRed";
+		SharedTome.BookSpriteIndex 17;
+	}
+}
+
+//Darkpath
+class DarkpathBringer : TomeBringer
+{
+	Default
+	{
+		//$Title Darkpath
+		Tag "\c[gcpurple]Tome of Darkpath";
+		Inventory.PickupMessage "$GOTDARKPATH";
+		Inventory.Amount 1000;
+		BaseBringer.ItemToBring "DarkpathTome";
+		BaseBringer.ItemToUnlock Gcs_BaseShop.darkpath;
+		TomeBringer.Particle "TomeParticleDarkpath";
+		TomeBringer.BookSpriteIndex 18;
+	}
+}
+
+class DarkpathTome : SharedTome
+{
+	Default
+	{
+		Tag "\c[gcpurple]Tome of Darkpath";
+		SharedTome.Token "DarkpathActive";
+		SharedTome.InProgress "DarkpathInProgress";
+		Inventory.PickupMessage "$GOTDARKPATH";
+		Inventory.Icon "BO2KS0";
+		SharedTome.Particle "TomeParticleDarkpath";
+		SharedTome.BookSpriteIndex 18;
+	}
+}
+
+//Dragonshout
+class DragonshoutBringer : TomeBringer
+{
+	Default
+	{
+		//$Title Dragonshout
+		Tag "\c[cyan]Tome of Dragonshout";
+		Inventory.PickupMessage "$GOTDRAGONSHOUT";
+		Inventory.Amount 7000;
+		BaseBringer.ItemToBring "DragonshoutTome";
+		BaseBringer.ItemToUnlock Gcs_BaseShop.dragonshout;
+		TomeBringer.Particle "TomeParticleDragonshout";
+		TomeBringer.BookSpriteIndex 19;
+	}
+}
+
+class DragonshoutTome : SharedTome
+{
+	Default
+	{
+		Tag "\c[cyan]Tome of Dragonshout";
+		SharedTome.Token "DragonshoutActive";
+		SharedTome.InProgress "DragonshoutInProgress";
+		Inventory.PickupMessage "$GOTDRAGONSHOUT";
+		Inventory.Icon "BO2KT0";
+		SharedTome.Particle "TomeParticleDragonshout";
+		SharedTome.BookSpriteIndex 19;
+	}
+}
+
+//Hammersmite
+class HammersmiteBringer : TomeBringer
+{
+	Default
+	{
+		//$Title Hammersmite
+		Tag "\c[yellow]Tome of Hammersmite";
+		Inventory.PickupMessage "$GOTHAMMERSMITE";
+		Inventory.Amount 4000;
+		BaseBringer.ItemToBring "HammersmiteTome";
+		BaseBringer.ItemToUnlock Gcs_BaseShop.hammersmite;
+		TomeBringer.Particle "TomeParticleYellow";
+		TomeBringer.BookSpriteIndex 20;
+	}
+}
+
+class HammersmiteTome : SharedTome
+{
+	Default
+	{
+		Tag "\c[yellow]Tome of Hammersmite";
+		SharedTome.Token "HammersmiteActive";
+		SharedTome.InProgress "HammersmiteInProgress";
+		Inventory.PickupMessage "$GOTHAMMERSMITE";
+		Inventory.Icon "BO2KU0";
+		SharedTome.Particle "TomeParticleYellow";
+		SharedTome.BookSpriteIndex 20;
+	}
+}
+
+//Sigil
+class SigilBringer : TomeBringer
+{
+	Default
+	{
+		//$Title Sigil
+		Tag "\c[GCSkyBlue]Sigil Tome";
+		Inventory.PickupMessage "$GOTSIGIL";
+		Inventory.Amount 5000;
+		BaseBringer.ItemToBring "SigilTome";
+		BaseBringer.ItemToUnlock Gcs_BaseShop.sigil;
+		TomeBringer.Particle "TomeParticleLightBlue";
+		TomeBringer.sprite_index "BSTK";
+		TomeBringer.BookSpriteIndex 4;
+	}
+}
+
+class SigilTome : SharedTome
+{
+	Default
+	{
+		Tag "\c[GCSkyBlue]Sigil Tome";
+		SharedTome.Token "SigilActive";
+		SharedTome.InProgress "SigilInProgress";
+		Inventory.MaxAmount 5;
+		Inventory.PickupMessage "$GOTSIGIL";
+		Inventory.Icon "BSTSA0";
+		SharedTome.Particle "TomeParticleLightBlue";
+		SharedTome.sprite_index "BSTK";
+		SharedTome.BookSpriteIndex 4;
+	}
+	
+	// kd: do this one here too cuz................
+	// it happens few times enough it doesn't warrant doing this at game start lel
+	const levels = 5;
+	
+	override void PostBeginPlay () {
+		static const String letters [] = {
+			"a", "b", "c", "d", "e"
+		};
+		
+		super.PostBeginPlay();
+		let count = min(letters.size(), levels);
+		
+		for(let ii = 0; ii < count; ii++) {
+			level_icons [ii] = TexMan.CheckForTexture("bsts" .. letters [ii] .. "0");
+		}
+	}
+	
+	override TextureId SbarIcon () const {
+		return level_icons [clamp(amount - 1, 0, levels - 1)];
+	}
+	
+	TextureId level_icons [levels];
+}
+
+#endregion

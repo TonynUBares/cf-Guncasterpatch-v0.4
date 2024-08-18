@@ -1,0 +1,5699 @@
+class StompCooldown : Inventory { Default { Inventory.MaxAmount 600; } }
+class ThreadingNotSoLightly : Inventory { Default { Inventory.MaxAmount 1; } }
+class NoLookZone : Inventory { Default { Inventory.MaxAmount 1; } }
+class Shadows_Token : Inventory { Default { Inventory.Maxamount 1000; } }
+class Shadows_Tracker : Inventory { Default { Inventory.Maxamount 100; } }
+
+class GuncasterDoom : Guncaster
+{
+	Default
+	{
+		Player.ColorRange 112,127;
+	
+		Player.ColorSet 0, "Cygnis", 176, 191, 182;
+		Player.ColorSet 1, "Neymathir", 160, 167, 163;
+		Player.ColorSet 2, "Vermathin", 90, 100, 88;
+		Player.ColorSet 3, "Surtra", 32, 47, 40;
+		Player.ColorSet 4, "Azaron", 118, 127, 120;
+		Player.ColorSet 5, "Leurith", 101, 111, 0;
+		Player.ColorSet 6, "Withar", 128, 143, 135;
+		Player.ColorSet 7, "Jackson", 64, 79, 71;
+	}
+	
+	States
+	{
+	Spawn:
+		CBG2 A 0 NoDelay A_JumpIfInventory("PowerSuitToken",1,4);
+		UBG2 A 0 A_JumpIfInventory("PowerSuitProtect",1,3);
+		YYG2 A 0 A_JumpIfInventory("PowerSuitDraugh",1,2);
+		CYG2 A 0;
+		"####" "#" 1;
+		"####" "#" 0 A_Jump(256,"Spawn");
+		Goto Spawn;
+	// Hardcoded menu player
+	See:
+		CYG2 ABCD 5;
+		Loop;
+	}
+}
+
+class GuncasterHexen : Guncaster
+{
+	Default
+	{
+		Player.ColorRange 186, 202;
+		
+		Player.ColorSet 0, "Cygnis", 164, 182, 176;
+		Player.ColorSet 1, "Neymathir", 122, 145, 138;
+		Player.ColorSet 2, "Vermathin", 33, 44, 39;
+		Player.ColorSet 3, "Surtra", 164, 171, 169;
+		Player.ColorSet 4, "Azaron", 186, 195, 191;
+		Player.ColorSet 5, "Leurith", 0, 15, 0;
+		Player.ColorSet 6, "Blain", 146, 161, 155;
+		Player.ColorSet 7, "Xaeratustra", 231, 239, 239;
+		Player.ColorSet 8, "Steelheart", 0, 31, 29;
+		Player.ColorSet 9, "Aquarius", 217, 223, 221;
+		Player.ColorSet 10, "Ernst", 67, 80, 80;
+	}
+	
+	States
+	{
+	Spawn:
+		CBG3 A 0 NoDelay A_JumpIfInventory("PowerSuitToken",1,4);
+		UBG3 A 0 A_JumpIfInventory("PowerSuitProtect",1,3);
+		YYG3 A 0 A_JumpIfInventory("PowerSuitDraugh",1,2);
+		CYG3 A 0;
+		"####" "#" 1;
+		"####" "#" 0 A_Jump(256,"Spawn");
+		Goto Spawn;
+	// Hardcoded menu player
+	See:
+		CYG3 ABCD 5;
+		Loop;
+	}
+}
+
+class GuncasterStrife : Guncaster
+{
+	Default
+	{
+		Radius 18; //Unless you wanna bypass the crystal key doorway with just one key, then remove this lol~
+		MaxStepHeight 16;
+		Player.ColorRange 96, 111;
+		
+		Player.ColorSet 0, "Cygnis", 64, 79, 235;
+		Player.Colorset 1, "Neymathir", 80, 95, 224;
+		Player.Colorset 2, "Vermathin", 1, 31, 7;
+		Player.Colorset 3, "Crocodile", 32, 63, 47;
+		Player.Colorset 4, "Zywiol", 144, 159, 151;
+		Player.Colorset 5, "Crescend", 112, 127, 120;
+		Player.Colorset 6, "Brownie", 176, 191, 183;
+		Player.Colorset 7, "Rust", 208, 223, 208;
+	}
+	
+	States
+	{
+	Spawn:
+		CBG4 A 0 NoDelay A_JumpIfInventory("PowerSuitToken",1,4);
+		UBG4 A 0 A_JumpIfInventory("PowerSuitProtect",1,3);
+		YYG4 A 0 A_JumpIfInventory("PowerSuitDraugh",1,2);
+		CYG4 A 0;
+		"####" "#" 1;
+		"####" "#" 0 A_Jump(256,"Spawn");
+		Goto Spawn;
+		
+		// Hardcoded menu player
+	See:
+		CYG4 ABCD 5;
+		Loop;
+	}
+}
+
+class GuncasterDummy : Guncaster
+{
+	Default
+	{
+		SeeSound "Guncaster/Meh";
+		AttackSound "";
+		DeathSound "Guncaster/Death";
+	}
+	States
+	{
+	Spawn:
+		CYGG AB 20 A_Look;
+		Loop;
+	See:
+		CYGG ABCDABCD 4 A_Chase;
+		Loop;
+	Missile:
+		CYGG F 8 Bright;
+		CYGG E 20;
+		Goto See;
+	Death:
+		CYGG H 5;
+		CYGG I 5 A_Scream;
+		CYGG J 5 A_NoBlocking;
+		CYGG K 5;
+		CYGG LL 20;
+		CYGG L -1;
+		Stop;
+	}
+}
+
+class Guncaster : PlayerPawn
+{
+	Class<Weapon> PreviousWeapon;	//I think it's pretty obvious what this is used for.
+	
+	Actor laser_target;
+	
+	Seekers Shepherd;
+	Seekers	RoyalShepherd;
+	Gc_NinjaData ninja_data;
+	Gc_Swagger view_tilt;
+	bool is_cycling_forwards;
+	
+	// Dino's Variables
+	bool weapswitchpenalty;	// Used for swapping weapon penalties
+	int buttStomp;			// Lets do something ultra silly. -Dino
+	double spellDelay;		// Used to handle spell delay timers.
+	double rainVolume;		// Used to handle weather volume.
+	Array<Actor> Pancakes;	// Â¯\_(ãƒ„)_/Â¯ -Dino
+	
+	int ChargeFuel; //Deadmaker's sprint\charge fuel.
+	int ChargeCooldown;
+	int RocketHoverTics; // Powersuit/Deadmaker hover/glide powers.
+	int RocketGlideTics;
+	
+	int JumpCount;
+	int TimesJumped;
+	int GlideGraceTimer;
+	int LedgeGraceTimer;
+	int StompCooldown;
+	int CurrentFlightState;
+	int PoundUnderwaterTics;
+	int MoneyArrowDistDivisor;
+	
+	bool GlideInitialized;
+	bool PoundInitialized;
+	bool GlideJumped;
+	bool SlowFell;
+	bool FirstEnteredAir;
+	bool ClimbStarted;
+	
+	int previousPlayerState;
+	
+	double SuitSpeedMult;
+	double SuitJumpMult;
+	double SuitScaleX;
+	double SuitScaleY;
+	double SuitViewHeight;
+	double SuitAttackZ;
+	double SuitStepHeight;
+	int    SuitWeight;
+	
+	double DMSpeedMult;
+	double DMJumpMult;
+	double DMScaleX;
+	double DMScaleY;
+	double DMViewHeight;
+	double DMAttackZ;
+	double DMStepHeight;
+	double DMClimbingHeight;
+	int    DMWeight;
+	
+	double DMSuitSpeedMult;
+	double DMSuitJumpMult;
+	double DMSuitScaleX;
+	double DMSuitScaleY;
+	double DMSuitViewHeight;
+	double DMSuitAttackZ;
+	double DMSuitStepHeight;
+	double DMSuitClimbingHeight;
+	int    DMSuitWeight;
+	
+	double AirControl;
+	double LedgeClimbReach;
+	double LedgeClimbSpeed;
+	double LedgeClimbHeight;
+	double LedgeRefPrevZ;
+	Actor  LedgeRef;
+	Actor  MoneyPointer;
+	
+	// Ninja stuff.
+	int    ninja_gracetics;
+	int    ninja_graceticlength;
+	int    ninja_elevatetics;
+	int    ninja_elevateticlength;
+	int    ninja_decaytics;
+	int    ninja_decayticlength;
+	int    ninja_avoidlevel;
+	int    ninja_maxavoidlevel;
+	double ninja_minvel;
+	
+	// Stealth Stuff
+	double alpha_goal;
+	
+	// Pulverizer Lead Ball stuff
+	actor anchorpointer;
+	
+	// Draugh Bad touch Stuff
+	// int max_curse_roster;	// only if you want it
+	int draugh_curse_power;		// temporary, we'll need to use an inventory later
+	int draugh_curse_power_max;
+	Array<int> cursed_monster_lifespan;
+	Array<int> cursed_monster_AI;
+	Array<int> cursed_monster_special;
+	Array<Actor> cursed_monster_list;
+	Vector3 matrix_point_storage[25];
+	
+	// RiftWalking Stuff
+	bool RW_Active;
+	int RW_turd;
+	int RW_crapper;
+	int this_recovery_amount;
+	
+	property GraceTicLength: ninja_graceticlength;
+	property ElevateTicLength: ninja_elevateticlength;
+	property DecayTicLength: ninja_decayticlength;
+	property MaxResistLevel: ninja_maxavoidlevel;
+	property NinjaVelocity: ninja_minvel;
+	
+	// User variables.
+	
+	// kd: This spell stuff is no longer necessary, but it doesn't hurt to
+	// keep them around. They're used by the old shop only.
+	int user_spellbuttons[4]; //The quick-selection thingamajib
+	int user_spellshopindex[4];
+	int user_spellitemindex[4];
+	int user_spellisbound[4];
+	int User_Ouch; //To determine for the Carlton Dance if you didn't get hit.
+	int User_Carlton; //It's not unusual to be loved by anyone~
+	//int user_TurretIDs[3];
+	Actor active_turret;		// gonna handle it liek dis. -Dino
+	
+	property InitialJumpCount: JumpCount;
+	property SuitSpeedMultiplier: SuitSpeedMult;
+	property SuitJumpMultiplier: SuitJumpMult;
+	property SuitScaleX: SuitScaleX;
+	property SuitScaleY: SuitScaleY;
+	property SuitViewHeight: SuitViewHeight;
+	property SuitAttackZOffset: SuitAttackZ;
+	property SuitMaxStepHeight: SuitStepHeight;
+	property SuitMass: SuitWeight;
+	
+	property DMSpeedMultiplier: DMSpeedMult;
+	property DMJumpMultiplier: DMJumpMult;
+	property DMScaleX: DMScaleX;
+	property DMScaleY: DMScaleY;
+	property DMViewHeight: DMViewHeight;
+	property DMAttackZOffset: DMAttackZ;
+	property DMMaxStepHeight: DMStepHeight;
+	property DMLedgeClimbHeight: DMClimbingHeight;
+	property DMMass: DMWeight;
+	
+	property DMSuitSpeedMultiplier: DMSuitSpeedMult;
+	property DMSuitJumpMultiplier: DMSuitJumpMult;
+	property DMSuitScaleX: DMSuitScaleX;
+	property DMSuitScaleY: DMSuitScaleY;
+	property DMSuitViewHeight: DMSuitViewHeight;
+	property DMSuitAttackZOffset: DMSuitAttackZ;
+	property DMSuitMaxStepHeight: DMSuitStepHeight;
+	property DMSuitLedgeClimbHeight: DMSuitClimbingHeight;
+	property DMSuitMass: DMSuitWeight;
+	
+	property AirControl: AirControl;
+	property LedgeClimbReach: LedgeClimbReach;
+	property LedgeClimbSpeed: LedgeClimbSpeed;
+	property LedgeClimbHeight: LedgeClimbHeight;
+	property MoneyArrowDist: MoneyArrowDistDivisor;
+	
+	Enum FlightState
+	{
+		NORMAL,
+		GLIDING,
+		GROUNDPOUND,
+		CLIMBING, // Yes.
+	};
+	
+	Enum PlayerState
+	{
+		PS_Derg,
+		// PS_Draugh,
+		PS_is_Petshop,
+		PS_is_angry,
+		PS_is_angry_draugh,
+		PS_is_angry_petshop,
+	};
+	
+	// Binding and spell cycling:
+	// Gc_Binds        Binds;
+	// Gc_SpellCycle   SpellCycle;
+	
+	// IholdPlayerVariables player_data;
+	
+	//Chillgrasp stuff
+	// Gc_GraspingAtStraws grasp;
+	Gc_GraspThinker grasp;
+	// Actor pimp;
+	
+	//Augur stuff.
+	// Array <Actor> augur_in_scope;
+	// bool clear_augur_targets;
+	// AugurBackground augur_fx;	// The fizzly particle effect when Augur-zooming.
+	
+	Default
+	{
+		Health 100;
+		player.maxhealth 100;
+		Radius 16;
+		Height 56;
+		Mass 100;
+		PainChance 255;
+		Player.SoundClass "Guncaster";
+		Player.ForwardMove 1.33;
+		Player.SideMove 1.33;
+		Player.JumpZ 14.0;
+		Player.GruntSpeed 24.0;
+		Player.ViewHeight 51;
+		Player.AirCapacity 3;
+		Player.AttackZOffset 23;
+		Player.UseRange 96;
+		Player.DamageScreenColor "Purple";
+		Player.DisplayName "Cygnis";
+		Player.Face "DRG";
+		Player.ColorRange 209, 224;
+		//Player.FlechetteType "CasterPoisonBag";
+		Player.SpawnClass "Any";
+		BloodColor "Purple";
+
+		Player.StartItem "VisionToggler";
+		Player.StartItem "VisionCounter", 120;
+		//Player.StartItem "MenuWheelToggler";
+		Player.StartItem "SheepGuidance";
+		Player.StartItem "DynamiteQuickToss";
+		Player.StartItem "GuncasterTauntItem";
+		Player.StartItem "QuickHealItem";
+		Player.StartItem "IronblastMissionControl";
+		Player.StartItem "CustomPain";
+		
+		Player.StartItem "FirebreathTome";
+		Player.StartItem "Longhorn";
+		Player.StartItem "LonghornAmmo", 6;
+		Player.StartItem "Dergfist";
+		Player.StartItem "Mana", 100;
+		Player.StartItem "DynamiteWeapon";
+		Player.StartItem "DynamiteTossWeapon";
+
+		//Player.StartItem "HammerSpaceCounter", 10;
+		Player.StartItem "FirebreathActive";
+		//Player.StartItem "TurretLimitCounter", 1;
+
+		Player.StartItem "IsGCPlayer";
+		Player.StartItem "IsGCAddonPlayer";
+
+		/*Player.WeaponSlot 1, "Dergfist";
+		Player.WeaponSlot 2, "Longhorn";
+		Player.WeaponSlot 3, "IronblastRevert", "Strucker", "Ironblast";
+		Player.WeaponSlot 4, "Pulverizer";
+		Player.WeaponSlot 5, "DynamiteWeapon","Matriarch";
+		Player.WeaponSlot 6, "Augur";
+		Player.WeaponSlot 7, "OldDreadful";
+		Player.WeaponSlot 9, "ATotallyUselessSomething"; 
+		slot stuff added on the weapons*/
+		
+		+THRUSPECIES
+		+DONTBLAST
+		+NOICEDEATH //Skull pop is a very annoying thing that also breaks multiplayer for lord knows what reason.
+		+NOSKIN
+		//+DONTMORPH
+		
+		Species "Rrerr";
+		
+		//General damage types
+		DamageFactor "Draugh", 0.0; //You silly bastards shouldn't damage your owner~
+		DamageFactor "Fire", 0.5; //That's a dragon - he should shrug it off. I actually should make him completely immune from all the fire attacks, but let's not go completely crazy due to balance reasons. Or Heretic damage floors.
+		DamageFactor "Ice", 1.25; //BAAAAD!
+		DamageFactor "Falling", 0.0; //Apparently some levels, even if you have falling damage off, are complete dicks, and still make you suffer from that shit. This guy laughs at your smelly falling damage!
+
+		//Spell damage types
+		// DamageFactor "Matriarch", 0.1; //Did someone say... cannon jumps? Well, not like he needs them... or that they work with such air control... but it's still awesome, hee. And still saves your skin in certain situations.
+		DamageFactor "Slime", 0.75; //Heavy boots, that is.
+
+		//Doom damage types
+		DamageFactor "FuckRevenants", 0.5; //What says on the tin!
+		DamageFactor "Bueller", 0.85; //Dem hitscanners should DIE.
+		
+		Player.Colorset 0, "Cygnis", 145, 160, 154;
+		Player.Colorset 1, "Neymathir", 113, 128, 128;
+		Player.Colorset 2, "Vermathin", 36, 47, 41;
+		Player.Colorset 3, "Surtra", 145, 152, 150;
+		Player.Colorset 4, "Azaron", 209, 218, 215, 225, 240, 185, 200; //, 225, 240, 185, 196, 0, 35, 66, 80
+		Player.Colorset 5, "Leurith", 0, 15, 0, 225, 240, 66, 79;
+		Player.Colorset 6, "Blain", 185, 200, 195;
+		Player.Colorset 7, "Xaeratustra", 169, 176, 173;
+		Player.Colorset 8, "Sealia", 194, 204, 202;
+	
+		Guncaster.InitialJumpCount 3; // How many times Cygnis can jump without boosters.
+		Guncaster.SuitSpeedMultiplier 1.33; // Powersuit speed multiplier.
+		Guncaster.SuitJumpMultiplier 1.5; // Powersuit jump height multiplier.
+		Guncaster.SuitScaleX 1.3; // Scale.X while in suit.
+		Guncaster.SuitScaleY 1.3; // ScaleY while in suit.
+		Guncaster.SuitViewHeight 64.0; // View height while in suit.
+		Guncaster.SuitAttackZOffset 36.0; // Attack Z offset while in suit.
+		Guncaster.SuitMaxStepHeight 48.0; // Max step height while in suit.
+		Guncaster.SuitMass 2225; //Heavy boi.
+		
+		Guncaster.AirControl 0.9; // Sucks that you have to override a huge virtual to do this per-player.
+		
+		Guncaster.DMSpeedMultiplier 0.7; //Pillow: Same as for suit, except for Deadmaker.
+		Guncaster.DMJumpMultiplier 1.5;
+		Guncaster.DMScaleX 2.2;		  	//Pillow: Temporary solution until I'll get my hands on sprites. Maybe. Some beautiful day.
+		Guncaster.DMScaleY 2.2;
+		Guncaster.DMViewHeight 108.0;	  //Pillow: Big Booper.
+		Guncaster.DMAttackZOffset 80.0;
+		Guncaster.DMMaxStepHeight 64.0;
+		Guncaster.DMLedgeClimbHeight 62.0;
+		Guncaster.DMMass 2815; //Heavier boi.
+		
+		Guncaster.DMSuitSpeedMultiplier 0.8;	  //Pillow: Now we are entering truly ridiculous territory.
+		Guncaster.DMSuitJumpMultiplier 1.7;
+		Guncaster.DMSuitScaleX 2.4;
+		Guncaster.DMSuitScaleY 2.4;
+		Guncaster.DMSuitViewHeight 118.0;
+		Guncaster.DMSuitAttackZOffset 90.0;
+		Guncaster.DMSuitMaxStepHeight 64.0;
+		Guncaster.DMSuitLedgeClimbHeight 88.0;
+		Guncaster.DMSuitMass 3600; //HEAVIEST BOI.
+		
+		Guncaster.LedgeClimbReach 8.0; // How far from the player we should trace, in map units, for a climbable ledge.
+		Guncaster.LedgeClimbSpeed 3.0; // Z-velocity of climbing speed.
+		Guncaster.LedgeClimbHeight 48.0; // The ledge height, above Cygnis' MaxStepHeight, he considers climbable. (24+48=64)
+		
+		Guncaster.MoneyArrowDist 64; // The total distance the money arrow will extend from you is divided by this.
+		
+		Guncaster.GraceTicLength 15; // How long it takes before ninjamode starts to decay.
+		Guncaster.ElevateTicLength 10; // How long it takes for ninjamode to improve by one level.
+		Guncaster.DecayTicLength 5; // How long it takes for ninjamode to decay by one level.
+		Guncaster.MaxResistLevel 9; // The max number of levels of resistance against bulletpuffs.
+		Guncaster.NinjaVelocity 19.0; // The max velocity Cygnis needs to reach for ninjamode to build.
+	}
+	
+	States
+	{
+	Spawn:
+		CBGG A 0 NoDelay A_JumpIfInventory("PowerSuitToken",1,4);
+		UBGG A 0 A_JumpIfInventory("PowerSuitProtect",1,3);
+		YYGG A 0 A_JumpIfInventory("PowerSuitDraugh",1,2);
+		CYGG A 0;
+		"####" "#" 1;
+		"####" "#" 0 A_Jump(256,"Spawn");
+		Goto Spawn;
+	CarltonDragon:
+		"####" A 0 A_JumpIfInventory("StrifeCounter",1,"Strife");
+		"####" A 0 A_JumpIfInventory("HexenCounter",1,"Hexen");
+		"####" A 0 A_JumpIfInventory("DoomCounter",1,"Doom");
+	Heretic:
+		CBDG A 0 A_JumpIfInventory("PowerSuitToken",1,4);
+		UBDG A 0 A_JumpIfInventory("PowerSuitProtect",1,3);
+		YYDG A 0 A_JumpIfInventory("PowerSuitDraugh",1,2);
+		CYDG A 0;
+		"####" "#" 0;
+		Goto Main;
+	Doom:
+		CBD2 A 0 A_JumpIfInventory("PowerSuitToken",1,4);
+		UBD2 A 0 A_JumpIfInventory("PowerSuitProtect",1,3);
+		YYD2 A 0 A_JumpIfInventory("PowerSuitDraugh",1,2);
+		CYD2 A 0;
+		"####" "#" 0;
+		Goto Main;
+	Hexen:
+		CBD3 A 0 A_JumpIfInventory("PowerSuitToken",1,4);
+		UBD3 A 0 A_JumpIfInventory("PowerSuitProtect",1,3);
+		YYD3 A 0 A_JumpIfInventory("PowerSuitDraugh",1,2);
+		CYD3 A 0;
+		"####" "#" 0;
+		Goto Main;
+	Strife:
+		CBD4 A 0 A_JumpIfInventory("PowerSuitToken",1,4);
+		UBD4 A 0 A_JumpIfInventory("PowerSuitProtect",1,3);
+		YYD4 A 0 A_JumpIfInventory("PowerSuitDraugh",1,2);
+		CYD4 A 0;
+		"####" "#" 0;
+	Main:
+		"####" CDEF 3;
+		"####" GH 6;
+		"####" FEDC 3;
+		"####" AB 6;
+		Goto CarltonDragon;
+		
+	// Hardcoded menu player
+	See:
+		CYGG ABCD 5;
+		Loop;
+		
+	GC_See:
+		"####" A 0 A_JumpIf(CountInv("PowerDeadmaker"), "SeeTheMaker");
+		"####" A 0 A_JumpIf(CountInv("PowerSuitToken"), "SeeSuit");
+		"####" A 0 A_JumpIfInventory("PowerBerserkDamage",1,"SeeBerserk") ;
+		
+		"####" A 0 A_JumpIfInventory("ThreadingNotSoLightly",1,11);
+		"####" A 0 A_GiveInventory("ThreadingNotSoLightly",1);
+		"####" A 0 {
+			if(!CountInv("PowerSuitDraugh")  || CountInv("PowerSuitProtect")) { A_PlaySound("Guncaster/Move",0,0.3); }
+			else if(random(0,3) == 0) 										  { A_PlaySound("Draughcaster/Move",0,0.3); }
+		}
+		"####" A 0 {
+			if(!multiplayer && (GetPlayerInput(INPUT_BUTTONS) & BT_CROUCH || 
+			(invoker.GetCvar("cl_run") == 1 && GetPlayerInput(INPUT_BUTTONS) & BT_SPEED) ||
+			(invoker.GetCvar("cl_run") == 0 && !(GetPlayerInput(INPUT_BUTTONS) & BT_SPEED))))
+			{
+				SetState(CurState+4);
+			}
+		}
+		"####" AB 5;
+		"####" A 0 A_Jump(256,3);
+		"####" AB 9;
+		"####" "#" 0 { if(Player.OnGround) { A_SpawnItemEx("GuncasterStepRight",0,0,0,0,0,0,0,SXF_SETTARGET,0); } }
+ 		//"####" A 0 A_SpawnItemEx("GuncasterStep",0,0,0,0.2,0,-10,0,SXF_NOCHECKPOSITION); //TIL that an actor NEEDS any velocity on X/Y plane to actually collide with shit. Fuck.
+		"####" A 0 A_Jump(256,"Spawn"); //So retarded inherited playerclasses for doom and hexen will work correctly.
+		Goto Spawn;
+		"####" A 0 A_TakeInventory("ThreadingNotSoLightly",1);
+		"####" A 0 {
+			if(!CountInv("PowerSuitDraugh")  || CountInv("PowerSuitProtect")) { A_PlaySound("Guncaster/Move",0,0.3); }
+			else if(random(0,3) == 0) 										  { A_PlaySound("Draughcaster/Move",0,0.3); }
+		}
+		"####" A 0 {
+			if(!multiplayer && (GetPlayerInput(INPUT_BUTTONS) & BT_CROUCH || 
+			(invoker.GetCvar("cl_run") == 1 && GetPlayerInput(INPUT_BUTTONS) & BT_SPEED) ||
+			(invoker.GetCvar("cl_run") == 0 && !(GetPlayerInput(INPUT_BUTTONS) & BT_SPEED))))
+			{
+				SetState(CurState+4);
+			}
+		}
+		"####" CD 5;
+		"####" A 0 A_Jump(256,3);
+		"####" CD 9;
+		"####" "#" 0 { if(Player.OnGround) { A_SpawnItemEx("GuncasterStepLeft",0,0,0,0,0,0,0,SXF_SETTARGET,0); } }
+ 		//"####" C 0 A_SpawnItemEx("GuncasterStep",0,0,0,0.2,0,-10,0,SXF_NOCHECKPOSITION);
+		"####" A 0 A_Jump(256,"Spawn");
+		Goto Spawn;
+		
+	SeeTheMaker:
+		"####" A 0 A_JumpIfInventory("DeadmakerCharger",1,22);
+		"####" A 0 A_JumpIfInventory("ThreadingNotSoLightly",1,12);
+		"####" A 0 A_GiveInventory("ThreadingNotSoLightly",1);
+		//"####" A 0 A_PlaySound("Deadmaker/Move",0,0.3);
+		"####" A 0 {
+			if(CountInv("PowerSuitDraugh") && random(0,3) == 0) { A_PlaySound("Draughcaster/Move",0,0.3); }
+			//if(CountInv("PowerSuitToken") && !GetCvar("GC_ForceNormalSteps")) { A_StartSound("Prophet/Move",0,888,0.6); }
+		}
+		"####" A 0 {
+			if(!multiplayer && (GetPlayerInput(INPUT_BUTTONS) & BT_CROUCH || 
+			(invoker.GetCvar("cl_run") == 1 && GetPlayerInput(INPUT_BUTTONS) & BT_SPEED) ||
+			(invoker.GetCvar("cl_run") == 0 && !(GetPlayerInput(INPUT_BUTTONS) & BT_SPEED))))
+			{
+				SetState(CurState+4);
+			}
+		}
+		"####" AB 10;
+		"####" A 0 A_Jump(256,3);
+		"####" AB 12;
+		"####" "#" 0 { if(Player.OnGround) { A_SpawnItemEx("GuncasterStepRight",0,0,0,0,0,0,0,SXF_SETTARGET,0); } }
+ 		//"####" A 0 A_SpawnItemEx("DeadmakerStep",0,0,0,0.2,0,-15,0,SXF_TRANSFERPOINTERS|SXF_SETTARGET);
+		"####" A 0 A_Jump(256,"Spawn");
+		Goto Spawn;
+		"####" A 0 A_TakeInventory("ThreadingNotSoLightly",1);
+		//"####" A 0 A_PlaySound("Deadmaker/Move",0,0.3);
+		"####" A 0 {
+			if(CountInv("PowerSuitDraugh") && random(0,3) == 0) { A_PlaySound("Draughcaster/Move",0,0.3); }
+			//if(CountInv("PowerSuitToken") && !GetCvar("GC_ForceNormalSteps")) { A_StartSound("Prophet/Move",888,0,0.6); }
+		}
+		"####" A 0 {
+			if(!multiplayer && (GetPlayerInput(INPUT_BUTTONS) & BT_CROUCH || 
+			(invoker.GetCvar("cl_run") == 1 && GetPlayerInput(INPUT_BUTTONS) & BT_SPEED) ||
+			(invoker.GetCvar("cl_run") == 0 && !(GetPlayerInput(INPUT_BUTTONS) & BT_SPEED))))
+			{
+				SetState(CurState+4);
+			}
+		}
+		"####" CD 10;
+		"####" A 0 A_Jump(256,3);
+		"####" CD 12;
+		"####" "#" 0 { if(Player.OnGround) { A_SpawnItemEx("GuncasterStepLeft",0,0,0,0,0,0,0,SXF_SETTARGET,0); } }
+ 		//"####" C 0 A_SpawnItemEx("DeadmakerStep",0,0,0,0.2,0,-15,0,SXF_TRANSFERPOINTERS|SXF_SETTARGET);
+		"####" A 0 A_Jump(256,"Spawn");
+		Goto Spawn;
+	//Charging:
+		"####" A 0 A_JumpIfInventory("ThreadingNotSoLightly",1,7);
+		"####" A 0 A_GiveInventory("ThreadingNotSoLightly",1);
+		//"####" A 0 A_PlaySound("Deadmaker/Move",0,0.3);
+		"####" A 0 {
+			if(CountInv("PowerSuitDraugh") && random(0,3) == 0) { A_PlaySound("Draughcaster/Move",0,0.3); }
+			//if(CountInv("PowerSuitToken") && !GetCvar("GC_ForceNormalSteps")) { A_StartSound("Prophet/Move",888,0,0.6); }
+		}
+		"####" AB 5;
+		"####" "#" 0 { if(Player.OnGround) { A_SpawnItemEx("GuncasterStepRight",0,0,0,0,0,0,0,SXF_SETTARGET,0); } }
+ 		//"####" A 0 A_SpawnItemEx("DeadmakerStep",0,0,0,0.2,0,-15,0,SXF_TRANSFERPOINTERS|SXF_SETTARGET);
+		"####" A 0 A_Jump(256,"Spawn");
+		Goto Spawn;
+		"####" A 0 A_TakeInventory("ThreadingNotSoLightly",1);
+		//"####" A 0 A_PlaySound("Deadmaker/Move",0,0.3);
+		"####" A 0 {
+			if(CountInv("PowerSuitDraugh") && random(0,3) == 0) { A_PlaySound("Draughcaster/Move",0,0.3); }
+			//if(CountInv("PowerSuitToken") && !GetCvar("GC_ForceNormalSteps")) { A_StartSound("Prophet/Move",888,0,0.6); }
+		}
+		"####" CD 5;
+		"####" "#" 0 { if(Player.OnGround) { A_SpawnItemEx("GuncasterStepLeft",0,0,0,0,0,0,0,SXF_SETTARGET,0); } }
+ 		//"####" C 0 A_SpawnItemEx("DeadmakerStep",0,0,0,0.2,0,-15,0,SXF_TRANSFERPOINTERS|SXF_SETTARGET);
+		"####" A 0 A_Jump(256,"Spawn");
+		Goto Spawn;
+		
+	SeeBerserk: 
+		"####" A 0 A_JumpIfInventory("ThreadingNotSoLightly",1,11);
+		"####" A 0 A_GiveInventory("ThreadingNotSoLightly",1);
+		"####" A 0 {
+			if(!CountInv("PowerSuitDraugh")  || CountInv("PowerSuitProtect")) { A_PlaySound("Guncaster/Move",0,0.3); }
+			else if(random(0,3) == 0) 										  { A_PlaySound("Draughcaster/Move",0,0.3); }
+		}
+		"####" A 0 {
+			if(!multiplayer && (GetPlayerInput(INPUT_BUTTONS) & BT_CROUCH || 
+			(invoker.GetCvar("cl_run") == 1 && GetPlayerInput(INPUT_BUTTONS) & BT_SPEED) ||
+			(invoker.GetCvar("cl_run") == 0 && !(GetPlayerInput(INPUT_BUTTONS) & BT_SPEED))))
+			{
+				SetState(CurState+4);
+			}
+		}
+		"####" AB 5;
+		"####" A 0 A_Jump(256,3);
+		"####" AB 9;
+		"####" "#" 0 { if(Player.OnGround) { A_SpawnItemEx("GuncasterStepRight",0,0,0,0,0,0,0,SXF_SETTARGET,0); } }
+ 		//"####" A 0 A_SpawnItemEx("BerserkStep",0,0,0,0.2,0,-10,0,SXF_NOCHECKPOSITION);
+		"####" A 0 A_Jump(256,"Spawn");
+		Goto Spawn;
+		"####" A 0 A_TakeInventory("ThreadingNotSoLightly",1);
+		"####" A 0 {
+			if(!CountInv("PowerSuitDraugh")  || CountInv("PowerSuitProtect")) { A_PlaySound("Guncaster/Move",0,0.3); }
+			else if(random(0,3) == 0) 										  { A_PlaySound("Draughcaster/Move",0,0.3); }
+		}
+		"####" A 0 {
+			if(!multiplayer && (GetPlayerInput(INPUT_BUTTONS) & BT_CROUCH || 
+			(invoker.GetCvar("cl_run") == 1 && GetPlayerInput(INPUT_BUTTONS) & BT_SPEED) ||
+			(invoker.GetCvar("cl_run") == 0 && !(GetPlayerInput(INPUT_BUTTONS) & BT_SPEED))))
+			{
+				SetState(CurState+4);
+			}
+		}
+		"####" CD 5;
+		"####" A 0 A_Jump(256,3);
+		"####" CD 9;
+		"####" "#" 0 { if(Player.OnGround) { A_SpawnItemEx("GuncasterStepLeft",0,0,0,0,0,0,0,SXF_SETTARGET,0); } }
+ 		//"####" C 0 A_SpawnItemEx("BerserkStep",0,0,0,0.2,0,-10,0,SXF_NOCHECKPOSITION);
+		"####" A 0 A_Jump(256,"Spawn");
+		Goto Spawn;
+		
+	SeeSuit:
+		"####" A 0 A_JumpIfInventory("PowerBerserkDamage",1,"SeeSuitBerserk");
+		"####" A 0 A_JumpIfInventory("ThreadingNotSoLightly",1,14);
+		"####" A 0 A_GiveInventory("ThreadingNotSoLightly",1);
+		"####" A 0 A_CheckFloor("RightWhiz");
+		"####" A 0 A_Jump(256,"RightNoes");
+	RightWhiz:
+		"####" A 0 {
+			if(!GetCvar("GC_ForceNormalSteps")) { A_PlaySound("Bishop/Move",0,0.6); }
+		}
+		"####" A 0 A_Jump(256,"RightNoes");
+	RightNoes:
+		"####" A 0 {
+			if(!multiplayer && (GetPlayerInput(INPUT_BUTTONS) & BT_CROUCH || 
+			(invoker.GetCvar("cl_run") == 1 && GetPlayerInput(INPUT_BUTTONS) & BT_SPEED) ||
+			(invoker.GetCvar("cl_run") == 0 && !(GetPlayerInput(INPUT_BUTTONS) & BT_SPEED))))
+			{
+				SetState(CurState+4);
+			}
+		}
+		"####" AB 7;
+		"####" A 0 A_Jump(256,3);
+		"####" AB 10;
+		"####" "#" 0 { if(Player.OnGround) { A_SpawnItemEx("GuncasterStepRight",0,0,0,0,0,0,0,SXF_SETTARGET,0); } }
+ 		//"####" A 0 A_SpawnItemEx("BishopStepRight",0,0,0,0.2,0,-10,0,SXF_NOCHECKPOSITION);
+		"####" A 0 A_Jump(256,"Spawn");
+		Goto Spawn;
+		"####" A 0 A_TakeInventory("ThreadingNotSoLightly",1);
+		"####" A 0 A_CheckFloor("LeftWhiz");
+		"####" A 0 A_Jump(256,"LeftNoes");
+	LeftWhiz:
+		"####" A 0 {
+			if(!GetCvar("GC_ForceNormalSteps")) { A_PlaySound("Bishop/Move",0,0.6); }
+		}
+		"####" A 0 A_Jump(256,"LeftNoes");
+	LeftNoes:
+		"####" A 0 {
+			if(!multiplayer && (GetPlayerInput(INPUT_BUTTONS) & BT_CROUCH || 
+			(invoker.GetCvar("cl_run") == 1 && GetPlayerInput(INPUT_BUTTONS) & BT_SPEED) ||
+			(invoker.GetCvar("cl_run") == 0 && !(GetPlayerInput(INPUT_BUTTONS) & BT_SPEED))))
+			{
+				SetState(CurState+4);
+			}
+		}
+		"####" CD 7;
+		"####" A 0 A_Jump(256,3);
+		"####" CD 10;
+		"####" "#" 0 { if(Player.OnGround) { A_SpawnItemEx("GuncasterStepLeft",0,0,0,0,0,0,0,SXF_SETTARGET,0); } }
+ 		//"####" C 0 A_SpawnItemEx("BishopStepLeft",0,0,0,0.2,0,-10,0,SXF_NOCHECKPOSITION);
+		"####" A 0 A_Jump(256,"Spawn");
+		Goto Spawn;
+		
+	SeeSuitBerserk:
+		"####" A 0 A_JumpIfInventory("ThreadingNotSoLightly",1,14);
+		"####" A 0 A_GiveInventory("ThreadingNotSoLightly",1);
+		"####" A 0 A_CheckFloor("ZerkRightWhiz");
+		"####" A 0 A_Jump(256,"ZerkRightNoes");
+	ZerkRightWhiz:
+		"####" A 0 {
+			if(!GetCvar("GC_ForceNormalSteps")) { A_PlaySound("Bishop/Move",7,0.6); }
+		}
+		"####" A 0 A_Jump(256,"ZerkRightNoes");
+	ZerkRightNoes:
+		"####" A 0 {
+			if(!multiplayer && (GetPlayerInput(INPUT_BUTTONS) & BT_CROUCH || 
+			(invoker.GetCvar("cl_run") == 1 && GetPlayerInput(INPUT_BUTTONS) & BT_SPEED) ||
+			(invoker.GetCvar("cl_run") == 0 && !(GetPlayerInput(INPUT_BUTTONS) & BT_SPEED))))
+			{
+				SetState(CurState+4);
+			}
+		}
+		"####" AB 7;
+		"####" A 0 A_Jump(256,3);
+		"####" AB 10;
+		"####" "#" 0 { if(Player.OnGround) { A_SpawnItemEx("GuncasterStepRight",0,0,0,0,0,0,0,SXF_SETTARGET,0); } }
+ 		//"####" A 0 A_SpawnItemEx("BishopZerkStepRight",0,0,0,0.2,0,-10,0,SXF_NOCHECKPOSITION);
+		"####" A 0 A_Jump(256,"Spawn");
+		Goto Spawn;
+		"####" A 0 A_TakeInventory("ThreadingNotSoLightly",1);
+		"####" A 0 A_CheckFloor("ZerkLeftWhiz");
+		"####" A 0 A_Jump(256,"ZerkLeftNoes");
+    ZerkLeftWhiz:
+		"####" A 0 {
+			if(!GetCvar("GC_ForceNormalSteps")) { A_PlaySound("Bishop/Move",7,0.6); }
+		}
+		"####" A 0 A_Jump(256,"ZerkLeftNoes");
+	ZerkLeftNoes:
+		"####" A 0 {
+			if(!multiplayer && (GetPlayerInput(INPUT_BUTTONS) & BT_CROUCH || 
+			(invoker.GetCvar("cl_run") == 1 && GetPlayerInput(INPUT_BUTTONS) & BT_SPEED) ||
+			(invoker.GetCvar("cl_run") == 0 && !(GetPlayerInput(INPUT_BUTTONS) & BT_SPEED))))
+			{
+				SetState(CurState+4);
+			}
+		}
+		"####" CD 7;
+		"####" A 0 A_Jump(256,3);
+		"####" CD 10;
+		"####" "#" 0 { if(Player.OnGround) { A_SpawnItemEx("GuncasterStepLeft",0,0,0,0,0,0,0,SXF_SETTARGET,0); } }
+ 		//"####" C 0 A_SpawnItemEx("BishopZerkStepLeft",0,0,0,0.2,0,-10,0,SXF_NOCHECKPOSITION);
+		"####" A 0 A_Jump(256,"Spawn");
+		Goto Spawn;
+	Melee:
+		"####" F 8 Bright;
+		"####" A 0 A_Jump(256,"Missile");
+		Goto Missile;
+	Missile:
+		"####" E 14;
+		"####" A 0 A_JumpIf(Health <= 0, "Death"); //Safety jump in case you died with pulverizer doing its thing again.
+		"####" A 0 A_Jump(256,"Spawn");
+		Goto Spawn;
+	Pain.Crow:
+	Pain.Crow2:
+		"####" "#" 0 A_SetBlend("Black",0.8,35);
+		Goto Pain;
+	Pain:
+		"####" G 0 A_JumpIfInventory("PowerSuitToken",1,3);
+		"####" G 15 A_Pain;
+		"####" A 0 A_Jump(256,"Spawn");
+		Goto Spawn;
+		"####" G 0 A_PlaySound("Bishop/Pain",0,0.8);
+		"####" G 0 A_JumpIf(Health < 50, 2);
+		"####" G 0 A_Jump(128,"Spawn");
+		"####" G 15 A_Pain;
+		"####" A 0 A_Jump(256,"Spawn");
+		Goto Spawn;
+	Death:
+	AltSkinDeath:
+		"####" H 5;
+		"####" I 5 A_PlayerScream;
+		"####" J 5 A_NoBlocking;
+		"####" K 5;
+		"####" K 0 { //Death nuke.
+			if(CountInv("Demopatch") && CountInv("TNTAmmo")) {
+				A_TakeInventory("TNTAmmo",1,TIF_NOTAKEINFINITE);
+				A_SpawnItemEx("DynamiteFugYou",0,0,0,0,0,0,0,SXF_SETTARGET);
+			}
+		}
+	WaitForIt:
+		"####" L 1;
+		"####" L 0 {
+			if(vel.x != 0 || vel.y != 0 || vel.z != 0)
+			{
+				Return ResolveState("WaitForIt");
+			}
+			else
+			{
+				If(!gc_toastergore) { A_SpawnItemEx("PGC_GrowingBloodPool",0,0,0,0,0,0,0,SXF_NOCHECKPOSITION|SXF_TRANSFERPITCH|SXF_TRANSFERPOINTERS|SXF_USEBLOODCOLOR); }
+			}
+			Return ResolveState(Null);
+		}
+		"####" L -1;
+		Stop;
+	XDeath:
+	AltSkinXDeath:
+		"####" H 5;
+		"####" I 5 A_PlayerScream;
+		"####" J 5 A_NoBlocking;
+		"####" K 5;
+		"####" K 0 { //Death nuke.
+			A_SpawnItemEx("GC_GrowingBloodPool",0,0,0,0,0,0,0,SXF_NOCHECKPOSITION|SXF_TRANSFERPITCH|SXF_TRANSFERPOINTERS|SXF_USEBLOODCOLOR);
+			if(CountInv("Demopatch") && CountInv("TNTAmmo")) {
+				A_TakeInventory("TNTAmmo",1,TIF_NOTAKEINFINITE);
+				A_SpawnItemEx("DynamiteFugYou",0,0,0,0,0,0,0,SXF_SETTARGET);
+			}
+		}
+	WaitForIt2:
+		"####" L 1;
+		"####" L 0 {
+			if(vel.x != 0 || vel.y != 0 || vel.z != 0)
+			{
+				Return ResolveState("WaitForIt2");
+			}
+			else
+			{
+				If(!gc_toastergore) { A_SpawnItemEx("PGC_GrowingBloodPool",0,0,0,0,0,0,0,SXF_NOCHECKPOSITION|SXF_TRANSFERPITCH|SXF_TRANSFERPOINTERS|SXF_USEBLOODCOLOR); }
+			}
+			Return ResolveState(Null);
+		}
+		"####" L -1;
+		Stop;
+	Death.Acid:
+		"####" G 1;
+		"####" "#" 1 A_Playsound("Gumpop/Expand",5);
+		"####" "###################################" 1 A_SetScale(Scale.X+frandom(0.01,0.025));
+		"####" "#" 1 A_Playsound("Gumpop/Pop",5);
+		"####" "#" 0 {
+			if(CountInv("Demopatch") && CountInv("TNTAmmo")) {
+				A_TakeInventory("TNTAmmo",1,TIF_NOTAKEINFINITE);
+				A_SpawnItemEx("DynamiteFugYou",0,0,0,0,0,0,0,SXF_SETTARGET);
+			}
+			If(gc_toastergore) { Return ResolveState("EndAcid"); }
+			Return ResolveState(null);
+		}
+		"####" "#" 0 {
+			for(int i = 0 ; i < 6 ; i++) { A_SpawnItemEx("PCeilBloodLauncherLong",0,0,0,frandom(5.0,-5.0),frandom(3.0,-3.0),frandom(10.0,4.0),frandom(0.0,360.0),SXF_NOCHECKPOSITION|SXF_TRANSFERPITCH|SXF_TRANSFERPOINTERS|SXF_USEBLOODCOLOR); }
+			for(int i = 0 ; i < 2 ; i++) { A_SpawnItemEx("PXDeath1",0,0,25,frandom(5.0,-5.0),frandom(3.0,-3.0),frandom(10.0,4.0),frandom(0.0,360.0),SXF_NOCHECKPOSITION|SXF_TRANSFERPITCH|SXF_TRANSFERPOINTERS|SXF_USEBLOODCOLOR);
+										   A_SpawnItemEx("PXDeath2",0,0,25,frandom(5.0,-5.0),frandom(3.0,-3.0),frandom(14.0,4.0),frandom(0.0,360.0),SXF_NOCHECKPOSITION|SXF_TRANSFERPITCH|SXF_TRANSFERPOINTERS|SXF_USEBLOODCOLOR);
+										   A_SpawnItemEx("PXDeath3",0,0,25,frandom(5.0,-5.0),frandom(3.0,-3.0),frandom(10.0,4.0),frandom(0.0,360.0),SXF_NOCHECKPOSITION|SXF_TRANSFERPITCH|SXF_TRANSFERPOINTERS|SXF_USEBLOODCOLOR); }
+										   A_SpawnItemEx("PXDeath4",0,0,25,frandom(5.0,-5.0),frandom(3.0,-3.0),frandom(10.0,4.0),frandom(0.0,360.0),SXF_NOCHECKPOSITION|SXF_TRANSFERPITCH|SXF_TRANSFERPOINTERS|SXF_USEBLOODCOLOR);
+			for(int i = 0 ; i < 8 ; i++) { A_SpawnItemEx("PGC_WallBlood",0,0,33,frandom(3.0,-3.0),frandom(2.0,-2.0),frandom(4.0,2.0),frandom(0.0,36.0),SXF_NOCHECKPOSITION|SXF_TRANSFERPITCH|SXF_TRANSFERPOINTERS|SXF_USEBLOODCOLOR); }
+			for(int i = 0 ; i < 4 ; i++) { A_SpawnItemEx("PInstestin",0,0,25,frandom(5.0,-5.0),frandom(3.0,-3.0),frandom(10.0,4.0),frandom(0.0,360.0),SXF_NOCHECKPOSITION|SXF_TRANSFERPITCH|SXF_TRANSFERPOINTERS|SXF_USEBLOODCOLOR); }
+			for(int i = 0 ; i < 24; i++) { A_SpawnItemEx("PGC_FlyingBlood",0,0,27,frandom(5.0,-5.0),frandom(3.0,-3.0),frandom(10.0,4.0),frandom(0.0,360.0),SXF_NOCHECKPOSITION|SXF_TRANSFERPITCH|SXF_TRANSFERPOINTERS|SXF_USEBLOODCOLOR); }
+			for(int i = 0 ; i < 6 ; i++) { A_SpawnItemEx("PGC_SuperGoreSpawner",0,0,25,frandom(5.0,-5.0),frandom(3.0,-3.0),frandom(10.0,4.0),frandom(0.0,360.0),SXF_NOCHECKPOSITION|SXF_TRANSFERPITCH|SXF_TRANSFERPOINTERS|SXF_USEBLOODCOLOR); }
+		}
+	EndAcid:
+		TNT1 A 0 {
+			bSOLID = 0;
+			bFLOORCLIP = 1;
+			A_SetTranslation("DragonPaste");
+		}
+		XMED ABCDE 5;
+	WaitForIt3:
+		"####" E 1;
+		"####" E 0 {
+			if(vel.x != 0 || vel.y != 0 || vel.z != 0)
+			{
+				Return ResolveState("WaitForIt3");
+			}
+			else
+			{
+				If(!gc_toastergore) { A_SpawnItemEx("PGC_GrowingBloodPool",0,0,0,0,0,0,0,SXF_NOCHECKPOSITION|SXF_TRANSFERPITCH|SXF_TRANSFERPOINTERS|SXF_USEBLOODCOLOR); }
+			}
+			Return ResolveState(Null);
+		}
+		"####" "#" 1;
+		Wait;
+	}
+
+
+ static const string GCWeapons[] = {"Brimstone","Dergfist","Longhorn","IronblastRevert", "Strucker", "Ironblast",
+		"Pulverizer","DynamiteWeapon","Matriarch","Augur","OldDreadful","ATotallyUselessSomething",
+		"MourningGlory","GoldenEmperor","Sandman"};
+  
+  override void CheatGive (String name, int amount)
+  {
+   string goodarmor = "NemesisArmorGiver";
+   Class<Weapon> weap = name;
+
+   if(name ~== "all" || name ~== "weapons")
+    {
+     GiveInventory(goodarmor,1);
+     super.CheatGive(name, amount);
+     if(!weaponExt)
+      {
+	CheatTake("weapons",amount);
+	int x=0; int y=0; string gcaddon = "GC_Sabbatha";
+	Class<Actor> addoncheck = (Class<Actor>) (gcaddon);
+
+	if(!addoncheck) {y=4;} //cutting the array if GC_Addon is not loaded
+
+	while( x < GCWeapons.Size()-y ) 
+	{
+	 GiveInventory(GCWeapons[x], 1); x++;
+	}
+      }
+    }
+
+   else if(weap)
+    {
+     CheatTake(name,amount);
+     Console.Printf("\cdUse the summon cheat and don't destroy \cgTonyn's work\cd :D");
+    }
+
+   else {super.CheatGive(name, amount);}
+
+  } //close override
+	
+	// kd: no more party
+	// shut the hell up heavy
+	override bool OnGiveSecret (bool is_automap, bool play_sound) {
+		if(PlayerNumber() != consoleplayer) {
+			return false;
+		}
+		
+		let secret_mode = CvarEx.UserIntDef("gc_secretmode", def: 1);
+		let is_gc_default = false;
+		
+		switch(secret_mode) {
+		default:
+		case 0: // use default
+			return true;
+		case 1: // use gc default
+			is_gc_default = true;
+			
+		case 2: // use from a certain game
+		case 3:
+		case 4:
+		case 5:
+			
+			static const string messages [] = {
+				"A treasure is revealed!"
+			,	"PAAAAAAAAAAAAAAAAARTAAAAAAAAAAAAAAAAAAAAAAAAAAAAAYYY!!"
+			,	"A treasure is revealed!"
+			,	"UFOPORNOOOOOOOOOO!!!"
+			};
+			
+			static const string sounds [] = {
+				"heretic/secret"
+			,	"doom/secret"
+			,	"heretic/secret"
+			,	"strife/secret"
+			};
+			
+			let i = clamp(secret_mode - 2, 0, min(sounds.size(), messages.size()) );
+			
+			if(is_gc_default) switch(gameinfo.gametype) {
+			case game_doom:
+				i = 1;
+				break;
+			case game_heretic:
+				i = 0;
+				break;
+			case game_hexen:
+				i = 2;
+				break;
+			case game_strife:
+				i = 3;
+				break;
+			}
+			
+			console.midprint(smallfont, messages [i]);
+			Object.S_StartSound(sounds [i], 0);
+			break;
+		
+		case 6: // kd: my secretâ™ª
+			console.printf("\c[sapphire]SECRET!!");
+			Object.S_StartSound("realtouhou/lucky", 0);
+			RealTouhouSecret.StaticTrigger(PlayerNumber(), "\c[sapphire]SECRET!!");
+			break;
+		}
+		
+		return false;
+	}
+	
+	//Weapon switch functionality.
+	static const string BlacklistedPrevWeapons [] = {
+	"ThrowObjectWeapon",
+	"DynamiteTossWeapon",
+	//"TiberiumBombTossWeapon",
+	"PropaneTossWeapon",
+	"LedgeGrabWeapon",
+	"EnvirosuitWeapon",
+	"DraughsuitActivateWeapon",
+	"DraughsuitDeactivateWeapon",
+	"CygborgActivateWeapon",
+	"CygborgDeactivateWeapon",
+	"DeadmakerActivateWeapon",
+	"DeadmakerDeactivateWeapon"//,
+	//"DergfistSupreme"
+	};
+	
+	// An Experimental Override -Dino
+	Override void PlayRunning ()
+	{
+		if (InStateSequence(CurState, SpawnState))
+			SetStateLabel ("GC_See");
+	}
+	
+	// A generic function for setting the player's previous weapon, ignoring blacklisted weapons.
+	void GC_SetPreviousWeapon() //(Guncaster playerref)
+	{
+		let playerref = Guncaster(self);
+		Class<Weapon> CurrentWeapon = playerref.player.ReadyWeapon.GetClass();
+		for(int i = 0; i < BlacklistedPrevWeapons.Size(); i++)
+		{
+			if(!CurrentWeapon || CurrentWeapon == BlacklistedPrevWeapons[i])
+			{
+				return; // Without doing anything.
+			}
+		}
+		// If no blacklisted weapons are found, set the current as previous
+		playerref.PreviousWeapon = CurrentWeapon;
+		return;
+	}
+	
+	override void BeginPlay () {
+		super.BeginPlay();
+	}
+	
+	override void PostBeginPlay() // Stuff that should be handled immediately after existing.
+	{
+		// Brotip: PostBeginPlay runs only when the player actor (or a voodoo doll) is created
+		// (even on multiplayer respawn), not guaranteed once every map. If something needs to
+		// be reinitialized every map, toss it into HandleItemReset().
+		// (Yes, the Chillgrasp thinker's user is lost between map changes in multiplayer.)
+		// Chillgrasp initialization is now done in OnRespawn.
+	
+		if (!player || !player.mo || player.mo != self || gamestate == GS_TITLELEVEL)
+		{ // For voodoo dolls and titlemaps.
+			Super.PostBeginPlay();
+			return;
+		}
+	
+		// This token really provides us with a reason not to do these things again
+		// after respawning in multiplayer.
+		if(!CountInv("GameStarted"))
+		{
+			HandleGameSetup();	// Set up some necessary tokens for game start.
+			GiveInventory("GameStarted", 1);
+		}
+		
+		// Don't start the player with the pistol in Hexen.
+		if(gameinfo.gametype != Game_HEXEN)
+		{
+			GiveInventory("Longhorn", 1);
+			player.PendingWeapon = Weapon(FindInventory("Longhorn"));
+		}
+		
+		// Players aren't allies in deathmatch.
+		// Also give some surges.
+		if(deathmatch)
+		{
+			bTHRUSPECIES = false;
+			GiveInventory("PowerSurge", 4);
+		}
+		
+		UpdateCarriedTome();
+		Super.PostBeginPlay();
+	}
+	
+	// Deprecating that once cool Xaser check, m'boi.
+	void HandleGameSetup()
+	{
+		//Deadmaker's Charge.
+		ChargeFuel = 425;
+		ChargeCooldown = 0;
+	
+		// Money setup.
+		GiveInventory("Dosh",GC_Doshmeter);
+	
+		// Doom setup.
+		if(gameinfo.gametype == Game_DOOM)
+		{
+			GiveInventory("DoomCounter", 1);
+		}
+		// Heretic setup.
+		else if(gameinfo.gametype == Game_HERETIC)
+		{
+			GiveInventory("HereticCounter", 1);
+		}
+		// Hexen setup.
+		else if(gameinfo.gametype == Game_HEXEN)
+		{
+			GiveInventory("HexenCounter", 1);
+		}
+		// Strife setup. (It exists?)
+		else if(gameinfo.gametype == Game_STRIFE)
+		{
+			GiveInventory("StrifeCounter", 1);
+		}
+		// "Can't detect which game" setup. (Defaults to Doom.)
+		else
+		{
+			GiveInventory("DoomCounter", 1);
+		}
+		
+		GiveInventory("IHoldPlayerVariables", 1); // Storage for people who die.
+		
+		// let player_data = IholdPlayerVariables(FindInventory("IholdPlayerVariables"));
+		
+		// if(player_data) {
+			// player_data.SetupForGameplay();
+		// }
+	}
+	
+	// Oooooh... I hope I don't regret this... -Dino
+	override bool CanCollideWith(Actor other, bool passive)
+	{
+		if(other)
+		{
+			if(other.bIsMonster || (deathmatch && (other is "PlayerPawn")))
+			{
+				if(Pancakes.Find(other) == Pancakes.Size()) {
+					// Add everything touching the platform to the array
+					Pancakes.Push(other);
+					if(buttStomp == 0) { buttStomp = vel.Z; }
+				}
+			}
+		}
+		if(RW_Active && !(other.bACTLIKEBRIDGE)) { Return false; }
+		return true;
+	}
+	
+	override void Tick() // Stuff that should be handled every tic.
+	{
+		if (!player || !player.mo || player.mo != self || gamestate == GS_TITLELEVEL || health <= 0)
+		{ // For voodoo dolls, titlemaps, and dead players.
+			if(MoneyPointer)
+			{
+				MoneyPointer.Destroy();
+			}
+			Super.Tick();
+			return;
+		}
+		
+		HandleHealth();			// Health capacity.
+		HandleMana();			// Mana regeneration and capacity.
+		HandleFlight();			// Someone in the ZDoom Discord made the interesting suggestion of handling extra jumps in a Tick loop.
+		HandlePlayerState();	// The handler for Deadmaker/Powersuit stuff.
+		HandleGameWeapons();	// We only want this games' weapons.
+		HandleGameItems();		// Same as above, just for items.
+		HandleQuickToss();		// Quicktoss timer for dynamite.
+		HandleMagAutoload();	// Supermag Autoloader.
+		HandleNinjaMode();		// Running fast makes you dodge bullets! Or something.
+		HandleRecharge();		// Of items that recharge.
+		// HandleBinds();			// Handles the binds! You wouldn't believe it! (not anymore)
+		HandleSeekers();		// Handles nuclear fission reactor. Jk, handles seekers.
+		HandleInvulnerabilityCounter(); // Godmode counter for status bar eyes
+		HandleDarkNithorCounter(); // To display correct mugshot for Draugh + Deadmaker
+		HandleMechaNithorCounter(); // To display correct mugshot for Powersuit + Deadmaker
+		HandleSpellCastDelay();	// Used for... handling the delay when casting spells! yea! -Dino
+		HandleRiftWalking();	// fancy rift walking.
+		view_tilt.Tick();		// don't rock the boat and keep on your swim vests
+		HandleGoombaStomp();	// Because your fat ass is a deadly weapon;
+		HandleStealth();		// Experimental -Dino
+		BadTouchScan();			// new void touch stuff
+		HandleVoidArmyAI();		// new monster handling
+		
+		//To make damn sure your dummy-ass won't change the weapon mid-activation.
+		if(CountInv("CygborgActivateWeapon")) { A_SelectWeapon("CygborgActivateWeapon"); }
+		if(CountInv("CygborgDeactivateWeapon")) { A_SelectWeapon("CygborgDeactivateWeapon"); }
+		if(CountInv("DraughsuitActivateWeapon")) { A_SelectWeapon("DraughsuitActivateWeapon"); }
+		if(CountInv("DraughsuitDeactivateWeapon")) { A_SelectWeapon("DraughsuitDeactivateWeapon"); }
+		if(CountInv("DeadmakerActivateWeapon")) { A_SelectWeapon("DeadmakerActivateWeapon"); }
+		if(CountInv("DeadmakerDeactivateWeapon")) { A_SelectWeapon("DeadmakerDeactivateWeapon"); }
+		
+		//Orrr if you use a couple, they will get all used up.
+		//if(CountInv("TiberiumBombTossWeapon")) { A_SelectWeapon("TiberiumBombTossWeapon"); }
+		if(CountInv("PropaneTossWeapon")) { A_SelectWeapon("PropaneTossWeapon"); }
+		
+		if(CountInv("PowerSuitDraugh"))
+		{
+			HandleDraughMove();	// People say they're afraid of shadows, which hide and obscure. But what they're really afraid of is the light - the truth.
+		}
+		
+		if(gameinfo.gametype == Game_HEXEN)
+		{
+			HandleAssembly();	// Of weapon pieces into superweapons.
+		}
+		
+		if(!(level.time % 35))
+		{
+			TakeInventory("GuncasterTauntTimer", 1);
+			if(!CountInv("PowerPermanentDrain")) { GiveInventory("GC_DrainMonitor",1); }	// Just check this once a second.
+		}
+		
+		if(CountInv("PhilosophersTome") || GC_Loadsamoney)
+		{
+			MoneyMagnet();
+		}
+		
+		// GLDEFS are kind of demanding. This is a stopgap solution.
+		if(CountInv("PowerVeilVision"))
+		{
+			MoneyLocator();
+		}
+		else
+		{
+			CVar.GetCVar("GC_GoldDetected", player).SetBool(FALSE);
+			if(MoneyPointer)
+			{
+				MoneyPointer.Destroy();
+			}
+		}
+		
+		// Little dance fix. Instead of relying on states to set this variable correctly
+		// (in a player, which can change states at will, lol), check the current state
+		// instead to see if we should tell the script to cancel dancing.
+		if(InStateSequence(CurState, FindState("Pain")))
+		{
+			User_Ouch = 1;
+		}
+		else
+		{
+			User_Ouch = 0;
+		}
+		
+		Super.Tick();
+	}
+	
+	vector2 weapon_bob_offset;
+	vector2 old_weapon_bob_offset;
+	double old_delta_view;
+	double delta_view;
+	
+	override vector2 BobWeapon (double t) {
+		if(!player || !player.readyweapon) {
+			return (0, 0);
+		}
+		
+		if(!view_tilt.IsEnabled()) {
+			return super.BobWeapon(t);
+		}
+		
+		// kd: For some reason, interpolation jitters in net play, so I turn it
+		// off altogether.
+		if(multiplayer) {
+			t = 1;
+		}
+		
+		let weapon		= player.readyweapon;
+		let vel_sq		= vel dot vel;
+		let left		= (-sin(angle), cos(angle));
+		let vel_side	= left dot vel.xy;
+		
+		let bob_force	= 60 * (weapon.bobrangex, weapon.bobrangey);
+		let forw_f		= view_tilt.MovingPhase();
+		let side_f		= view_tilt.SidewaysPhase();
+		
+		let bob_f	= (
+			clamp(vel_side / 20, -1, 1),
+			clamp(vel_sq / 400, -1, 1));
+			
+		let pend_ang = 30 * sin(view_tilt.BobAngle()) + 90;
+		
+		old_weapon_bob_offset	= weapon_bob_offset;
+		weapon_bob_offset		= forw_f * (
+			bob_force.x * bob_f.y * cos(pend_ang) * 0.4,
+			bob_force.y * bob_f.y * (1 - sin(pend_ang)));
+		
+		weapon_bob_offset += (
+			0.23 * side_f * bob_force.x,
+			0.125 * abs(side_f) * bob_force.y);
+		
+		return t * weapon_bob_offset + (1 - t) * old_weapon_bob_offset;
+	}
+	
+	// kd: This is arguably gzd's worst function. You really have to take it
+	// all in and appreciate how many contradicting designs meet under the same
+	// roof - which in itself has the dumbest possible name.
+	
+	override bool CheckFrozen() {
+		if(0 < player.mo.CountInv("NoLookZone")) {
+			player.cmd.yaw		= 0;
+			player.cmd.pitch	= 0;
+			player.cmd.roll		= 0;
+			player.turnticks	= 0;
+			
+			// kd: And here comes the worst part. Take a good hard look. This
+			// will *disable* view interpolation on the next frame.
+			player.cheats		|= CF_INTERPVIEW;
+		}
+		
+		return super.CheckFrozen();
+	}
+	
+	// new kick drain handling
+	override int OnDrain (Actor victim, int damage, Name dmgtype)
+    {
+        if(victim && victim.bIsMonster && damage > 0 &&
+            ((dmgtype == 'ShoeLaces') ||
+            (dmgtype == 'MidasShoelaces') || 
+            (dmgtype == 'SuperShoelaces') ||
+            (dmgtype == 'SuperMidasShoelaces'))
+        )
+        {
+            if(CountInv("PowerBerserkDamage")) { 
+                if(CountInv("PowerSuitToken") || CountInv("PowerDeadmaker")) { damage = clamp(Damage * 0.06,0,600); }
+                else { damage = clamp(Damage * 0.15,0,600); }
+            }
+            else if(CountInv("PowerDeadmaker")) { damage = clamp(Damage * 0.04,0,600); }
+            else { damage = 0; }
+        }
+        else { 
+            damage = 0;
+        }
+		// if(damage > 0) { console.printf("Healing for %f",Damage); }
+        return damage;
+    }
+	
+	Void HandleGoombaStomp()
+	{
+		Bool hahGotEm;
+		double vel_damage;
+		// This stuff is for limiting our scan lines
+		double radiusScanLimit = radius / 4;
+		let limitCounter = (radius * -1);
+		// Determine our Damage
+		string sitDamage = "Extreme";
+		if(CountInv("PowerDeadmaker") || CountInv("PowerBerserkDamage")) { sitDamage = "SuperShoelaces"; }
+		else if(CountInv("PowerMidasMode")) { sitDamage = "SuperMidasShoelaces"; }
+		
+		// Convert mass to energy using an asymptotic equation
+		let heft = Clamp((Clamp((Mass - 1000),0,3000) ** 2) * 0.00005,0,300);
+		if(heft <= 0) { Pancakes.Clear(); Return; }	// Terminate the function if we aren't heavy enough to hurt things we sit on.
+		
+		// Convert Velocity to kinetic energy with another asymptotic equation.
+		let vel_stomp = ((buttstomp * -1) - 8);
+		if(vel_stomp >= 0) { vel_damage = Clamp((vel_stomp ** (0.325)) + 4,1,63); }
+		else { vel_damage = 1; }
+		
+		// For the impact, we're going to treat the player like a projectile, you land and do damage
+		if(Player.OnGround && (vel.Z <= 0) && (buttstomp < vel.Z) && (buttstomp < -14)) { 
+			// console.printf("hit the floor");
+			bool success;
+			Actor particle;
+			[success, particle] = A_SpawnItemEx("Flight_RoflCopterDustSpawner",0,0,0,0,0,0,0,SXF_TRANSFERPOINTERS|SXF_CLIENTSIDE); 
+			particle.Scale = self.scale * 0.75;
+			A_Explode(
+				clamp(heft * (vel_damage / 8),0,200),
+				vel_damage * 17.92,
+				XF_NOTMISSILE,
+				FALSE,
+				vel_damage * 11.648,
+				0,
+				10,
+				"NONE",
+				sitDamage); 
+		}
+		
+		// This is where we'll do the damage to monsters if we are actually standing on them.
+		// We're going to do another scanning linetrace matrix here. This will only run if
+		// a monster was collided with and added to the Pancakes Array.
+		if(Pancakes.Size()) {
+			// console.printf("Running Goomba Stomp and pancakes are %i",Pancakes.Size());
+			for(int i = 0; i < Pancakes.Size(); i++)
+			{
+				// console.printf("this pancakes is named %s",Pancakes[i].GetClassName());
+				FLineTraceData buttStompTraceData;
+				bool buttStompTraceMade;
+				let whyposition = radius;
+				for(int turd = 0; turd < 9; turd++) {
+					let exposition = radius;
+					Do {
+						// console.printf("running Trace");
+						// console.printf("Exposition is %f and whyposition is %f and limitnumber is %f",Exposition,Whyposition,limitCounter);
+						buttStompTraceMade = LineTrace(0, 1, 90, 0, 0, whyposition, exposition, buttStompTraceData);
+						// Spawn("Blood", buttStompTraceData.hitlocation);
+						if(buttStompTraceMade && (buttStompTraceData.HitType == buttStompTraceData.TRACE_HitActor))
+						{
+							let thisPancake = pancakes[i];
+							let thatPancake = buttStompTraceData.TRACE_HitActor;
+							if((thisPancake != null) && !(thisPancake.CountInv("gotSatOn")) && (thisPancake is buttStompTraceData.HitActor.GetClassName())) {
+								double dmg_reduction;
+								thisPancake.target = self;
+								// Delay our squishing by 20 game tics
+								let im_so_salty = Inventory(Spawn("gotSatOn"));
+								im_so_salty.Touch(thisPancake);
+								// Maximum possible damage with current velocity
+								let dmg_Maximum = heft * vel_damage;
+								// Calculate monster damage reduction according to mass
+								if(thisPancake.mass >= 2000) { dmg_reduction = clamp((-15 * (thisPancake.mass - 2000) ** (0.55555555555) + 1500) / dmg_Maximum,0,1); }
+								else { dmg_reduction = 1; }
+								// Apply Damage
+								thisPancake.DamageMobj(self,target,dmg_Maximum * dmg_reduction,sitDamage,DMG_THRUSTLESS);
+								if(thisPancake.Health <= 0) { thisPancake.bSOLID = FALSE; }
+								vel_damage = 1;
+							}
+							// else { console.printf("FUCK!"); }
+							hahGotEm = TRUE;
+						}
+						Exposition -= radiusScanLimit;
+					}
+					While(!hahGotEm && (Exposition >= limitCounter))
+					Whyposition -= radiusScanLimit;
+					if(hahGotEm) { Break; }
+				}
+				hahGotEm = FALSE;
+			}
+		}
+		// Set previous velocity and clear our array of squished actors.
+		buttStomp = vel.Z;
+		Pancakes.Clear();
+	}
+	
+	void HandleHealth()
+	{
+		int DefaultMaxHealth = Default.MaxHealth;
+		if(DefaultMaxHealth < 1) { DefaultMaxHealth = 100; } // The dehacked default of 0 isn't valid.
+		
+		// Simple function: change maximum health value dynamically.
+		MaxHealth = DefaultMaxHealth +
+				    (CountInv("PowerStimulant") * 10) +			//Pillow: Syringes bonus.
+					(Int(CountInv("DraughCounter") / 4) * 10) + //Pillow: Draughsuits bonus, if you stack them.
+					(CountInv("PowerDeadmaker") * 200);			//Pillow: Deadmaker bonus.
+	}
+	
+	void HandleMana()
+	{	
+		let ManaAmmo = self.FindInventory("Mana");
+		
+		// First, set up its capacity.
+		ManaAmmo.MaxAmount = GetDefaultByType("Mana").MaxAmount + 
+							 (CountInv("PowerBooster") * 25) + 		//Pillow: Syringes bonus.
+							 (CountInv("PowerTomeEffect") * 100) +  // Pillow: Active tomed mode bonus.
+							 (CountInv("PowerSuitDraugh") * 75) + 	//Pillow: Draughsuit initial bonus.
+							 (CountInv("DraughCounter") * 25);		// Pillow: Draugh multiple bonus.
+							// (CountInv("StridersLanternActive") * CountInv("StridersLantern") * 25);		//Pillow: Lantern penalty.
+		
+		// If mana is somehow over augmented capacity, reset it to that capacity.
+		if(CountInv("Mana") > ManaAmmo.MaxAmount)
+		{
+			SetInventory(ManaAmmo.GetClassName(), ManaAmmo.MaxAmount);
+		}
+		
+		// Next, handle its regeneration rate.
+		if(GC_ManaRegenSpeed <= 0)
+		{
+			return; // Disabled, or invalid negative value.
+		}
+		else
+		{
+			if(!(level.time % ((GetDefaultByType("PowerSurge").MaxAmount-CountInv("PowerSurge")+GC_ManaRegenSpeed))))
+			{
+				GiveInventory("Mana", 1);
+			}
+			if(CountInv("PowerTomeEffect") && !(level.time % GC_ManaRegenSpeed+4)) // Pillow: Bonus regen from active tomed mode.
+			{
+				GiveInventory("Mana", 1);
+			}
+		}
+		
+		// Lets handle Draugh Shadow mana here too
+		if(!RW_Active) { A_GiveInventory("Shadows_Token",this_recovery_amount); }
+		double this_maxamount = 1000;
+		let this_recovery_item = self.FindInventory("Shadows_Token");
+		if(this_recovery_item) { this_maxamount = this_recovery_item.maxamount; }
+		A_SetInventory("Shadows_Tracker",floor(100 * (CountInv("Shadows_Token") / this_maxamount)));
+	}
+	
+	Void CacheShadowRecoveryAmount()
+	{
+		// Lets handle Draugh Shadow mana here too
+		let this_recovery_item = self.FindInventory("Shadows_Token");
+		if(this_recovery_item) { 
+			this_recovery_item.MaxAmount = (this_recovery_item.Default.MaxAmount + ceil(CountInv("VoidwalkersTouch") * 334)); // TravelersJournal
+			this_recovery_amount = ceil(this_recovery_item.MaxAmount * 0.002);
+		}
+		else { console.printf("lol gzd"); }
+	}
+	
+	void RefillRocketTics ()
+	{
+		// I use this code twice. How much code can you save?!
+		TimesJumped++;
+		RocketGlideTics += 6*TICRATE;
+		RocketHoverTics += 9*TICRATE;
+	}
+	
+	void HandleFlight()
+	{
+		int buttons = GetPlayerInput(MODINPUT_BUTTONS);
+		int oldbuttons = GetPlayerInput(MODINPUT_OLDBUTTONS);
+		int forwardmove = GetPlayerInput(MODINPUT_FORWARDMOVE);
+		int sidemove = GetPlayerInput(MODINPUT_SIDEMOVE);
+		int JumpLimit;
+		int AccelerateDeath;
+		
+		// Always decrement ledge grace timer since it can be done from ground.
+		if(LedgeGraceTimer)
+		{
+			LedgeGraceTimer--;
+		}
+	
+		// Only run if in mid-air, not mid-water, no fly cheat.
+		if(!player.OnGround && waterlevel < 2 && !(player.cheats & CF_FLY) && !bNoGravity)
+		{
+			
+			// Decrement gliding state input time.
+			if(GlideGraceTimer)
+			{
+				GlideGraceTimer--;
+			}
+			
+			// Decrease stomp cooldown timer.
+			if(StompCooldown > 0)
+			{
+				StompCooldown--;
+			}
+			
+			// Disallow an immediate stomp after entering airspace.
+			if(!FirstEnteredAir && !StompCooldown)
+			{
+				FirstEnteredAir = TRUE;
+				StompCooldown = 15;
+			}
+			
+			// Set total jump count.
+			if(gameinfo.gametype & Game_DOOM || gameinfo.gametype & Game_STRIFE)
+			{
+				JumpLimit = JumpCount + CountInv("PowerLifter") + (CountInv("PowerDeadmaker") * 16);
+			}
+			else
+			{
+				JumpLimit = JumpCount + CountInv("WingsOfWrath") + (CountInv("PowerDeadmaker") * 16);
+			}
+			
+			switch(CurrentFlightState)
+			{
+				// Gliding and groundpounding need to completely intercept movement to work.
+				// So, they are separate states to normal flight jumping.
+				case NORMAL:
+				default:
+					
+					// Mid-air jumping.
+					if(((buttons & BT_JUMP) && !(oldbuttons & BT_JUMP) && (TimesJumped < JumpLimit)) || GlideJumped)
+					{
+						// This bool bypasses the above check because it's already done somewhere else.
+						GlideJumped = FALSE;
+						
+						// If we haven't just previously jumped, jump again.
+						Vel.Z = JumpZ + (CountInv("PowerBerserkDamage") ? 5.0 : 0.0);
+						TimesJumped++;
+						
+						// Kick up dust
+						let roflCopter = Pos.Z - floorz;
+						if((self.Scale.X >= 1.2625) && (roflCopter <= Self.Scale.X * 192)) { 
+							bool success;
+							Actor particle;
+							[success, particle] = A_SpawnItemEx("Flight_RoflcopterDustSpawner",0,0,0,0,0,0,0,SXF_TRANSFERPOINTERS|SXF_CLIENTSIDE); 
+							particle.Scale = self.scale * (0.536 / clamp(roflcopter - 192,1,192));
+						}
+						
+						// Sound.
+						if(CountInv("PowerDeadmaker") && CountInv("PowerSuitToken"))
+						{
+							A_StartSound("Prophet/Jet",889,0,0.8);
+							A_PlaySound("Deadmaker/Fly",0);
+						}
+						else if(CountInv("PowerDeadmaker"))
+						{
+							A_PlaySound("Deadmaker/Fly",0);
+						}
+						else if(CountInv("PowerSuitToken"))
+						{
+							A_PlaySound("Bishop/Wings");
+						}
+						else
+						{
+							A_PlaySound("Wings/Movement");
+						}
+						
+						// Effect (if applicable).
+						if(CountInv("PowerDeadmaker") && CountInv("PowerSuitToken"))
+						{
+							GiveInventory("Nasa_RocketPack_Emitter", 1);
+						}
+						else if(CountInv("PowerSuitToken"))
+						{
+							GiveInventory("RocketPack_Emitter", 1);
+						}
+						
+						// If the player is holding movement direction keys, also jump in that direction.
+						// Or in Stanley's words: "Scout on crack". 
+						A_ChangeVelocity((forwardmove/0x3200) * 12.0, (sidemove/-0x2800) * 12.0, Vel.Z, CVF_RELATIVE|CVF_REPLACE);
+						// Apparently a weapon bob bug appears if this stops x/y velocity.
+						// Harmless, but let's do something about it anyway.
+						// Can I manually stop weapon bobbing from here?
+						if(!forwardmove && !sidemove)
+						{
+							player.bob = 0.;
+						}
+						/*
+						if(forwardmove)
+						{
+							Thrust((forwardmove/0x3200 * 8.0), Angle);
+						}
+						
+						if(sidemove)
+						{
+							let SideAngle = Angle - 90;
+							Thrust((sidemove/0x2800 * 8.0), SideAngle);
+						}
+						*/
+					}
+					
+					// Slow fall.
+					if((buttons & BT_JUMP) && (oldbuttons & BT_JUMP) && (Vel.Z < 0.05))
+					{
+							
+						// Holding jump in mid-air reduces gravity greatly.
+						// Holding it with Powersuit or Deadmaker on will negate it completely.
+						// Sound and effect, if applicable.
+						if(CountInv("PowerSuitToken") || CountInv("PowerDeadmaker"))
+						{
+							if(!RocketHoverTics && (TimesJumped < JumpLimit))
+							{
+								// Rocket fuel refill.
+								RefillRocketTics();
+								TimesJumped++;
+							}
+						
+							if(RocketHoverTics)
+							{
+								// Rocket fuel behavior.
+								A_ChangeVelocity(Vel.X,Vel.Y,0,CVF_REPLACE);
+								A_SetGravity(0.0);
+								if(CountInv("PowerSuitToken") && CountInv("PowerDeadmaker")) { A_GiveInventory("NasaRocketGlide_Emitter_Vertical",1); A_PlaySound("Prophet/Glide", CHAN_7, 1.0, TRUE); }
+								else { GiveInventory("RocketGlide_Emitter_Vertical", 1); A_PlaySound("Bishop/Glide", CHAN_7, 1.0, TRUE); }
+								RocketHoverTics--;
+							}
+							else
+							{
+								// No rocket fuel left.
+								if(CountInv("PowerSuitToken") && CountInv("PowerDeadmaker")) {
+									A_StopSound(7);
+									A_StartSound("Prophet/JetOff",7,0,1.0);
+								}
+								A_SetGravity(0.1);
+							}
+						}
+						else
+						{
+							if(CountInv("PowerSuitToken") && CountInv("PowerDeadmaker")) {
+								A_StopSound(7);
+								A_StartSound("Prophet/JetOff",7,0,1.0);
+							}
+							A_SetGravity(0.1);
+						}
+						
+						SlowFell = TRUE;
+					}
+					else
+					{
+						// No gravity reduction otherwise.
+						if(SlowFell)
+						{
+							Vel.Z -= 0.01;
+							A_StopSound(CHAN_7);
+							if(CountInv("PowersuitToken") && CountInv("PowerDeadmaker")) { A_StartSound("Prophet/JetOff", 7, 0, 1.0); }
+							SlowFell = FALSE;
+						}
+						A_SetGravity(1.0);
+					}
+					
+					// Ledge-climbing. See its function for more info.
+					HandleLedgeClimb();
+					// Stop processing the current flight state if it changes because of the above function.
+					if(CurrentFlightState == CLIMBING)
+					{
+						break;
+					}
+					
+					// Gliding.
+					if((buttons & BT_FORWARD) && !(oldbuttons & BT_FORWARD))
+					{
+						// Only glide if the grace timer is still active.
+						if(GlideGraceTimer)
+						{
+							GlideGraceTimer = 0;
+							CurrentFlightState = GLIDING;
+							break;
+						}
+						else
+						{
+							// Set the grace timer (in tics), so as to allow for a window between button taps.
+							GlideGraceTimer = GetCVar("GC_GlideTimer");
+						}
+					}
+					
+					// Groundpounding.
+					if((buttons & BT_CROUCH) && !StompCooldown)
+					{
+						CurrentFlightState = GROUNDPOUND;
+					}
+					break;
+				
+				case GLIDING:
+					if(!GlideInitialized)
+					{
+						A_NoGravity(); // Nullify gravity.
+						Vel = (0, 0, 0); // Annul velocity *once*. The script used to do this repeatedly.
+						//if(CountInv("PowersuitToken") || CountInv("PowerDeadmaker")) { A_StartSound("Prophet/Jet", 889, 0, 0.8); }
+						GlideInitialized = TRUE; // Done setting up gliding.
+					}
+					
+					// Sound and effect in one check. -Dino
+					if(CountInv("PowerSuitToken") || CountInv("PowerDeadmaker"))
+					{
+						if(CountInv("PowerSuitToken") && CountInv("PowerDeadmaker")) {
+							A_PlaySound("Prophet/Glide", CHAN_7, 1.0, TRUE);
+							A_GiveInventory("NasaRocketGlide_Emitter",1);
+						} else {
+							A_PlaySound("Bishop/Glide", CHAN_7, 1.0, TRUE);
+							GiveInventory("RocketGlide_Emitter", 1);
+						}
+					}
+					
+					// Movement.
+					// And allow for strafing while we're at it.
+					// Pillow: Also added new fun functionality here~
+					
+					if(CountInv("PowersuitToken") || CountInv("PowerDeadmaker"))
+					{
+						if(!RocketGlideTics && (TimesJumped < JumpLimit))
+						{
+							// Rocket fuel refill.
+							RefillRocketTics();
+							TimesJumped++;
+						}
+					
+						if(RocketGlideTics)
+						{
+							// Rocket fuel glide.
+							if(CountInv("PowersuitToken") && CountInv("PowerDeadmaker")) { A_ChangeVelocity (Cos(Pitch) * 60.0, (sidemove/-0x2800 * 30.0), Sin(Pitch) * -60.0, CVF_RELATIVE|CVF_REPLACE); }
+							else { A_ChangeVelocity (Cos(Pitch) * 40.0, (sidemove/-0x2800 * 20.0), Sin(Pitch) * -40.0, CVF_RELATIVE|CVF_REPLACE); }
+							RocketGlideTics--;
+						}
+						else
+						{
+							// Rocket fuel depleted.
+							A_ChangeVelocity(28.0, (sidemove/-0x2800 * 16.0), -1.5, CVF_RELATIVE|CVF_REPLACE);
+						}
+					} 
+					else 
+					{
+						A_ChangeVelocity(28.0, (sidemove/-0x2800 * 16.0), -1.5, CVF_RELATIVE|CVF_REPLACE); // Set movement.
+					}
+					
+					/*
+					if(sidemove)
+					{
+						let SideAngle = Angle - 90;
+						Thrust((sidemove/0x2800 * 0.5), SideAngle);
+					}
+					*/
+					// Hold forward to continue the glide, or let go to break it.
+					if(!(oldbuttons & BT_FORWARD))
+					{
+						A_StopSound(CHAN_7);
+						if(CountInv("PowersuitToken") && CountInv("PowerDeadmaker")) { A_PlaySound("Prophet/JetOff", CHAN_7, 1.0); }
+						A_Gravity();
+						GlideInitialized = FALSE;
+						CurrentFlightState = NORMAL;
+					}
+					// Tap jump to break the glide immediately and jump, if any jumps are left.
+					if((buttons & BT_JUMP) && !(oldbuttons & BT_JUMP) && (TimesJumped < JumpLimit))
+					{
+						GlideJumped = TRUE;
+						A_StopSound(CHAN_7);
+						if(CountInv("PowersuitToken") && CountInv("PowerDeadmaker")) { A_PlaySound("Prophet/JetOff", CHAN_7, 1.0); }
+						A_Gravity();
+						GlideInitialized = FALSE;
+						CurrentFlightState = NORMAL;
+					}
+					// Crouch to go directly to ground pounding.
+					if((buttons & BT_CROUCH) && !StompCooldown)
+					{
+						CurrentFlightState = GROUNDPOUND;
+					}
+					
+					HandleLedgeClimb();
+					break;
+				
+				case GROUNDPOUND:
+					if(!PoundInitialized)
+					{
+						if(CountInv("PowerSuitToken") && CountInv("PowerDeadmaker")) {
+							A_StartSound("Prophet/Jet",890,0);
+							//A_SpawnItemEx("ProphetStompInitiate",0,0,0,0,0,0,0,SXF_TRANSFERPOINTERS);
+							AccelerateDeath = 0;
+						}
+						A_PlaySound("Stomp/Use");
+						// Start with -60 Z velocity.
+						// Hexen terminal velocity is -63u/s
+						// but that's been fixed with a damagemobj
+						// override.
+						//if(CountInv("PowerSuitToken") && CountInv("PowerDeadmaker")) { Vel.Z = -99.5; }
+						if(CountInv("PowerSuitToken") || CountInv("PowerDeadmaker")) { Vel.Z = -79.5; }
+						else { Vel.Z = -59.5; }
+						PoundInitialized = TRUE;
+					}
+					// Allow for very slight horizontal movement during a pound.
+					A_ChangeVelocity((forwardmove/0x3200) * 8.0, (sidemove/-0x2800) * 8.0, Vel.Z-0.5, CVF_RELATIVE|CVF_REPLACE);
+					// If you are in Power Armor and Deadmaker - ACCELERATE DEATH.
+					if(CountInv("PowerSuitToken") && CountInv("PowerDeadmaker")) { Vel.Z -= 4.0; AccelerateDeath++; } 
+					
+					// If the player jumps in the middle of a groundpound, break out of it.
+					if(buttons & BT_JUMP && !(oldbuttons & BT_JUMP))
+					{
+						// Add some temporary velocity the player still has to deal with, but not too severe.
+						// He has wings to flap out and counteract with, after all.
+						Vel.Z = -20;
+						PoundInitialized = FALSE;
+						CurrentFlightState = NORMAL;
+					}
+					break;
+					
+				case CLIMBING:
+					// Continue holding forward to climb.
+					if((buttons & BT_FORWARD) && (oldbuttons & BT_FORWARD) && LedgeRef)
+					{
+						// First-time climb stuff.
+						if(!ClimbStarted)
+						{
+							A_StopSound(CHAN_7);
+							// Animation/sound stuff here.
+							if(GetCVar("GC_LedgeImmersion"))
+							{
+								// Pillow: Notify the weapon that we're climbing here!
+								GiveInventory("GCLedgeGrabbed", 1);
+								A_StopSound(CHAN_VOICE);
+							}
+							A_NoGravity();
+							TimesJumped = 0; // Reset jumps, you're technically touching ground.
+							Vel.X = 0;
+							Vel.Y = 0;
+							ViewBob = 0;
+							player.cheats |= CF_FROZEN;
+							ClimbStarted = TRUE;
+						}
+						
+						// Comparison against previous Z values of our ledge reference actor.
+						if(LedgeRef.Pos.Z > LedgeRefPrevZ)
+						{
+							// The ledge reference actor was placed on a lift that is now moving up.
+							// Continue to hang onto the elevator until it stops moving
+							// (or until the reference actor is crushed by a conflicting ceiling).
+							
+							Vel.X = 0;
+							Vel.Y = 0;
+							SetInventory("GCLiftGrabbed", 1); // Toggle on the holding animation.
+							
+							if((buttons & BT_JUMP))
+							{
+								// If we're holding jump, clamber up and onto the moving lift.
+								// First match the speed of the lift.
+								Vel.Z = (LedgeRef.Pos.Z - LedgeRefPrevZ) + LedgeClimbSpeed;
+								// If we're above the point where we should climb up, climb up.
+								if(LedgeRef.Pos.Z < Pos.Z+MaxStepHeight+(LedgeRef.Pos.Z - LedgeRefPrevZ))
+								{
+									// We have climbed the ledge successfully, thrust the player onto it
+									// and call it a day.
+									VelFromAngle(LedgeClimbSpeed * 2, AngleTo(LedgeRef));
+									LedgeClimbCleanup();
+									break;
+								}
+							}
+							else if(LedgeRef.Pos.Z > Pos.Z+ViewHeight)
+							{
+								// If the elevator is above a certain height, move with it.
+								if(!Warp(LedgeRef, Pos.X, Pos.Y, LedgeRef.Pos.Z-ViewHeight, 0,
+									WARPF_ABSOLUTEPOSITION|WARPF_USECALLERANGLE|WARPF_COPYVELOCITY|WARPF_WARPINTERPOLATION))
+								{
+									// If the expected position could not be warped to (such as
+									// being interrupted by a ceiling), break ledge climbing.
+									LedgeClimbCleanup();
+									break;
+								}
+							}
+							else
+							{
+								// Wait until the ledge reference thing is above a certain height to begin moving.
+								Vel.Z = 0;
+							}
+							
+							A_SetAngle(AngleTo(LedgeRef), SPF_INTERPOLATE);
+							// Would've had the player aim up the elevator automatically, but eh, freelook's better
+							//A_SetPitch(-asin((LedgeRef.Pos.Z - Pos.Z)/Distance3D(LedgeRef)), SPF_INTERPOLATE);
+							// The previous Z value needs to be watched in this case.
+							LedgeRefPrevZ = LedgeRef.Pos.Z;
+							break;
+						}
+						else if(LedgeRef.Pos.Z < LedgeRefPrevZ)
+						{
+							// The ledge reference actor was placed on a lift that is now moving down.
+							// Break climbing as a result (but also be polite and grant some velocity
+							// since we started climbing anyway).
+							Vel.Z += LedgeClimbSpeed;
+							//A_SetPitch(0, SPF_INTERPOLATE);
+							LedgeClimbCleanup();
+							break;
+						}
+						// Neither condition was met, but the previous Z of the ledge thing needs watching for updates.
+						LedgeRefPrevZ = LedgeRef.Pos.Z;
+						SetInventory("GCLiftGrabbed", 0); // Toggle off the holding animation.
+						
+						// If we jump while ledge-grabbing, override all other ledge behavior and jump.
+						if((buttons & BT_JUMP) && !(oldbuttons & BT_JUMP))
+						{
+							GlideJumped = TRUE;
+							Vel.Z = 0;
+							LedgeClimbCleanup();
+							break;
+						}
+						
+						// Comparison against the current Z value of our ledge reference actor.
+						if(LedgeRef.Pos.Z < Pos.Z+MaxStepHeight)
+						{
+							// We have climbed the ledge successfully, thrust the player onto it
+							// and call it a day.
+							Vel.Z = LedgeClimbSpeed;
+							VelFromAngle(LedgeClimbSpeed * 2, AngleTo(LedgeRef));
+							//A_SetPitch(0, SPF_INTERPOLATE);
+							LedgeClimbCleanup();
+							break;
+						}
+						else
+						{
+							// We have not climbed the ledge yet, continue climbing it.
+							Vel.Z = LedgeClimbSpeed;
+							// Set the player's view to look toward the ledge reference.
+							A_SetAngle(AngleTo(LedgeRef), SPF_INTERPOLATE);
+							// I would set pitch to look at the ledge you're climbing,
+							// but even as it interpolates it is too jerky.
+							//A_SetPitch(asin((LedgeRef.Pos.Z - Pos.Z)/Distance3D(LedgeRef)), SPF_INTERPOLATE);
+						}
+					}
+					
+					// Or don't, to give up climbing.
+					else
+					{
+						LedgeClimbCleanup();
+					}
+				break;
+			}
+		}
+		else if(Player.OnGround && (buttons & BT_JUMP) && !(oldbuttons & BT_JUMP) && (waterlevel <= 0)) {
+			// Kick up some dust
+			double jumpvelz = (JumpZ * 35 / TICRATE) * (1 + (CountInv("PowerJumping")));
+			if(jumpvelz >= 15) {
+				// console.printf("Kicking Up Dust");
+				bool success;
+				Actor particle;
+				[success, particle] = A_SpawnItemEx("RoflcopterDustSpawner",0,0,0,0,0,0,0,SXF_NOCHECKPOSITION|SXF_CLIENTSIDE); 
+				particle.Scale = self.scale * 0.536;
+			}
+		}
+		else
+		{
+			if(CurrentFlightState == GROUNDPOUND)
+			{
+				if(player.onground)
+				{
+					/*if(AccelerateDeath > 10) // Hmmmmmmmm.
+					{
+						GiveInventory("NuclearStompItem",1);
+					}*/
+					if(CountInv("PowerDeadmaker"))
+					{
+						GiveInventory("DeadmakerStompItem",1);
+					}
+					else if(CountInv("PowerBerserkDamage") && CountInv("PowerMidasMode"))
+					{
+						GiveInventory("MidasBerserkStompItem",1);
+					}
+					else if(CountInv("PowerBerserkDamage"))
+					{
+						GiveInventory("BerserkStompItem",1);
+					}
+					else if(CountInv("PowerMidasMode"))
+					{
+						GiveInventory("MidasStompItem",1);
+					}
+					else
+					{
+						GiveInventory("StompItem",1);
+					}
+					StompCooldown = 60;
+					PoundUnderwaterTics = 0;
+					CurrentFlightState = NORMAL;
+				}
+				else if(waterlevel)
+				{
+					// A bit of an added reeuhlizum tweak here. If pounding into a body of water,
+					// give a bit of leeway time before exiting the pound state (i.e. allow
+					// a stomp actor time to spawn). If the floor isn't reached (too much
+					// water resistance), give up and set normal flight state.
+					if(PoundUnderwaterTics > 4)
+					{
+						CurrentFlightState = NORMAL;
+						PoundUnderwaterTics = 0;
+					}
+					else
+					{
+						Vel.Z = -30;
+						PoundUnderwaterTics++;
+					}
+				}
+			}
+			else
+			{
+				// If the ground is somehow touched during a ledge climb, clean up anyway.
+				// Happens on rising elevators for some silly reason.
+				if(CurrentFlightState == CLIMBING)
+				{
+					Vel.Z = LedgeClimbSpeed;
+					VelFromAngle(LedgeClimbSpeed * 2, AngleTo(LedgeRef));
+					LedgeClimbCleanup();
+				}
+				CurrentFlightState = NORMAL;
+			}
+			PoundInitialized = FALSE;
+			if(GlideInitialized || SlowFell)
+			{
+				A_StopSound(CHAN_7); // Stop powersuit sounds.
+				SlowFell = FALSE;
+				GlideInitialized = FALSE;
+			}
+			FirstEnteredAir = FALSE;
+			GlideGraceTimer = 0; // Reset glide input grace timer.
+			TimesJumped = 0; // Reset jumps.
+			// Reset rocket fuel.
+			RocketHoverTics = 0;
+			RocketGlideTics = 0;
+			// Don't break the fly cheat.
+			if(!(player.cheats & CF_FLY) && !bNoGravity)
+			{
+				A_Gravity(); // Reset gravity.
+			}
+			
+			// Ledge-climb from ground.
+			if(buttons & BT_FORWARD && buttons & BT_USE)
+			{
+				HandleLedgeClimb();
+				if(CurrentFlightState == CLIMBING)
+				{
+					Vel.Z = LedgeClimbSpeed;
+				}
+			}
+		}
+	}
+	
+	// Right now, this is simply called to from the flight states to prevent duplicate code.
+	// It will take a bit more thought to completely export its handling to be autonomous.
+	// (Or maybe it's better where it is.)
+	void HandleLedgeClimb()
+	{
+		FLineTraceData ledgelinedata;
+		bool ledgetracesuccess;
+		double ledgeheight;
+		double ledgeceiling;
+		double aboveceiling;
+		Class<Weapon> check_BarrelWeapon;
+		
+		if(Guncaster(self).player.ReadyWeapon) {
+			let playerref = Guncaster(self);
+			 check_BarrelWeapon = playerref.player.ReadyWeapon.GetClassName();
+		}
+		
+		// If we are within ledge-climbing grace, or using a thrown weapon, don't even try.
+		if((LedgeGraceTimer > 0) || (check_BarrelWeapon == 'ThrowObjectWeapon'))
+		{
+			return;
+		}
+
+		// Let me just reprototype this function in a comment block.
+		ledgetracesuccess = FALSE;
+		// First, detect a valid ledge. Scan from the top down.
+		for(int ledgetrace = MaxStepHeight+LedgeClimbHeight; ledgetrace > MaxStepHeight; ledgetrace--)
+		{
+			// At the first ledge encountered, grab its data.
+			if(LineTrace(Angle, Radius + LedgeClimbReach, 0, TRF_THRUACTORS|TRF_THRUHITSCAN, ledgetrace, 0, 0, ledgelinedata)
+				&& ledgelinedata.HitType == ledgelinedata.TRACE_HitWall)
+			{
+				// Tried to use some native functions that weren't static. Have to use a friggen actor instead.
+				LedgeRef = Spawn("LedgeSitter", (
+					ledgelinedata.HitLocation.X + ledgelinedata.HitDir.X,
+					ledgelinedata.HitLocation.Y + ledgelinedata.HitDir.Y,
+					ledgelinedata.HitLocation.Z + 1.0));
+				
+				// Get the reference thing's floor height.
+				ledgeheight = LedgeRef.GetZAt(0, 0, 0);
+				
+				// Get a ceiling height too so we don't climb toward a strange space.
+				ledgeceiling = LedgeRef.GetZAt(0, 0, 0, GZF_CEILING);
+				
+				// Get the height of the ceiling above us to make sure we have enough room to climb past it.
+				aboveceiling = GetZAt(0, 0, 0, GZF_CEILING);
+				
+				// And now that we have our data, we check for a laundry list of conditions.
+				// First, ceiling height restrictions.
+				if((pos.z+MaxStepHeight <= ledgeheight) && (pos.z+MaxStepHeight+LedgeClimbHeight >= ledgeheight)
+					&& (ledgeceiling - ledgeheight >= FullHeight) && (aboveceiling - ledgeheight >= Fullheight))
+				{
+					// Then, line restrictions.
+					if(ledgelinedata.Hit3DFloor)
+					{
+						// Short-circuit these line checks for a 3D floor.
+						ledgetracesuccess = TRUE;
+					}
+					else if(ledgelinedata.HitLine.flags & Line.ML_TWOSIDED
+					&& !(ledgelinedata.HitLine.flags & Line.ML_BLOCKING)
+					&& !(ledgelinedata.HitLine.flags & Line.ML_BLOCK_PLAYERS)
+					&& !(ledgelinedata.HitLine.flags & Line.ML_BLOCKEVERYTHING))
+					{
+						// Success on matching these line flags.
+						ledgetracesuccess = TRUE;
+					}
+				}
+				
+				if(ledgetracesuccess)
+				{
+					//ClimbAngle = Angle;
+					//LedgeRef = Spawn("LedgeSitter", (ledgelinedata.HitLocation.x, ledgelinedata.HitLocation.y, ledgeheight));
+					LedgeRefPrevZ = LedgeRef.Pos.Z;
+					CurrentFlightState = CLIMBING;
+					return;
+				}
+				else if(LedgeRef)
+				{
+					LedgeRef.Destroy();
+				}
+			}
+		}
+	}
+	
+	// I've copy-pasted this shit into enough places.
+	void LedgeClimbCleanup()
+	{
+		if(LedgeRef) // Remove the ledge reference.
+		{
+			LedgeRef.Destroy();
+			LedgeRef = null;
+		}
+		ViewBob = 1.0;
+		A_Gravity();
+		SetInventory("GCLiftGrabbed", 0); // Toggle off the holding animation.
+		player.cheats &= ~CF_FROZEN;
+		ClimbStarted = FALSE;
+		CurrentFlightState = NORMAL;
+		LedgeGraceTimer = GetCVar("GC_LedgeTimer");
+	}
+
+	// Previous AttackZOffset solution:
+	// floor(((1.07396 * player.viewz) - 36.4979) * player.crouchfactor
+	void HandlePlayerState()
+	{
+		int currentPlayerState;
+		
+		if(CountInv("PowerDeadmaker") && CountInv("PowerSuitToken")) //Good lord why am I even doing this.
+		{
+			currentPlayerState = PS_is_angry_petshop;
+			
+			A_TakeInventory("Dergfist",1);
+			A_TakeInventory("DergfistSelected",1);
+			bWINDTHRUST = 0;
+			
+			if(GetCvar("GC_NoExtraHeight"))
+			{
+				A_SetScale(GetDefaultByType(self.GetClass()).Scale.X, GetDefaultByType(self.GetClass()).Scale.Y);
+				ViewHeight = GetDefaultByType(self.GetClass()).ViewHeight;
+				AttackZOffset = GetDefaultByType(self.GetClass()).AttackZOffset;
+			}
+			else
+			{
+				A_SetScale(DMSuitScaleX, DMSuitScaleY);
+				ViewHeight = DMSuitViewHeight;
+				AttackZOffset = player.viewz >= CeilingZ-4 ? CeilingZ - pos.Z - Height/2 - (12.0 * player.crouchfactor) : DMSuitAttackZ;
+			}
+			MaxStepHeight = DMSuitStepHeight;
+			A_SoundPitch(2,0.88);
+			JumpZ = GetDefaultByType(self.GetClass()).JumpZ * DMSuitJumpMult;
+			ForwardMove1 = GetDefaultByType(self.GetClass()).ForwardMove1 * DMSuitSpeedMult;
+			ForwardMove2 = GetDefaultByType(self.GetClass()).ForwardMove2 * DMSuitSpeedMult;
+			SideMove1 = GetDefaultByType(self.GetClass()).SideMove1 * DMSpeedMult;
+			SideMove2 = GetDefaultByType(self.GetClass()).SideMove2 * DMSpeedMult;
+			LedgeClimbSpeed = GetDefaultByType(self.GetClass()).LedgeClimbSpeed * 2;
+			LedgeClimbHeight = DMSuitClimbingHeight;
+			Mass = DMSuitWeight;
+			if(!GetCvar("GC_ForceNormalSteps")) { SoundClass = "Mechamaker"; }
+			else { SoundClass = "Guncaster"; }
+		}
+		else if(CountInv("PowerDeadmaker"))
+		{
+			currentPlayerState = PS_is_angry;
+			
+			A_TakeInventory("Dergfist",1);
+			A_TakeInventory("DergfistSelected",1);
+			bWINDTHRUST = 0;
+			
+			if(GetCvar("GC_NoExtraHeight"))
+			{
+				A_SetScale(GetDefaultByType(self.GetClass()).Scale.X, GetDefaultByType(self.GetClass()).Scale.Y);
+				ViewHeight = GetDefaultByType(self.GetClass()).ViewHeight;
+				AttackZOffset = GetDefaultByType(self.GetClass()).AttackZOffset;
+			}
+			else
+			{
+				A_SetScale(DMScaleX, DMScaleY);
+				ViewHeight = DMViewHeight;
+				AttackZOffset = player.viewz >= CeilingZ-4 ? CeilingZ - pos.Z - Height/2 - (12.0 * player.crouchfactor) : DMAttackZ;
+			}
+			A_SoundPitch(2,0.88);
+			MaxStepHeight = DMStepHeight;
+			JumpZ = GetDefaultByType(self.GetClass()).JumpZ * DMJumpMult;
+			ForwardMove1 = GetDefaultByType(self.GetClass()).ForwardMove1 * DMSpeedMult;
+			ForwardMove2 = GetDefaultByType(self.GetClass()).ForwardMove2 * DMSpeedMult;
+			SideMove1 = GetDefaultByType(self.GetClass()).SideMove1 * DMSpeedMult;
+			SideMove2 = GetDefaultByType(self.GetClass()).SideMove2 * DMSpeedMult;
+			LedgeClimbSpeed = GetDefaultByType(self.GetClass()).LedgeClimbSpeed * 2;
+			LedgeClimbHeight = DMClimbingHeight;
+			Mass = DMWeight;
+			if(!GetCvar("GC_ForceNormalSteps")) { SoundClass = "Deadmaker"; }
+			else { SoundClass = "Guncaster"; }
+		}
+		else if(CountInv("PowerSuitToken"))
+		{
+			currentPlayerState = PS_is_petshop;
+			
+			A_TakeInventory("PowerSuitProtect",1); //Remove Envirosuit if you are in powersuit. It's a direct upgrade anyway.
+			A_TakeInventory("PowerSuitIronfeet",1);
+			bWINDTHRUST = 0;
+			
+			if(GetCvar("GC_NoExtraHeight"))
+			{
+				A_SetScale(GetDefaultByType(self.GetClass()).Scale.X, GetDefaultByType(self.GetClass()).Scale.Y);
+				ViewHeight = GetDefaultByType(self.GetClass()).ViewHeight;
+				AttackZOffset = GetDefaultByType(self.GetClass()).AttackZOffset;
+			}
+			else
+			{
+				A_SetScale(SuitScaleX, SuitScaleY);
+				ViewHeight = SuitViewHeight;
+				AttackZOffset = player.viewz >= CeilingZ-4 ? CeilingZ - pos.Z - Height/2 - (12.0 * player.crouchfactor) : SuitAttackZ;
+			}
+			A_SoundPitch(2,1.0);
+			MaxStepHeight = SuitStepHeight;
+			JumpZ = GetDefaultByType(self.GetClass()).JumpZ * SuitJumpMult;
+			ForwardMove1 = GetDefaultByType(self.GetClass()).ForwardMove1 * SuitSpeedMult;
+			ForwardMove2 = GetDefaultByType(self.GetClass()).ForwardMove2 * SuitSpeedMult;
+			SideMove1 = GetDefaultByType(self.GetClass()).SideMove1 * SuitSpeedMult;
+			SideMove2 = GetDefaultByType(self.GetClass()).SideMove2 * SuitSpeedMult;
+			LedgeClimbSpeed = GetDefaultByType(self.GetClass()).LedgeClimbSpeed * 2;
+			Mass = SuitWeight;
+			if(!GetCvar("GC_ForceNormalSteps")) { SoundClass = "GCPowerSuit"; }
+			else { SoundClass = "Guncaster"; }
+		}
+		else
+		{
+			currentPlayerState = PS_Derg;
+			
+			if(!CountInv("Dergfist")) { A_GiveInventory("Dergfist",1); }
+			bWINDTHRUST = 1;
+			A_SoundPitch(2,1.0);
+			A_SetScale(GetDefaultByType(self.GetClass()).Scale.X, GetDefaultByType(self.GetClass()).Scale.Y);
+			ViewHeight = GetDefaultByType(self.GetClass()).ViewHeight;
+			AttackZOffset = GetDefaultByType(self.GetClass()).AttackZOffset;
+			MaxStepHeight = GetDefaultByType(self.GetClass()).MaxStepHeight;
+			JumpZ = GetDefaultByType(self.GetClass()).JumpZ;
+			ForwardMove1 = GetDefaultByType(self.GetClass()).ForwardMove1;
+			ForwardMove2 = GetDefaultByType(self.GetClass()).ForwardMove2;
+			SideMove1 = GetDefaultByType(self.GetClass()).SideMove1;
+			SideMove2 = GetDefaultByType(self.GetClass()).SideMove2;
+			LedgeClimbSpeed = GetDefaultByType(self.GetClass()).LedgeClimbSpeed;
+			Mass = GetDefaultByType(self.GetClass()).Mass;
+			SoundClass = "Guncaster";
+		}
+		
+		if(previousPlayerState != currentPlayerState) { CalculateRadiusOffset(); }
+		previousPlayerState = currentPlayerState;
+	}
+	
+	// the threshold at which monsters will start turning to face the player
+	// higher numbers are weaker monsters.
+	const monster_detection_power = 200;
+	// the range at which monsters will start to hear the player
+	// lower numbers are weaker monsters.
+	const monster_detection_range = 416;
+	
+	Void HandleStealth()
+	{
+		if(CountInv("PowerIAmInvisibleDerg") || RW_Active)
+		{
+			let gvars = GC_GlobalVariables.Get();
+			for(int i = 0; i < gvars.monsterlist.Size(); i++)
+			{
+				if(gvars.monsterlist[i] && gvars.monsterlist[i].Health > 0) {//<= 0) { continue; }
+				double distx = (gvars.monsterlist[i].pos.x - pos.x) ** 2;
+				double disty = (gvars.monsterlist[i].pos.y - pos.y) ** 2;
+				double distz = (gvars.monsterlist[i].pos.z - pos.z) ** 2;
+				double length = sqrt(distx + disty + distz);
+				if(length < monster_detection_range) {
+					// console.printf("distance is %f",length);
+					if(CheckSight(gvars.monsterlist[i]))
+					{
+						// console.printf("%s sees you",gvars.monsterlist[i].GetClassName());
+						let holyShit = GC_MonsterTargetTracker(gvars.monsterlist[i].FindInventory("GC_MonsterTargetTracker"));
+						holyShit.suspicion += max(1,(monster_detection_range - length) / 128);
+						if(!(holyShit.suspicion % monster_detection_power) && !holyShit.previous_target) { 
+							holyshit.previous_target = self;
+							gvars.monsterlist[i].A_Face(holyshit.previous_target, 0, 0, frandom(-15,15));
+							holyshit.saw_you = TRUE;
+						}
+						if(holyShit.suspicion > (monster_detection_power * 4))
+						{
+							alpha_goal = 1.0;
+						}
+					}
+				}}
+			}
+			int this_frac_tic;
+			if(alpha_goal >= 1.0) { this_frac_tic = 8; }
+			else { this_frac_tic = 20; }
+			if(!(Alpha ~== alpha_goal)) { 
+				double diff = alpha_goal - alpha;
+				diff /= this_frac_tic;
+				Alpha += diff; 
+				// console.printf("alpha is %f",alpha);
+			}
+			if(alpha <= 0.9) { 
+				if((alpha_goal <= 0.9) && (bSHADOW == FALSE)) { 
+					A_StartSound(
+						"Reaversphere/Cloak",
+						50,
+						CHANF_NOSTOP,
+						0.8,
+						ATTN_NORM);
+				}
+				bSHADOW = TRUE; 
+			}
+			else if (alpha >= 0.9) { bSHADOW = FALSE; }
+			if((alpha_goal != 1.0) || ((alpha >= 0.98) && (alpha_goal >= 1.0))) { alpha_goal = 0.3; }
+			A_SetRenderStyle(Alpha,STYLE_Translucent);
+			Return;
+		}
+		bSHADOW = FALSE;
+		Alpha = 1.0;
+		RestoreRenderStyle();
+	}
+	
+	// we need to calculate this every time the player gets fatter or loses weight.
+	Void CalculateRadiusOffset()
+	{
+		int this_index = 0;
+		for(double this_rise = -1; this_rise < 1.1; this_rise += 0.5)
+		{
+			for(double this_run = -1; this_run < 1.1; this_run += 0.5)
+			{
+				let this_rise_calc = this_rise * radius * scale.x;
+				let this_run_calc = this_run * radius * scale.x;
+				matrix_point_storage[this_index] = (this_rise_calc,this_run_calc,1);
+				this_index++;
+			}
+		}
+	}
+	
+	Void BadTouchScan() {
+		if((!RW_Active) || (!CountInv("VoidwalkersTouchActive"))) { Return; }
+		let my_height = Height * Scale.y;
+		
+		FLineTraceData tracedata;
+		bool tracemade;
+		
+		// do a simple, 25 point scan
+		for(int i = 0; i < 25; i++)
+		{
+			tracemade = LineTrace(
+				0, 
+				my_height, 
+				-90, 
+				TRF_THRUSPECIES|TRF_ABSPOSITION,
+				pos.z + 1, 
+				pos.x + matrix_point_storage[i].x, 
+				pos.y + matrix_point_storage[i].y, 
+				TraceData);
+			
+			// Spawn("Blood",TraceData.HitLocation);
+			
+			if(TraceMade
+				&& (tracedata.HitType == TraceData.TRACE_HitActor) 		// Make sure we hit an actor
+				&& TraceData.HitActor.bIsMonster 						// and that it's a monster
+				&& !TraceData.HitActor.bFRIENDLY 						// and not already friendly
+				// && (cursed_monster_list.Size() < max_curse_roster)		// Ensure we have an open spot in our army
+				&& (TraceData.HitActor.Health > 0)						// and that our target isn't dead
+				//&& !(TraceData.HitActor.bBOSS && (TraceData.HitActor.Health > (TraceData.HitActor.SpawnHealth() * 0.5)))
+				&& (TraceData.HitActor.Health <= CountInv("Shadows_Token"))	// and that it's within our power to convert it
+			)
+			{
+				let this_hitActor = TraceData.HitActor;
+				cursed_monster_list.Push(this_hitActor);
+				int this_lifespan = random(17,20) * 35;
+				if(CountInv("VoidwalkersTouch") >= 2) { this_lifespan *= 2; }
+				cursed_monster_lifespan.Push(this_lifespan);
+				cursed_monster_AI.push(5 * 35);
+				cursed_monster_special.push(1);
+				A_TakeInventory("Shadows_Token",this_hitActor.Health);
+				this_hitActor.Spawn("DraughCurseFace",(this_hitActor.pos.x,this_hitActor.pos.y,this_hitActor.pos.z + (this_hitActor.Height * 0.5)));
+				this_hitActor.Spawn("IronblastRelease",this_hitActor.pos);
+				this_hitActor.A_SetRenderStyle(1.0,STYLE_OptFuzzy);
+				this_hitActor.bFRIENDLY = TRUE;
+				this_hitActor.bAlwaysFast = TRUE;
+				this_hitActor.bJumpDown = TRUE;
+				this_hitActor.bThruActors = TRUE;
+				this_hitActor.species = "Rrerr";
+			}
+		}
+	}
+	
+	Void HandleVoidArmyAI()
+	{
+		let this_target = ActorEx.BetterAimTarget(self);
+		
+		for(int i = 0; i < cursed_monster_list.Size(); i++)
+		{
+			if(!cursed_monster_list[i]) { 
+				cursed_monster_list.delete(i);
+				cursed_monster_lifespan.delete(i);
+				cursed_monster_AI.delete(i);
+				cursed_monster_special.delete(i);
+				i--;
+				continue;
+			}
+			cursed_monster_lifespan[i]--;
+			if(!cursed_monster_list[i].CheckSight(self) || (Distance2d(cursed_monster_list[i]) > 2048) || (cursed_monster_AI[i] > 175)) { cursed_monster_AI[i]--; }
+			if(cursed_monster_list[i] 
+				&& !cursed_monster_list[i].target 
+				&& this_target
+				&& this_target.bShootable
+				&& !this_target.bFriendly
+				&& this_target.bIsMonster
+				&& (this_target.Health > 0)) { cursed_monster_list[i].target = this_target; }
+			if(cursed_monster_list[i] && 
+				cursed_monster_list[i].target && 
+				(cursed_monster_list[i].target.target == cursed_monster_list[i]) &&
+				(cursed_monster_special[i] > 0) &&
+				(random(1,256) == 1))
+			{
+				if(CountInv("VoidwalkersTouch") > 0) { // TravelersJournal
+					cursed_monster_list[i].bREFLECTIVE = TRUE; 
+					cursed_monster_AI[i] = 350;
+				}
+				cursed_monster_list[i].A_PlaySound("Ironspirit/Release",5,0.8);
+				cursed_monster_list[i].A_SpawnItemEx("IronblastRelease",0,0,0,0,0,0,0,SXF_CLIENTSIDE);
+				double this_distance = frandom(0,128);
+				this_distance *= RandomPick(-1,1);
+				cursed_monster_list[i].A_Warp(AAPTR_TARGET,this_distance,this_distance,floorz,cursed_monster_list[i].angle,WARPF_TOFLOOR|WARPF_ABSOLUTEOFFSET,null,0,2);
+				cursed_monster_special[i] = 0;
+			}
+			if(cursed_monster_AI[i] < 175) { cursed_monster_list[i].bREFLECTIVE = FALSE; }
+			if(cursed_monster_AI[i] <= 0) { 
+				double this_distance = frandom(0,128);
+				this_distance *= RandomPick(-1,1);
+				cursed_monster_list[i].A_Warp(AAPTR_DEFAULT,this_distance,this_distance,floorz,cursed_monster_list[i].angle,WARPF_TOFLOOR|WARPF_ABSOLUTEOFFSET,null,0,2);
+				cursed_monster_list[i].A_SpawnItemEx("IronblastRelease",0,0,0,0,0,0,0,SXF_CLIENTSIDE);
+				cursed_monster_AI[i] = 5 * 35;
+			}
+			if(cursed_monster_lifespan[i] <= 0)
+			{
+				// overkill them hard
+				if(CountInv("VoidwalkersTouch") >= 3) { cursed_monster_list[i].DamageMobj(self,self,0x7FFFFFF,"Breath",DMG_THRUSTLESS); }
+				// Set them Free
+				else { 
+					cursed_monster_list[i].A_SpawnItemEx("IronblastRelease",0,0,0,0,0,0,0,SXF_CLIENTSIDE);
+					cursed_monster_list[i].RestoreRenderStyle();
+					cursed_monster_list[i].bFRIENDLY = FALSE;
+					cursed_monster_list[i].bAlwaysFast = FALSE;
+					cursed_monster_list[i].bJumpDown = FALSE;
+					cursed_monster_list[i].bThruActors = FALSE;
+					cursed_monster_list[i].species = cursed_monster_list[i].Default.species;
+				}
+				cursed_monster_list.delete(i);
+				cursed_monster_lifespan.delete(i);
+				cursed_monster_AI.delete(i);
+				cursed_monster_special.delete(i);
+				i--;
+			}
+		}
+	}
+	
+	Void HandleRiftWalking() {
+		int RW_ManaCost;
+		RW_ManaCost = 3;
+		// Living on the edge!
+		if(Health <= (MaxHealth * 0.30)) {
+			RW_ManaCost = 2;
+		}
+		if(CountInv("PowerSuitDraugh") && RW_Crapper <= 0 && ((GetPlayerInput(INPUT_BUTTONS) & BT_USE) /*|| CountInv("RiftWalkToggleOn")*/)) {
+			RW_turd++;
+			if(RW_turd >= 12 /*|| CountInv("RiftWalkToggleOn")*/) {
+				if(!(RW_Active)) {
+					A_SpawnItemEx("IronblastRelease",0,0,0,0,0,0,0,SXF_NOCHECKPOSITION);
+					A_PlaySound("Ironspirit/Release",5,0.7);
+					RW_Active = TRUE;
+				}
+				if(CountInv("Shadows_Token") >= 5) {
+					if(!(level.time % 2) &&
+						!(sv_infiniteammo) &&
+						!CountInv("PowerExtremeAmmo")) {
+							A_TakeInventory("Shadows_Token",RW_ManaCost);
+					}
+					// console.printf("RIFT WALKING!");
+					// bGHOST = TRUE;
+					bNOTRIGGER = TRUE;
+					A_GiveInventory("DraughRiftwalking",1);
+					/*
+					if(!CountInv("PowerIAmInvisibleDerg")) { 
+						bNOTARGET = TRUE;
+					}
+					*/
+				}
+				else { 
+					// A_TakeInventory("RiftWalkToggleOn",1);
+					RW_Crapper = 60; 
+				}
+			}
+		}
+		else {
+			if(RW_Active) {
+				RW_Crapper = 60;
+				RW_Active = FALSE;
+				A_SpawnItemEx("IronblastRelease",0,0,0,0,0,0,0,SXF_NOCHECKPOSITION);
+				A_PlaySound("Ironspirit/Release",5,0.7);
+				bGHOST = FALSE;
+				bNOTRIGGER = FALSE;
+				A_TakeInventory("DraughRiftwalking",0x7FFFFFFF);
+				// A_TakeInventory("RiftWalkToggleOn",1);
+				if(!CountInv("PowerIAmInvisibleDerg")) {
+					// bNOTARGET = FALSE;
+					RestoreRenderStyle();
+				}
+			}
+			RW_turd = 0;
+		}
+		if(RW_Crapper > 0) { RW_Crapper--; }
+	}
+
+	void HandleGameWeapons()
+	{
+		if(GetCvar("GC_Trogdor"))
+		{
+			A_TakeInventory("Dergfist",1);
+			A_TakeInventory("DergfistSelected",1);
+			A_GiveInventory("DergfistSupreme",1);
+		}
+		else if(!CountInv("PowerDeadmaker"))
+		{
+			A_GiveInventory("Dergfist",1);
+			A_TakeInventory("DergfistSupremeSelected",1);
+			A_TakeInventory("DergfistSupreme",1);
+		}
+	}
+	
+	Void HandleGameItems()
+	{
+		if(gameinfo.gametype == Game_HERETIC || gameinfo.gametype == Game_HEXEN)
+		{
+			A_TakeInventory("Amplifier",9);
+			A_TakeInventory("Propane",99);
+			A_TakeInventory("Gunzerk",9);
+			A_TakeInventory("Berserk2",9);
+			//A_TakeInventory("RejuvCaps",99);
+		}
+		else
+		{
+			A_TakeInventory("TomeOfPowah",9);
+			//A_TakeInventory("RejuvPot",99);
+			A_TakeInventory("GunzerkPot",9);
+			A_TakeInventory("BerserkPot",9);
+			A_TakeInventory("IronLizardPot",99);
+			A_TakeInventory("HealPot",99);
+		}
+		if(gameinfo.gametype != Game_STRIFE)
+		{
+			A_TakeInventory("GCS_Stimpack",99);
+			A_TakeInventory("GCS_Medipod",99);
+			A_TakeInventory("GCS_Megahealth",9);
+		}
+	}
+	
+	void HandleQuickToss()
+	{
+		if(CountInv("DynamiteTossTimer"))
+		{
+			TakeInventory("DynamiteTossTimer", 1);
+		}
+		else if(CountInv("DynamiteTossCounter"))
+		{
+			TakeInventory("DynamiteTossCounter", 1);
+		}
+	}
+	
+	void HandleMagAutoload()
+	{
+		if(CountInv("SupermagJohnson") || CountInv("SupermagTheta"))
+		{
+			if(CountInv("IronblastMag") || CountInv("AugurMag")) {
+				A_GiveInventory("SupermagTimer",1);
+				if(CountInv("SupermagTimer") >= 210) // About six seconds.
+				{
+					A_TakeInventory("SupermagTimer",0);
+					A_TakeInventory("IronblastMag",0);
+					A_TakeInventory("AugurMag",0);
+				}
+			}
+			else
+			{
+				A_TakeInventory("SupermagTimer",0);
+			}
+
+			if(CountInv("IronblastMag2") || CountInv("AugurMag2")) {
+				A_GiveInventory("SupermagTimer2",1);
+				if(CountInv("SupermagTimer2") >= 210)
+				{
+					A_TakeInventory("SupermagTimer2",0);
+					A_TakeInventory("IronblastMag2",0);
+					A_TakeInventory("AugurMag2",0);
+				}
+			}
+			else
+			{
+				A_TakeInventory("SupermagTimer2",0);
+			}
+		}	
+	}
+	
+	void HandleDraughMove()
+	{
+		// Maybe...
+	}
+	
+	void HandleNinjaMode()
+	{
+		// Reinstated because it was discovered that checking
+		// if we were damaged by a BulletPuff is E Z.
+		
+		// If we are above minimum velocity and below max ninja level,
+		// start building ninja power!
+		if((ninja_minvel <= vel.length()) && (ninja_avoidlevel < ninja_maxavoidlevel))
+		{
+			// Reset grace and decay when we start elevating.
+			ninja_gracetics = 0;
+			ninja_decaytics = 0;
+			
+			// Gained enough ninja elevation tics to advance one level.
+			if(ninja_elevatetics >= ninja_elevateticlength)
+			{
+				ninja_avoidlevel++;
+				ninja_elevatetics = 0;
+			}
+			// Don't have enough elevation tics. Keep advancing!
+			else
+			{
+				ninja_elevatetics++;
+			}
+		}
+		// Otherwise, start losing ninja power.
+		else if((ninja_minvel > vel.length()) && (ninja_avoidlevel > 0))
+		{
+			// Reset elevation when we start decaying.
+			ninja_elevatetics = 0;
+			
+			// There's a grace period before decay begins.
+			// If that grace period runs out...
+			if(ninja_gracetics >= ninja_graceticlength)
+			{
+				// Waited through enough decay tics to lose one level.
+				if(ninja_decaytics >= ninja_decayticlength)
+				{
+					ninja_avoidlevel--;
+					ninja_decaytics = 0;
+				}
+				// Don't have enough decay tics.
+				else
+				{
+					ninja_decaytics++;
+				}
+			}
+			// Keep running through the grace period.
+			else
+			{
+				ninja_gracetics++;
+			}
+		}
+		
+		// Set the number of tokens to our max count, for the status bar.
+		SetInventory("NinjaToken", ninja_avoidlevel);
+	}
+	
+	void HandleRecharge()
+	{
+		//Deadmaker's sprint.
+		if(CountInv("PowerDeadmaker") && ChargeFuel < 425 && level.time % 3 == 0) {  ChargeFuel = ChargeFuel + random(1,2); /*A_LogInt(ChargeFuel);*/ }
+		
+		//Draugh cooldown.
+		if(CountInv("DraughUseCooldown") && !CountInv("DraughOut")) { A_TakeInventory("DraughUseCooldown",random(1,2)); }
+	}
+	
+	void HandleAssembly()
+	{
+		if(CountInv("PowersuitAssembled"))
+		{
+			self.player.PendingWeapon = Weapon(FindInventory("PowersuitAssembled"));
+		}
+		
+		if(CountInv("DraughTomeAssembled"))
+		{
+			self.player.PendingWeapon = Weapon(FindInventory("DraughTomeAssembled"));
+		}
+	}
+	
+	// kd: The binds you set in the shop / spell wheel are handled here.
+	// Three of these are called by EventHandlers of sorts! Yea...
+	
+	void ShopBind (uint bind, Gcs_ItemType handler, class <Inventory> item) {
+		// I'll never learn!
+		let player_data = IholdPlayerVariables(FindInventory("IholdPlayerVariables"));
+		
+		if(player_data) {
+			player_data.Binds.Set(bind, handler, item);
+		}
+		
+		// Binds.Set(bind, handler, item);
+	}
+	
+	class <SharedTome> CurrentSpell () {
+		let player_data = IholdPlayerVariables(FindInventory("IholdPlayerVariables"));
+		
+		if(player_data) {
+			return player_data.SpellEquip.CurrentSpell(self);
+		}
+		
+		return NULL;
+	}
+	
+	bool SetToSpell (class <SharedTome> tome) {
+		let player_data = IholdPlayerVariables(FindInventory("IholdPlayerVariables"));
+		
+		if(player_data) {
+			return player_data.SpellEquip.MatchTome(tome);
+		}
+		
+		return false;
+	}
+	
+	protected SharedTome current_tome;
+	
+	clearscope SharedTome CurrentTomeConst () const {
+		return current_tome;
+	}
+	
+	virtual void OnSpellActivate (/*MagicInfo info*/) {
+		UpdateCarriedTome();
+	}
+	
+	void UpdateCarriedTome () {
+		let player_data = IholdPlayerVariables(FindInventory("IholdPlayerVariables"));
+		
+		if(player_data) {
+			current_tome = (SharedTome)(FindInventory(player_data.SpellEquip.CurrentSpell(self)) );
+		}
+	}
+	
+	void NextSpell () {
+		let player_data = IholdPlayerVariables(FindInventory("IholdPlayerVariables"));
+		
+		if(player_data) {
+			player_data.SpellEquip.NextSpell();
+			is_cycling_forwards = true;
+		}
+	}
+	
+	void PrevSpell () {
+		let player_data = IholdPlayerVariables(FindInventory("IholdPlayerVariables"));
+		
+		if(player_data) {
+			player_data.SpellEquip.PreviousSpell();
+			is_cycling_forwards = false;
+		}
+	}
+	
+	class <Inventory> BoundItem (uint bind) const {
+		if(Gc_Binds.bind_keys <= bind) {
+			return NULL;
+		}
+		
+		let player_data = IholdPlayerVariables(FindInventory("IholdPlayerVariables"));
+		
+		if(player_data) {
+			return player_data.Binds.m_item [bind];
+		}
+		
+		return NULL;
+	}
+	
+	void SetBind (
+	uint				bind,
+	Gcs_ItemType		handler,
+	class <Inventory>	inv) {
+		let player_data = IholdPlayerVariables(FindInventory("IholdPlayerVariables"));
+		
+		if(player_data && handler.Equippable(self, inv)) {
+			
+			if(consoleplayer == PlayerNumber()) {
+				console.printf(
+					"%s \c[ice]%s \c-%s %i.",
+					StringTable.Localize("$bind_item"),
+					StringTable.Localize("$" .. inv.GetClassName() .. "_title"),
+					StringTable.Localize("$bind_to_slot"),
+					bind);
+			}
+			
+			Gcs_ShopSounds.SetBind();
+			player_data.Binds.Set(bind, handler, inv);
+		}
+		
+		else {
+			console.printf(StringTable.Localize("$cant_bind_item"));
+			Gcs_ShopSounds.BindFail();
+		}
+	}
+	
+	void UseBind (uint bind) {
+		let player_data = IholdPlayerVariables(FindInventory("IholdPlayerVariables"));
+		
+		if(player_data) {
+			player_data.Binds.Use(bind);
+		}
+	}
+	
+	void HandleBinds () {
+		// Since the user keys are the same for setting as well as binding,
+		// we really don't wanna activate a bind in the shop.
+		if(1 <= CountInv("GCCantFire")) {
+			return;
+		}
+		
+		let player_data = IholdPlayerVariables(FindInventory("IholdPlayerVariables"));
+		
+		if(player_data ) {
+			uint press =	  GetPlayerInput(INPUT_BUTTONS) &
+							(~GetPlayerInput(INPUT_OLDBUTTONS));
+		
+					if(press & BT_USER1)	player_data.Binds.Use(0);
+			else	if(press & BT_USER2)	player_data.Binds.Use(1);
+			else	if(press & BT_USER3)	player_data.Binds.Use(2);
+			else	if(press & BT_USER4)	player_data.Binds.Use(3);
+		}
+	}
+	
+	const seek_key = BT_RELOAD;
+	
+	static void MakeSeekerForPlayer (
+	Actor	mo,
+	Actor	owner,
+	double	max_vel,
+	double	acc) {
+		let cast_owner = Guncaster(owner);
+		
+		if(cast_owner) {
+			cast_owner.Shepherd.Add(mo, max_vel, acc);
+		}
+	}
+	
+	static void RemoveSeeker (Actor mo, Actor owner) {
+		let cast_owner = Guncaster(owner);
+		
+		if(cast_owner) {
+			cast_owner.Shepherd.Remove(mo);
+		}
+	}
+	
+	static void MakeRoyalSeekerForPlayer (
+	Actor	mo,
+	Actor	owner,
+	double	max_vel,
+	double	acc) {
+		let cast_owner = Guncaster(owner);
+		
+		if(cast_owner) {
+			cast_owner.RoyalShepherd.Add(mo, max_vel, acc);
+		}
+	}
+	
+	static void RemoveRoyalSeeker (Actor mo, Actor owner) {
+		let cast_owner = Guncaster(owner);
+		
+		if(cast_owner) {
+			cast_owner.RoyalShepherd.Remove(mo);
+		}
+	}
+	
+	// kd: Invulnerability is implied by cheats and powerups, so if we want
+	// the hud statue eyes to glow in god mode, we gotta do it this way, cuz
+	// I'm not adding a special case for something so specialised (that's what
+	// gets me into Plunderbund).
+	
+	bool old_god_mode;
+	
+	void HandleInvulnerabilityCounter () {
+		bool god_mode =
+			player.cheats & (CF_GODMODE | CF_GODMODE2) ||
+			0 < CountInv("PowerInvulnerable") ||
+			0 < CountInv("PowerGodMode");
+		
+		if(god_mode && !old_god_mode) {
+			A_GiveInventory("GodToken", 1);
+		}
+		
+		else if(old_god_mode && !god_mode) {
+			A_TakeInventory("GodToken", int.max);
+		}
+		
+		old_god_mode = god_mode;
+	}
+	
+	bool old_dark_nithor_mode;
+	
+	void HandleDarkNithorCounter () {
+		bool dark_nithor_mode =
+			0 < CountInv("PowerDeadmaker") &&
+			0 < CountInv("PowerSuitDraugh");
+		
+		if(dark_nithor_mode && !old_dark_nithor_mode) {
+			A_GiveInventory("DarkNithorToken", 1);
+		}
+		
+		else if(!dark_nithor_mode && old_dark_nithor_mode) {
+			A_TakeInventory("DarkNithorToken", 0x7fffffff);
+		}
+		
+		old_dark_nithor_mode = dark_nithor_mode;
+	}
+	
+	bool old_mecha_nithor_mode;
+	
+	void HandleMechaNithorCounter () {
+		bool mecha_nithor_mode =
+			0 < CountInv("PowerDeadmaker") &&
+			0 < CountInv("PowerSuitToken");
+		
+		if(mecha_nithor_mode && !old_mecha_nithor_mode) {
+			A_GiveInventory("MechaNithorToken", 1);
+		}
+		
+		else if(!mecha_nithor_mode && old_mecha_nithor_mode) {
+			A_TakeInventory("MechaNithorToken", 0x7fffffff);
+		}
+		
+		old_mecha_nithor_mode = mecha_nithor_mode;
+	}
+	
+	void HandleSpellCastDelay() {
+		if(SpellDelay > 0) { SpellDelay--; }
+		else { weapswitchpenalty = FALSE; }
+	}
+	
+	void HandleSeekers () {
+		GuidePos guide_pos;
+		guide_pos.FromPlayerAim(self);
+		vector3 seek_pos = guide_pos.Get();
+		
+		Shepherd.EnsureNoNulls();
+		Shepherd.All3d(seek_pos);
+		Shepherd.AllFaceMoveDir();
+		
+		if(player.cmd.buttons & seek_key) {
+			RoyalShepherd.All3d(seek_pos);
+			RoyalShepherd.AllFaceMoveDir();
+		}
+		
+		/* vector3 seek_pos = GCSheepBaton.TargetSeekPos(self, height: 41);
+		
+		// For sheep:
+		Shepherd.EnsureNoNulls();
+		Shepherd.AllSeekPos3d(seek_pos);
+		Shepherd.AllFaceMoveDir();
+		
+		// For the emperor:
+		if(GetPlayerInput(INPUT_BUTTONS) & seek_key) {
+			RoyalShepherd.EnsureNoNulls();
+			RoyalShepherd.AllSeekPos3d(seek_pos);
+		} */
+	}
+	
+	void MoneyLocator()
+	{
+		Actor ClosestMoneyPickup;
+		int lowestdistance = 0x7FFFFFFF;
+		let gvars = GC_GlobalVariables.Get();
+		
+		if(gvars.MoneyList.Size() <= 0)
+		{
+			CVar.GetCVar("GC_GoldDetected", player).SetBool(FALSE);
+			if(MoneyPointer)
+			{
+				MoneyPointer.Destroy();
+			}
+			return;
+		}
+		
+		// Find the closest dosh pickup.
+		for(int i = 0; i < gvars.MoneyList.Size(); i++)
+		{
+			if(gvars.MoneyList[i] && Distance3D(gvars.MoneyList[i]) < lowestdistance)
+			{
+				lowestdistance = Distance3D(gvars.MoneyList[i]);
+				ClosestMoneyPickup = gvars.MoneyList[i];
+			}
+		}
+		if(ClosestMoneyPickup)
+		{
+			CVar.GetCVar("GC_GoldDetected", player).SetBool(TRUE);
+			CVar.GetCVar("GC_GoldDistance", player).SetInt(lowestdistance);
+		
+			Vector3 Normal = (ClosestMoneyPickup.Pos - (Pos + (0, 0, height/2))) / lowestdistance;
+			Vector3 NextPos = (Pos + (0, 0, height/2)) + Normal * (lowestdistance / MoneyArrowDistDivisor > 0 ? lowestdistance / MoneyArrowDistDivisor + 16 : 16);
+			if(MoneyPointer)
+			{
+				MoneyPointer.A_Warp(AAPTR_DEFAULT, NextPos.X, NextPos.Y, NextPos.Z, 0, WARPF_ABSOLUTEPOSITION|WARPF_NOCHECKPOSITION|WARPF_INTERPOLATE);
+			}
+			else
+			{
+				MoneyPointer = Spawn("MoneyPointer", NextPos);
+				MoneyPointer.target = self;
+			}
+			MoneyPointer.A_Face(ClosestMoneyPickup, 0, 0);
+		}
+	}
+	
+	void MoneyMagnet()
+	{
+		let mymoney = self.FindInventory("Dosh");
+		// Do not teleport money if the player is full of money or isn't moving.
+		// The latter is a bugfix for Doom being unable to hand you things when
+		// you aren't moving.
+		if(mymoney && (mymoney.Amount == mymoney.MaxAmount && !GC_HoardingHeadache))
+		{
+			return;
+		}
+		
+		int grabrange;
+		int tomed = (CountInv("PowerMidasMode") ? 2 : 
+					CVar.FindCVar("GC_Loadsamoney").GetInt())
+					+ CountInv("PowerTomeEffect");
+		let gvars = GC_GlobalVariables.Get();
+		switch(tomed)
+		{
+			default:
+			case 3:
+				grabrange = 16384;
+				break;
+			case 2:
+				grabrange = 4096;
+				break;
+			case 1:
+				grabrange = 512;
+				break;
+			case 0:
+				grabrange = 384;
+				break;
+		}
+		
+		if(gvars.MoneyList.Size() )
+		{
+			// Find the nearest dosh item and drop it on ourselves.
+			for(int i = 0; i < gvars.MoneyList.Size(); i++)
+			{
+				// If it is close enough...
+				if(gvars.MoneyList[i] && Distance2D(gvars.MoneyList[i]) <= grabrange)
+				{
+					// Spawn the decorative money sparkle.
+					Spawn("ShingSparkleSparkle", gvars.MoneyList[i].Pos);
+					// Give the money to the player.
+					Inventory(gvars.MoneyList[i]).Touch(self); //Warp(self, zofs:Height/2);
+					// Move only one gold item per run.
+					return;
+				}
+			}
+		}
+	}
+
+ bool justabool;
+
+ override void PostMorph(Actor mo, bool current)
+ {
+  justabool = true;
+ }
+	
+	void HandleItemReset()
+	{	
+		// We gonna do initial setup here
+		double this_maxamount = 1000;
+		let this_recovery_item = self.FindInventory("Shadows_Token");
+		if(this_recovery_item) { this_maxamount = this_recovery_item.maxamount; }
+		A_SetInventory("Shadows_Token",this_maxamount);
+		CalculateRadiusOffset();
+		CacheShadowRecoveryAmount();
+		
+		// Zhs2: Rather cool that all of these functions translate well from ACS to ZScript.
+		//Pillow: Removes spell-in-progress tokens,
+		//so they won't stick around after haphazard map switch mid-casting.
+		A_TakeInventory("SkullfireInProgress",1);
+		A_TakeInventory("FlamewaveInProgress",1);
+		A_TakeInventory("FrostbiteInProgress",1);
+		A_TakeInventory("SpiritcannonInProgress",1);
+		A_TakeInventory("HammersmiteInProgress",1);
+		A_TakeInventory("GumpopInProgress",1);
+		A_TakeInventory("SkypunchInProgress",1);
+		A_TakeInventory("ThunderInProgress",1);
+		A_TakeInventory("CorpseInProgress",1);
+		A_TakeInventory("ThreadcutterInProgress",1);
+		A_TakeInventory("AnnihilationInProgress",1);
+		A_TakeInventory("ApocalypseInProgress",1);
+		A_TakeInventory("DarkpathInProgress",1);
+		A_TakeInventory("CrowsInProgress",1);
+		A_TakeInventory("PrismInProgress",1); 
+		A_TakeInventory("BreathInProgress",1);
+		A_TakeInventory("SheepshieldInProgress",1);
+
+		// Clear all keys
+		A_TakeInventory("GC_RedCard",9);
+		A_TakeInventory("GC_BlueCard",9);
+		A_TakeInventory("GC_YellowCard",9);
+		A_TakeInventory("GC_RedSkull",9);
+		A_TakeInventory("GC_BlueSkull",9);
+		A_TakeInventory("GC_YellowSkull",9);
+		
+		//Spiritcannon
+		//A_TakeInventory("SpiritTurretPresent",1);
+
+		//Sheepshield
+		A_TakeInventory("SheepActive",1);
+		A_TakeInventory("SheepOut",999);
+		A_TakeInventory("SuperSheepOut",999);
+		A_TakeInventory("SheepOut1",1);
+		A_TakeInventory("SheepOut2",1);
+		A_TakeInventory("SheepOut3",1);
+		
+		//Pulverizer Strat
+		A_TakeInventory("LeadBallHeld",1);
+		A_TakeInventory("LeadBallSize",999);
+		// These no longer exist?
+		//A_TakeInventory("RLeadBallHeld",1);
+		//A_TakeInventory("RLeadBallSize",999);
+		A_TakeInventory("LLeadBallHeld",1);
+		A_TakeInventory("LLeadBallSize",999);
+
+		A_TakeInventory("StormEngaged",999); //Tomed Thunderstruck
+		//A_TakeInventory("CasterFamiliarActive",999);	//Wyvern
+		
+		A_TakeInventory("DynamiteTossCounter",999); //TNT
+		A_TakeInventory("DynamiteTossTimer",999);
+		
+		//Ironblast
+		A_TakeInventory("IronblastMag",9);
+		A_TakeInventory("IronblastMag2",9);
+		
+		if(CountInv("IronblastRevert"))
+		{
+			SetInventory("IronblastRevert",0);
+			SetInventory("FloaterblastActive",0);
+			SetInventory("AnotherIronblast",0);
+			SetInventory("IronblastStratActive",0);
+			if(CountInv("Ironblast"))
+			{
+				A_DropItem("IronblastDropped",1);
+			}
+			else
+			{
+				GiveInventory("IronblastDropped",1);
+			}
+		}
+		
+		// Pillow: Kick stuph, Cuz I keep forgetting about map transition not
+		// going well with kicking while changing maps.
+		
+		A_TakeInventory("KickethThyHappend",1);
+		
+		//Draugh
+		A_SetInventory("DraughMonsterCount",0);	
+		A_SetInventory("DraughUseCooldown",0);
+		A_TakeInventory("DraughRiftwalking",1);
+		A_TakeInventory("DraughWithdraw",1);
+		while(CountInv("DraughOut"))
+		{
+			GiveInventory("DraughTome", 1);
+			A_TakeInventory("DraughOut", 1);
+		}
+		
+		// Pillow: Removes the riftwalking effects.
+		bThruActors	= FALSE;
+		bGhost		= FALSE;
+		bNoTrigger	= FALSE;
+		player.cheats &= ~CF_NOTARGET;
+		
+		//Vision refill
+		GiveInventory("VisionCounter",120);
+		
+		//Philosopher's refill
+		TakeInventory("MidasTimer",999);
+		TakeInventory("MidasUsed",1);
+		TakeInventory("MidasRecharger",1);
+		
+		// Stop dancing! This isn't a happy place!
+	if(justabool)
+	{
+		if(User_Carlton)
+		{
+			User_Carlton = 0;
+		}
+	}
+
+	justabool = false;
+		// Clean up ledge stuff on transition.
+		LedgeClimbCleanup();
+		
+		//Chillgrasp stuff between maps in multiplayer.
+		if(!grasp)
+		{
+			grasp = new("Gc_GraspThinker");
+			grasp.Init(self);
+		}
+		
+		// Unfreeze people who had the shop open on the next map start.
+		player.cheats &= ~CF_TOTALLYFROZEN;
+		
+		// you're that ninja...
+		ninja_data = Gc_PlayerEventHandler.NinjaDataPtr();
+		
+		// I HAVE AN ANNOUNCEMENT TO MAKE - I AM DRUNK.
+		view_tilt.Init(player);
+	}
+	
+	override void OnDestroy () {
+		// Sheppard no Shepherding!
+		Shepherd.Clear();
+		RoyalShepherd.Clear();
+	}
+	
+	Override void FireWeapon (State stat)
+	{
+		let player = self.player;
+		
+		let weapn = player.ReadyWeapon;
+		if (weapn == null || !weapn.CheckAmmo (Weapon.PrimaryFire, true))
+		{
+			return;
+		}
+		name CurrentWeapon = weapn.GetClassName();
+		if(!(RW_ACTIVE) && (CurrentWeapon != 'dergfist') && (CurrentWeapon != 'dergfistsupreme')) { alpha_goal = 1.0; }
+
+		player.WeaponState &= ~WF_WEAPONBOBBING;
+		PlayAttacking ();
+		weapn.bAltFire = false;
+		if (stat == null)
+		{
+			stat = weapn.GetAtkState(!!player.refire);
+		}
+		player.SetPsprite(PSP_WEAPON, stat);
+		if (!weapn.bNoAlert)
+		{
+			SoundAlert (self, false);
+		}
+	}
+	
+	override int DamageMobj(Actor inflictor, Actor source, int damage, Name mod, int flags, double angle)
+	{
+		bool selfDamage = source == self;
+		bool disableDefFactors = deathmatch && !selfDamage && (source is "PlayerPawn");
+		
+		let sgvars = GC_StaticGlobalVariables.Get();
+		
+		if (disableDefFactors) {
+			flags |= DMG_NO_FACTOR;
+		}
+		
+		// Deathmatch specific tweaks.
+		if(deathmatch)
+		{
+			// Tweak down the radius damage of the Dreadful damager, to encourage hitting other players with the actual ball.
+			if(inflictor is "DreadfulDamager")
+			{
+				damage = ceil(damage/3);
+			}
+			
+			// Nerf crows a lot. The blinding effect is cool tho.
+			// Untomed crows.
+			if(inflictor is "CrowProjectile2")
+			{
+				damage = 1;
+			}
+			// Tomed crows.
+			if(inflictor is "CrowProjectile")
+			{
+				damage = 2;
+			}
+			// Deadmaker crows.
+			if(inflictor is "CrowProjectile3")
+			{
+				damage = 3;
+			}
+				
+		}
+
+		//Coop thrust damage removal. Note that it does not prevent the most important part - the explosion damage push. What a load.
+		if (!deathmatch && !selfDamage && (source is "PlayerPawn")) {
+			if (CVar.GetCVar("teamdamage", Player).GetFloat() <= 0.0) {
+				flags |= DMG_THRUSTLESS;
+			}
+		}
+		
+		//Voodoo doll tiberium nuke blow-up prevention. Not tested yet but it 'should' work.
+		PlayerInfo Player = self.Player;
+		if (!Player || !Player.mo || self != Player.mo) {
+			if (mod == "Tiberium" || mod == "BlueTiberium") {
+				return -1;
+			}
+			
+			// If we're banning death traps, also get rid of Death Exits
+			if ((GC_AntiTerry == TRUE) &&
+				(Source is "Propane" || Source is "ExplosiveBarrel" || mod == "Telefrag" || mod == "Crush")) {
+				return -1;
+			}
+		}
+		
+		//MINION, GIVE ME A BREAK~
+		if(Source is "Draugh" || Source is "DreadfulBeamlord" /*|| Source is "CasterFamiliar" || Source is "CasterFamiliar2"*/) {
+			return -1;
+		}
+		
+		//STOOPID, STOOPID.
+		if(	!deathmatch && (
+			(mod == "Falling") || 
+			(mod == "InstantDeath") ||
+			(mod == "ImmuneFire")
+			)) {
+            return -1;
+        }
+		
+		// Non-monster based damage
+		if((mod != "Crush") && !deathmatch && source && !source.bIsMonster) {
+			// Self Damage with matriarch
+			if((inflictor is "MatriarchSlug") || (inflictor is "MatriarchDrunkSlug")) { Damage = clamp(damage,0,10); }
+			else {
+				if(GC_AntiTerry && (damage > 300)) { 	// death trap
+					//console.printf("death trap!");
+					Return -1; 
+				}
+				else { Damage = Clamp(Damage,0,50); }	// Proper level design.
+				if(mod == "Matriarch") {
+					//console.printf("Explosive damage");
+					Damage = Damage * 0.10; 
+				}
+			}
+		}
+		
+		// Ninjamode check, to avoid damage from hitscan attacks.
+		// Strife, y u no inherit from BulletPuff
+		// Same reason DRLA didn't...
+		if(
+		inflictor && (
+		inflictor is "BulletPuff" ||
+		inflictor is sgvars.ADAPTER_RLEnemyBulletPuff ||
+		inflictor is "StrifePuff" || (
+		ninja_data && ninja_data.IsInflictor(inflictor.GetClassName()) )) )
+		{
+			if(!RW_Active) { 
+				let miss_chance = CountInv("VoidwalkersTouch"); // TravelersJournal
+				miss_chance *= 15;
+				if(random(1,100) <= miss_chance) { Return -1; }
+			}
+			damage = int(damage * ((ninja_maxavoidlevel + 1) - ninja_avoidlevel) / (ninja_maxavoidlevel + 1));
+			//console.printf("Total hitscan damage at ninja level %i: %i", ninja_avoidlevel, damage);
+		}
+		// console.printf("Damage taken is "..Damage);
+		return Super.DamageMobj(inflictor, source, damage, mod, flags, angle);
+	}
+	
+	override void Die(Actor source, Actor inflictor, int dmgflags) // Stuff that is handled on death.
+	{
+		if(CheckInventory("PowerSuitItem2", 1))
+		{	// Switch the Powersuit's state back to inactive.
+			GiveInventory("PowerSuitItem", 1); // Give back the toggle up.
+			TakeInventory("PowerSuitItem2", 1); // And take the toggle down.
+			A_SoundPitch(2,1.0);
+			A_SetScale(GetDefaultByType(self.GetClass()).Scale.X, GetDefaultByType(self.GetClass()).Scale.Y);
+			ViewHeight = GetDefaultByType(self.GetClass()).ViewHeight;
+			AttackZOffset = GetDefaultByType(self.GetClass()).AttackZOffset;
+			MaxStepHeight = GetDefaultByType(self.GetClass()).MaxStepHeight;
+			JumpZ = GetDefaultByType(self.GetClass()).JumpZ;
+			ForwardMove1 = GetDefaultByType(self.GetClass()).ForwardMove1;
+			SideMove1 = GetDefaultByType(self.GetClass()).SideMove1;
+		}
+		
+		//Pillow: In case you died while having Draugh on yourself, it will give you him back.
+		if(CountInv("DraughsuitItem"))
+		{
+			A_TakeInventory("DraughCounter",1);
+			A_GiveInventory("DraughTome",1);
+			A_TakeInventory("DraughsuitItem",1);
+		}
+		
+		// Deathmatch handling!
+		if(deathmatch)
+		{
+			// Drop the powersuit in deathmatch.
+			if((CheckInventory("PowerSuitItem", 1) || CheckInventory("PowerSuitItem2", 1)))
+			{
+				TakeInventory("PowerSuitItem", 1);
+				TakeInventory("PowerSuitItem2", 1);
+				A_DropItem("PowerSuitItem", 1);
+			}
+			
+			// Same with Deadmaker mask.
+			if(CheckInventory("DeadmakerMask", 1))
+			{
+				TakeInventory("PowerDeadmaker", 1);
+				TakeInventory("DeadmakerMask", 1);
+				A_DropItem("DeadmakerMask", 1);
+			}
+			
+			// Same with Draugh tome...
+			
+		}
+		
+		// People die when they are killed, but important variables shouldn't.
+		let VarStorage = IHoldPlayerVariables(self.FindInventory("IHoldPlayerVariables"));
+		if(VarStorage)
+		{
+			// All of these array variables have four fields, for four user buttons.
+			for(int i = 0; i < 3; i++)
+			{
+				VarStorage.spellbuttons[i] = self.user_spellbuttons[i];
+				VarStorage.spellshopindex[i] = self.user_spellshopindex[i];
+				VarStorage.spellitemindex[i] = self.user_spellitemindex[i];
+				VarStorage.spellisbound[i] = self.user_spellisbound[i];
+			}
+			
+			VarStorage.grasp = grasp;
+		}
+		
+		Gc_Shop_Entry.SendNetworkEvent("CloseShop+", PlayerNumber());
+		
+		Super.Die(source, inflictor, dmgflags);
+	}
+	
+	override void OnRespawn()
+	{
+		// Fun fact: this function fires at the beginning of a game too.
+		
+		// Bring my variables back!
+		let VarStorage = IHoldPlayerVariables(self.FindInventory("IHoldPlayerVariables"));
+		if(VarStorage)
+		{
+			// All of these array variables have four fields, for four user buttons.
+			for(int i = 0; i < 3; i++)
+			{
+				self.user_spellbuttons[i] = VarStorage.spellbuttons[i];
+				self.user_spellshopindex[i] = VarStorage.spellshopindex[i];
+				self.user_spellitemindex[i] = VarStorage.spellitemindex[i];
+				self.user_spellisbound[i] = VarStorage.spellisbound[i];
+			}
+			
+			if(VarStorage.grasp)
+			{
+				grasp = VarStorage.grasp;
+			}
+			else
+			{
+				grasp = new("Gc_GraspThinker");
+				grasp.Init(self);
+			}
+		}
+		
+		// LET'S HEAD OVER THERE REALLY REALLY FAST. IF SOMETHING GETS IN OUR
+		// WAY - SHOOT IT!
+		view_tilt.Init(player);
+		
+		// player_data = VarStorage;
+		Super.OnRespawn();
+		return;
+	}
+	
+	override void MovePlayer ()
+	{
+		let player = self.player;
+		UserCmd cmd = player.cmd;
+
+		// [RH] 180-degree turn overrides all other yaws
+		if (player.turnticks)
+		{
+			player.turnticks--;
+			Angle += (180. / TURN180_TICKS);
+		}
+		else
+		{
+			Angle += cmd.yaw * (360./65536.);
+		}
+
+		player.onground = (pos.z <= floorz) || bOnMobj || bMBFBouncer || (player.cheats & CF_NOCLIP2);
+
+		// killough 10/98:
+		//
+		// We must apply thrust to the player and bobbing separately, to avoid
+		// anomalies. The thrust applied to bobbing is always the same strength on
+		// ice, because the player still "works just as hard" to move, while the
+		// thrust applied to the movement varies with 'movefactor'.
+
+		if (cmd.forwardmove | cmd.sidemove)
+		{
+			double forwardmove, sidemove;
+			double bobfactor;
+			double friction, airfriction, movefactor;
+			double fm, sm;
+			
+			// Normal friction = ORIG_FRICTION, normal movefactor = ORIG_FRICTION_FACTOR
+			if(player.onground)
+			{
+				if(CountInv("PowerSuitToken"))
+				{
+					// Powersuit overrides Envirosuit, grants full movement on any surface.
+					self.friction = 1.0;
+					friction = ORIG_FRICTION;
+					movefactor = ORIG_FRICTION_FACTOR;
+				}
+				else if(CountInv("PowerSuitProtect"))
+				{
+					if(GetCvar("GC_SpikeBoots"))
+					{
+						// Mofuckin' glue boots.
+						self.friction = 0.9;
+						friction = ORIG_FRICTION;
+						movefactor = ORIG_FRICTION_FACTOR*1.9;
+					}
+					else
+					{
+						// Just regular friction negation.
+						self.friction = 1.0;
+						friction = ORIG_FRICTION;
+						movefactor = ORIG_FRICTION_FACTOR;
+					}
+				}
+				else
+				{
+					// No effect, normal walking.
+					self.friction = 1.0;
+					[friction, movefactor] = GetFriction();
+				}
+			}
+			else
+			{
+				// Don't fuck with airspeed, we do that later.
+				self.friction = 1.0;
+				[friction, movefactor] = GetFriction();
+			}
+			bobfactor = friction < ORIG_FRICTION ? movefactor : ORIG_FRICTION_FACTOR;
+			if (!player.onground && !bNoGravity && !waterlevel)
+			{
+				// [RH] allow very limited movement if not on ground.
+				// Zhs2: If that's what the player's aircontrol is set to, that is.
+				movefactor *= self.aircontrol ? self.aircontrol : level.aircontrol;
+				bobfactor *= self.aircontrol ? self.aircontrol : level.aircontrol;
+			}
+
+			fm = cmd.forwardmove;
+			sm = cmd.sidemove;
+			[fm, sm] = TweakSpeeds (fm, sm);
+			fm *= Speed / 256;
+			sm *= Speed / 256;
+
+			// When crouching, speed and bobbing have to be reduced
+			if (CanCrouch() && player.crouchfactor != 1)
+			{
+				fm *= player.crouchfactor;
+				sm *= player.crouchfactor;
+				bobfactor *= player.crouchfactor;
+			}
+
+			forwardmove = fm * movefactor * (35 / TICRATE);
+			sidemove = sm * movefactor * (35 / TICRATE);
+
+			if (forwardmove)
+			{
+				Bob(Angle, cmd.forwardmove * bobfactor / 256., true);
+				ForwardThrust(forwardmove, Angle);
+			}
+			if (sidemove)
+			{
+				let a = Angle - 90;
+				Bob(a, cmd.sidemove * bobfactor / 256., false);
+				Thrust(sidemove, a);
+			}
+
+			if (!(player.cheats & CF_PREDICTING) && (forwardmove != 0 || sidemove != 0))
+			{
+				PlayRunning ();
+			}
+
+			if (player.cheats & CF_REVERTPLEASE)
+			{
+				player.cheats &= ~CF_REVERTPLEASE;
+				player.camera = player.mo;
+			}
+			
+			if(!player.onground && self.aircontrol && !waterlevel && !bNoGravity)
+			{
+				//level.airfriction = 1.; // Fuck you Baltimore!
+				// Friction seems to be a thing that is applied based on level settings.
+				if(self.aircontrol <= 1/256.)
+				{
+					airfriction = 1.;
+				}
+				else
+				{
+					// Friction is inversely proportional to the amount of control
+					airfriction = self.aircontrol * -0.0941 + 1.0004;
+				}
+				// It was never externalized for actor use. So, let's apply it here.
+				if (player && player.mo && player.mo == self && airfriction != 1.)
+				{
+					// Apply only to players, not voodoo dolls.
+					Vel.X *= airfriction;
+					Vel.Y *= airfriction;
+				}
+			}
+			
+			//Console.Printf("Velocity is %f", Vel.Length());
+		}
+	}
+	
+	// This is here to un-do the work of several terrorists.
+	// -Dino
+	Override void CheckJump()
+	{
+		let player = self.player;
+		
+		if (player.cmd.buttons & BT_JUMP)
+		{
+			if (player.crouchoffset != 0)
+			{
+				// Jumping while crouching will force an un-crouch but not jump
+				player.crouching = 1;
+			}
+			else if (waterlevel >= 2)
+			{
+				Vel.Z = 4 * Speed;
+			}
+			else if (bNoGravity)
+			{
+				Vel.Z = 3.;
+			}
+			// If I wanna disable jumping... I'll do it myself.
+			// -Dino
+			else if (player.onground && player.jumpTics == 0)
+			{
+				double jumpvelz = JumpZ * 35 / TICRATE;
+				double jumpfac = 0;
+
+				// [BC] If the player has the high jump power, double his jump velocity.
+				// (actually, pick the best factors from all active items.)
+				for (let p = Inv; p != null; p = p.Inv)
+				{
+					let pp = PowerHighJump(p);
+					if (pp)
+					{
+						double f = pp.Strength;
+						if (f > jumpfac) jumpfac = f;
+					}
+				}
+				if (jumpfac > 0) jumpvelz *= jumpfac;
+
+				Vel.Z += jumpvelz;
+				bOnMobj = false;
+				player.jumpTics = -1;
+				if (!(player.cheats & CF_PREDICTING)) A_PlaySound("*jump", CHAN_BODY);
+			}
+		}
+	}
+	
+	override void CheckCrouch(bool totallyfrozen)
+	{
+		let player = self.player;
+		UserCmd cmd = player.cmd;
+		
+		/*	This is totally stupid. Why negate buttons under certain conditions
+			when you can just disallow their functions under said conditions?
+		if (cmd.buttons & BT_JUMP)
+		{
+			cmd.buttons &= ~BT_CROUCH;
+		}
+		*/
+		// Just like jumping, if I want crouch disabled, I'll do it myself.
+		// Everyone who wants to take away the player's ability to
+		// press buttons that they've keybound needs to get different
+		// fetish...
+		// -Dino
+		if (CanCrouch() && player.health > 0 && !(cmd.buttons & BT_JUMP))
+		{
+			if (!totallyfrozen)
+			{
+				int crouchdir = player.crouching;
+
+				if (crouchdir == 0)
+				{
+					crouchdir = (cmd.buttons & BT_CROUCH) ? -1 : 1;
+				}
+				else if (cmd.buttons & BT_CROUCH)
+				{
+					player.crouching = 0;
+				}
+				if (crouchdir == 1 && player.crouchfactor < 1 && pos.Z + height < ceilingz)
+				{
+					CrouchMove(1);
+				}
+				else if (crouchdir == -1 && player.crouchfactor > 0.5)
+				{
+					CrouchMove(-1);
+				}
+			}
+		}
+		else
+		{
+			player.Uncrouch();
+		}
+
+		player.crouchoffset = -(ViewHeight) * (1 - player.crouchfactor);
+	}
+	
+	int SpellIndex () const {
+		let player_data = IholdPlayerVariables(FindInventory("IholdPlayerVariables"));
+		
+		if(player_data) {
+			return player_data.SpellEquip.SpellIndex();
+		}
+		
+		return 0;
+	}
+}
+
+class GC_PlayerEventHandler : EventHandler
+{
+	override void PlayerEntered(PlayerEvent e)
+	{
+		PlayerInfo player = players[e.PlayerNumber];
+		
+		if(player.mo is "Guncaster")
+		{
+			Guncaster(player.mo).HandleItemReset();
+		}
+	}
+	
+	// kd: Ninja stuff. The gcninja lumps get read (they're just lists of
+	// actors / inflictors you wanna have the ninja effect on) and then passed
+	// to the player.
+	
+	protected Gc_NinjaData ninja_data;
+	
+	override void OnRegister () {
+		ninja_data = new("Gc_NinjaData");
+		
+		if(ninja_data) {
+			ninja_data.UseAllNinjaLumps();
+		}
+	}
+	
+	static Gc_NinjaData NinjaDataPtr () {
+		let handler = Gc_PlayerEventHandler(Find("Gc_PlayerEventHandler"));
+		
+		if(handler) {
+			return handler.ninja_data;
+		}
+		
+		return NULL;
+	}
+}
+
+class GodToken : Inventory {
+	default {
+		Inventory.MaxAmount 1;
+	}
+}
+
+class DarkNithorToken : Inventory {
+	default {
+		Inventory.MaxAmount 1;
+	}
+}
+
+class MechaNithorToken : Inventory {
+	default {
+		Inventory.MaxAmount 1;
+	}
+}
+
+//This is probably the weirdest way to handle taunt buttons... but whatever. If it works, it ain't stupid!
+class GuncasterTauntTimer : Inventory { Default { Inventory.MaxAmount 999; } }
+
+class GuncasterTauntItem : CustomInventory
+{
+	Default
+	{
+		Inventory.Amount 1;
+		-INVENTORY.INVBAR
+	}
+	
+	int user_Carlton;
+	
+	states
+	{
+	Spawn:
+		TNT1 A -1;
+		Stop;
+	Use:
+		TNT1 A 0 A_JumpIf(CountInv("GuncasterTauntTimer") && !invoker.User_Carlton, "Nope");
+		TNT1 A 0 A_Jump(256,"Taunt01","Taunt02","Taunt03","Taunt04","Taunt05",
+		"Taunt06","Taunt07","Taunt08","Taunt09","Taunt10","Taunt11","Taunt12",
+		"Taunt13","Taunt14","Taunt15","Taunt16","Taunt17","Taunt18","Taunt19",
+		"Taunt20","Taunt21","Taunt22","Taunt23","Taunt24","Taunt25","Taunt26",
+		"Taunt27","Taunt28","Taunt29","Taunt30","Taunt31","Taunt32","Taunt33",
+		"Taunt34","Taunt35");
+	Taunt01:
+		TNT1 A 0 A_GiveInventory("GuncasterTauntTimer",4);
+		TNT1 A 0 A_PlaySound("GC/Taunt01",2);
+		Fail;
+	Taunt02:
+		TNT1 A 0 A_GiveInventory("GuncasterTauntTimer",6);
+		TNT1 A 0 A_PlaySound("GC/Taunt02",2);
+		Fail;
+	Taunt03:
+		TNT1 A 0 A_GiveInventory("GuncasterTauntTimer",5);
+		TNT1 A 0 A_PlaySound("GC/Taunt03",2);
+		Fail;
+	Taunt04:
+		TNT1 A 0 A_GiveInventory("GuncasterTauntTimer",3);
+		TNT1 A 0 A_PlaySound("GC/Taunt04",2);
+		Fail;
+	Taunt05:
+		TNT1 A 0 A_GiveInventory("GuncasterTauntTimer",6);
+		TNT1 A 0 A_PlaySound("GC/Taunt05",2);
+		Fail;
+	Taunt06:
+		TNT1 A 0 A_GiveInventory("GuncasterTauntTimer",3);
+		TNT1 A 0 A_PlaySound("GC/Taunt06",2);
+		Fail;
+	Taunt07:
+		TNT1 A 0 A_GiveInventory("GuncasterTauntTimer",4);
+		TNT1 A 0 A_PlaySound("GC/Taunt07",2);
+		Fail;
+	Taunt08:
+		TNT1 A 0 A_GiveInventory("GuncasterTauntTimer",5);
+		TNT1 A 0 A_PlaySound("GC/Taunt08",2);
+		Fail;
+	Taunt09:
+		TNT1 A 0 A_GiveInventory("GuncasterTauntTimer",5);
+		TNT1 A 0 A_PlaySound("GC/Taunt09",2);
+		Fail;
+	Taunt10:
+		TNT1 A 0 A_GiveInventory("GuncasterTauntTimer",4);
+		TNT1 A 0 A_PlaySound("GC/Taunt10",2);
+		Fail;
+	Taunt11:
+		TNT1 A 0 A_GiveInventory("GuncasterTauntTimer",5);
+		TNT1 A 0 A_PlaySound("GC/Taunt11",2);
+		Fail;
+	Taunt12:
+		TNT1 A 0 A_GiveInventory("GuncasterTauntTimer",4);
+		TNT1 A 0 A_PlaySound("GC/Taunt12",2);
+		Fail;
+	Taunt13:
+		TNT1 A 0 A_GiveInventory("GuncasterTauntTimer",4);
+		TNT1 A 0 A_PlaySound("GC/Taunt13",2);
+		Fail;
+	Taunt14:
+		TNT1 A 0 A_GiveInventory("GuncasterTauntTimer",2);
+		TNT1 A 0 A_PlaySound("GC/Taunt14",2);
+		Fail;
+	Taunt15:
+		TNT1 A 0 A_GiveInventory("GuncasterTauntTimer",4);
+		TNT1 A 0 A_PlaySound("GC/Taunt15",2);
+		Fail;
+	Taunt16:
+		TNT1 A 0 A_GiveInventory("GuncasterTauntTimer",5);
+		TNT1 A 0 A_PlaySound("GC/Taunt16",2);
+		Fail;
+	Taunt17:
+		TNT1 A 0 A_GiveInventory("GuncasterTauntTimer",5);
+		TNT1 A 0 A_PlaySound("GC/Taunt17",2);
+		Fail;
+	Taunt18:
+		TNT1 A 0 A_GiveInventory("GuncasterTauntTimer",2);
+		TNT1 A 0 A_PlaySound("GC/Taunt18",2);
+		Fail;
+	Taunt19:
+		TNT1 A 0 A_GiveInventory("GuncasterTauntTimer",2);
+		TNT1 A 0 A_PlaySound("GC/Taunt19",2);
+		Fail;
+	Taunt20:
+		TNT1 A 0 A_GiveInventory("GuncasterTauntTimer",2);
+		TNT1 A 0 A_PlaySound("GC/Taunt20",2);
+		Fail;
+	Taunt21:
+		TNT1 A 0 A_GiveInventory("GuncasterTauntTimer",4);
+		TNT1 A 0 A_PlaySound("GC/Taunt21",2);
+		Fail;
+	Taunt22:
+		TNT1 A 0 A_GiveInventory("GuncasterTauntTimer",6);
+		TNT1 A 0 A_PlaySound("GC/Taunt22",2);
+		Fail;
+	Taunt23:
+		TNT1 A 0 A_GiveInventory("GuncasterTauntTimer",5);
+		TNT1 A 0 A_PlaySound("GC/Taunt23",2);
+		Fail;
+	Taunt24:
+		TNT1 A 0 A_GiveInventory("GuncasterTauntTimer",11);
+		TNT1 A 0 A_PlaySound("GC/Taunt24",2);
+		Fail;
+	Taunt25:
+		TNT1 A 0 A_GiveInventory("GuncasterTauntTimer",4);
+		TNT1 A 0 A_PlaySound("GC/Taunt25",2);
+		Fail;
+	Taunt26:
+		TNT1 A 0 A_GiveInventory("GuncasterTauntTimer",6);
+		TNT1 A 0 A_PlaySound("GC/Taunt26",2);
+		Fail;
+	Taunt27:
+		TNT1 A 0 A_GiveInventory("GuncasterTauntTimer",5);
+		TNT1 A 0 A_PlaySound("GC/Taunt27",2);
+		Fail;
+	Taunt28:
+		TNT1 A 0 A_GiveInventory("GuncasterTauntTimer",4);
+		TNT1 A 0 A_PlaySound("GC/Taunt28",2);
+		Fail;
+	Taunt29:
+		TNT1 A 0 A_GiveInventory("GuncasterTauntTimer",1);
+		TNT1 A 0 A_PlaySound("GC/Taunt29",2);
+		Fail;
+	Taunt30:
+		TNT1 A 0 A_GiveInventory("GuncasterTauntTimer",2);
+		TNT1 A 0 A_PlaySound("GC/Taunt30",2);
+		Fail;
+	Taunt31:
+		TNT1 A 0 A_GiveInventory("GuncasterTauntTimer",3);
+		TNT1 A 0 A_PlaySound("GC/Taunt21",2);
+		Fail;
+	Taunt32:
+		TNT1 A 0 A_GiveInventory("GuncasterTauntTimer",2);
+		TNT1 A 0 A_PlaySound("GC/Taunt22",2);
+		Fail;
+	Taunt33:
+		TNT1 A 0 A_GiveInventory("GuncasterTauntTimer",3);
+		TNT1 A 0 A_PlaySound("GC/Taunt23",2);
+		Fail;
+	Taunt34:
+		TNT1 A 0 A_GiveInventory("GuncasterTauntTimer",3);
+		TNT1 A 0 A_PlaySound("GC/Taunt34",2);
+		Fail;
+	Taunt35:
+		TNT1 A 0 A_GiveInventory("GuncasterTauntTimer",4);
+		TNT1 A 0 A_PlaySound("GC/Taunt35",2);
+		Fail;
+	Nope:
+		TNT1 A 0;
+		Fail;
+	}
+}
+
+//Quick-heal item. REVOLVER OCELOT.
+Class QuickHealItem : CustomInventory
+{
+	Default
+	{
+		Inventory.Amount 1;
+		Inventory.MaxAmount 1;
+		Inventory.InterHubAmount 1;
+		Inventory.PickupSound "";
+		Inventory.UseSound "";
+		Inventory.PickupMessage "Verbosen Verbosen Hosen werde Geschlossen.";
+		//+INVENTORY.INVBAR
+		+INVENTORY.UNDROPPABLE
+	}
+	
+	transient CVar AutoHealCVar, AutoHealLimitCVar;
+	
+	override void DoEffect()
+	{
+		if(!AutoHealCVar)
+		{
+			AutoHealCVar = CVar.GetCVar("GC_AutoHeal", owner.player);
+		}
+		if(!AutoHealLimitCVar)
+		{
+			AutoHealLimitCvar = CVar.GetCVar("GC_AutoHealLimit", owner.player);
+		}
+		if(AutoHealCVar && AutoHealLimitCVar && owner.player &&
+			AutoHealCVar.GetInt() && owner.Health > 0 && owner.Health < AutoHealLimitCvar.GetInt())
+		{
+			owner.UseInventory(self);
+		}
+		
+		Super.DoEffect();
+		return;
+	}
+	
+	States
+	{
+	Spawn:
+		MBAG A -1;
+		Stop;
+	Use:
+		TNT1 A 0 //A_JumpIf(CallACS("Can I Heal"), 1)
+		{
+			let WhatAreWeLookingAt = invoker.owner.AimTarget();
+			if(multiplayer && WhatAreWeLookingAt is "PlayerPawn") //invoker.owner.Health >= PlayerPawn(invoker.owner).MaxHealth)
+			{
+				A_FireBullets(0,0,1,0,"HealingPuff",FBF_NOFLASH,256);
+			}
+			else if(invoker.owner.Health < PlayerPawn(invoker.owner).MaxHealth)
+			{
+				return ResolveState("Heal");
+			}
+			return ResolveState(Null);
+		}
+		Fail;
+	Heal:
+		TNT1 A 0 A_JumpIf(CountInv("StrifeCounter"), "StrifeHealer");
+		TNT1 A 0 A_JumpIf(CountInv("HexenCounter") || CountInv("HereticCounter"), "RavenHealer");
+
+	//Doom and unassigned.
+		TNT1 A 0 A_JumpIf(CountInv("PowerMedbagFake") || !CountInv("Medbag"), "UsePod");
+		TNT1 A 0 UseInventory(FindInventory("MedBag"));
+		Fail;
+
+	//Hexen. And Heretic.
+	RavenHealer:
+		TNT1 A 0 A_JumpIf(CountInv("PowerMedbagFake") || !CountInv("Medbag"), "UsePot");
+		TNT1 A 0 UseInventory(FindInventory("MedBag"));
+		Fail;
+	UsePot:
+		TNT1 A 0 {
+			//if(CountInv("RejuvPot")) { UseInventory(FindInventory("RejuvPot")); Return ResolveState(Null); }
+			if(CountInv("HealPot"))  { UseInventory(FindInventory("HealPot")); Return ResolveState(Null); }
+			Return ResolveState(Null);
+		}
+		Fail;
+
+	//Strife.
+	StrifeHealer:
+		TNT1 A 0 A_JumpIf(CountInv("PowerMedbagFake") || !CountInv("Medbag"), "UsePod");
+		TNT1 A 0 UseInventory(FindInventory("MedBag"));
+		Fail;
+	UsePod:
+		TNT1 A 0 {
+			if(CountInv("GCS_Stimpack")) { UseInventory(FindInventory("GCS_Stimpack")); Return ResolveState(Null); }
+			if(CountInv("GCS_Medipod"))  { UseInventory(FindInventory("GCS_Medipod")); Return ResolveState(Null); }
+			if(CountInv("GCS_Megahealth")) { UseInventory(FindInventory("GCS_Megahealth")); Return ResolveState(Null); }
+			//if(CountInv("RejuvCaps"))  { UseInventory(FindInventory("RejuvCaps")); Return ResolveState(Null); }
+			Return ResolveState(Null);
+		}
+		Fail;
+	} 
+}
+
+// Variable storage. This used to be an inventory item but guess what,
+// inventory items die horrible deaths in deathmatch and thus so do 
+// the features this supports. One is created per player.
+/*
+class IHoldPlayerVariables : Thinker
+{
+	int playerowner;
+	bool deathtrigger;
+	Guncaster ourplayer;
+
+	int spellbuttons[4];
+	int spellshopindex[4];
+	int spellitemindex[4];
+	int spellisbound[4];
+	
+	Gc_GraspThinker 	grasp;
+	Gc_Binds			Binds;
+	GCSpellEquip		SpellEquip;
+	
+	// Sets up the thinker and passes back 
+	// the pointer for the first time.
+	IHoldPlayerVariables Init(int playernumber)
+	{
+		// Store our player.
+		playerowner = playernumber;
+		ourplayer = Guncaster(players[playernumber]);
+		// Create a grasp thinker.
+		grasp = new("Gc_GraspThinker");
+		grasp.Init(self);
+		// Set ourself up.
+		ChangeStatNum(STAT_STATIC);
+		return self;
+	}
+	
+	// Tick must do some specific things since we
+	// can't rely on players to exist indefinitely.
+	// First, it must make sure its player has its
+	// pointer, beyond death.
+	// Second, it must watch the player's condition
+	// and react by passing back its pointer
+	// (and info) accordingly.
+	override void Tick()
+	{
+		// Check if our player still exists in game.
+		if(playeringame[playerowner])
+		{
+			
+			// React to respawning.
+			if(deathtrigger)
+			{
+				
+			}
+			// React to death.
+			else
+			{
+				if(!deathtrigger && ourplayer && ourplayer.health < 0)
+				{
+					deathtrigger = TRUE;
+					
+				}
+			}
+		}
+		// If our player has left, do nothing.
+		else
+		{
+			return;
+		}
+		
+	}
+}
+*/
+
+//Variable storage.
+class IHoldPlayerVariables : Inventory
+{
+	int spellbuttons[4];
+	int spellshopindex[4];
+	int spellitemindex[4];
+	int spellisbound[4];
+	
+	Gc_GraspThinker 	grasp;
+	Gc_Binds			Binds;
+	GCSpellEquip		SpellEquip;
+
+	Default
+	{
+		Inventory.MaxAmount 1;
+		+INVENTORY.UNDROPPABLE
+		+INVENTORY.UNCLEARABLE
+		+INVENTORY.UNTOSSABLE
+	}
+	
+	override void AttachToOwner (Actor mo) {
+		super.AttachToOwner(mo);
+		
+		if(!owner) {
+			return;
+		}
+		
+		Binds.Init(owner);
+		SpellEquip.Reset(owner);
+	}
+}
+
+// New All in one Sound effect. -Dino
+
+class GuncasterStepRight : Actor
+{
+	Default
+	{
+		GuncasterStepRight.StepSide 1;
+		//+NOINTERACTION
+		+THRUACTORS
+		+Missile	// fucking terrain splashes... -Dino
+		+NOTIMEFREEZE
+		+NODAMAGETHRUST	
+		-ACTIVATEIMPACT
+		+FORCERADIUSDMG	
+		+BLOODLESSIMPACT
+		//+NOTONAUTOMAP
+		DamageType "ShoeLaces";
+	}
+	
+	int Counter;
+	int StepSide;
+	int turd;
+	double hotGarbage;	// I have transcended.ide
+	
+	Property StepSide : StepSide;
+	
+	Void DeploySound()
+	{
+		if(!target) { Return; }
+		bool you_are_boring = target.GetCvar("GC_ForceNormalSteps");
+		
+		if(!you_are_boring && target.CountInv("PowerDeadMaker"))
+		{
+			if(target.CountInv("PowerSuitToken"))
+			{
+				A_StartSound("Prophet/Step",888,0,0.7,0.8);
+				A_PlaySound("Deadmaker/Step",5,1.0,0,0.8);
+			}
+			else { A_PlaySound("Deadmaker/Step",5); }
+		}
+		else if (!you_are_boring && target.CountInv("PowerSuitToken")) { 
+			A_PlaySound("Bishop/Step",6,0.3);
+			A_PlaySound("Bishop/Thud",5,0.3);
+		}
+		else { 
+			if(target.CountInv("PowerBerserkDamage")) {
+				A_PlaySound("Berserk/Step",6,0.4);
+				if(CountInv("PowerSuitProtect",AAPTR_TARGET) && !CountInv("PowerSuitToken",AAPTR_TARGET) && target.GetCvar("GC_SpikeBoots"))
+				{
+					A_PlaySound("SpikedBoots/Step",5,0.2);
+				}
+			}
+			else {
+				A_PlaySound("Guncaster/Step",6,0.3); 
+				if(CountInv("PowerSuitProtect",AAPTR_TARGET) && !CountInv("PowerSuitToken",AAPTR_TARGET) && target.GetCvar("GC_SpikeBoots"))
+				{
+					A_PlaySound("SpikedBoots/Step",5,0.15);
+				}
+			}
+		}
+	}
+	
+	Override Void PostBeginPlay()
+	{
+		if(!target) { Self.Destroy(); Return; }
+		Counter = 25;
+		if(target.CountInv("PowerBerserkDamage")) { turd = 4; A_SetDamageType("SuperShoeLaces"); }
+		if(target.CountInv("PowerMidasMode")) { A_SetDamageType("SuperMidasShoeLaces"); }
+		if(target.CountInv("PowerSuitToken")) { 
+			hotGarbage = 15.0; 
+			turd = 15;
+		}
+		if(target.CountInv("PowerDeadMaker")) {
+			A_SetDamageType("SuperShoeLaces");
+			Counter += 10;
+			hotGarbage = 32.0;
+			turd = 8; 
+		}
+		
+		If((turd > 0) && !CountInv("AugurZoomed",AAPTR_TARGET)) { A_QuakeEx(1,1,1 + (target.CountInv("PowerDeadMaker") * 1),turd,0,128,"none",QF_SCALEDOWN); }
+		if(target.CountInv("PowerBerserkDamage")) {
+			if(!target.CountInv("PowerDeadMaker") && !target.CountInv("PowerSuitToken")) { A_SetTics(clamp(turd,0,4)); }
+			for(int i = 0; i < 6; i++) {
+				A_SpawnItemEx("BerserkStep_Effect",
+					frandom(3.0,-3.0),frandom(3.0,-3.0),frandom(3.0,-3.0),
+					frandom(0.2,-0.2),frandom(0.2,-0.2),frandom(0.5,0.1),
+					frandom(0.0,360.0),SXF_CLIENTSIDE|SXF_TRANSFERPOINTERS,0);
+			}
+		}
+		if(target.CountInv("PowerDeadMaker") && target.CountInv("PowerSuitToken")) {
+			let dergBoi = Guncaster(target);
+			if(!(dergBoi.RW_Active && target.CountInv("VoidwalkersTouchActive"))) { A_Explode((100),128,0,0,40); }
+			//A_SpawnItemEx("ProphetStepWave",0,0,0,0,0,0,0,SXF_CLIENTSIDE); // will add that proper later.
+			A_SpawnItemEx("ProphetStepDustSpawner",0,0,0,0,0,0,0,SXF_TRANSFERPOINTERS);
+			A_AlertMonsters(512);
+		}
+		else if(target.CountInv("PowerDeadMaker")) {
+			let dergBoi = Guncaster(target);
+			if(!(dergBoi.RW_Active && target.CountInv("VoidwalkersTouchActive"))) { A_Explode((80),96,0,0,20); }
+			A_SpawnItemEx("BishopStepDustSpawner",0,0,0,0,0,0,0,SXF_TRANSFERPOINTERS);
+			A_AlertMonsters(256);
+		}
+		else if(target.CountInv("PowerSuitToken")) {
+			A_Explode((70),16,0,0,16);
+			A_SpawnItemEx("BishopStepDustSpawner",0,0,0,0,0,0,0,SXF_TRANSFERPOINTERS);
+			A_AlertMonsters(256);
+		}
+		DeploySound();
+		Super.PostBeginPlay();
+	}
+	
+	States
+	{
+	Death:
+	XDeath:
+	Crash:
+		TNT1 A 0 { bMISSILE = FALSE; }	// Disgusting...
+	Spawn:
+		TNT1 A 1 NODELAY {
+			A_Warp(AAPTR_TARGET,0,5 * StepSide,-10 - hotGarbage,0,WARPF_NOCHECKPOSITION);
+			Counter--;
+			If(Counter <= 0) { Self.Destroy(); }
+		}
+		Wait;
+	}
+}
+
+class GuncasterStepLeft : GuncasterStepRight
+{
+	Default
+	{
+		GuncasterStepRight.StepSide -1;
+	}
+}
+
+//Steps, effects and such.
+
+class GuncasterStep : Actor
+{
+	Default
+	{
+		Radius 10;
+		Projectile;
+		+BLOODLESSIMPACT
+		+DONTBLAST
+		-ACTIVATEMCROSS
+		-ACTIVATEIMPACT
+		+NOTIMEFREEZE
+	}
+	
+	States
+	{
+	Spawn:
+		TNT1 A 1;
+		Stop;
+	Death:
+		TNT1 A 0 A_SpawnItemEx("GuncasterStepConnect",0,0,0,0,0,0,0,SXF_TRANSFERPOINTERS);
+		Stop;
+	}
+}
+class GuncasterStepConnect : Actor
+{
+	Default
+	{
+		+NOINTERACTION
+		+NOTIMEFREEZE
+		-ACTIVATEIMPACT
+		//+NOTONAUTOMAP
+	}
+	
+	int Counter;
+	
+	States
+	{
+	Spawn:
+		TNT1 A 0 NoDelay {
+			Counter = 25;
+			A_PlaySound("Guncaster/Step",6,0.3);
+			if(CountInv("PowerSuitProtect",AAPTR_TARGET) && !CountInv("PowerSuitToken",AAPTR_TARGET) && target.GetCvar("GC_SpikeBoots"))
+			{
+				A_PlaySound("SpikedBoots/Step",5,0.15);
+			}
+		}
+		goto Looplet;
+	Looplet:
+		TNT1 A 1 {
+			A_Warp(AAPTR_TARGET,0,0,-10.0,0,WARPF_NOCHECKPOSITION);
+			Counter--;
+			Return A_JumpIf(Counter <= 0, "Null");
+		}
+		Loop;
+	}
+}
+
+class BerserkStep : GuncasterStep
+{
+	States
+	{
+	Spawn:
+		TNT1 A 1;
+		Stop;
+	Death:
+		TNT1 A 0 { If(!CountInv("AugurZoomed",AAPTR_TARGET)) { A_QuakeEx(1,1,1,4,0,128,"none",QF_SCALEDOWN); } }
+		TNT1 AAAAAA 0 A_SpawnItemEx("BerserkStep_Effect",
+			frandom(3.0,-3.0),frandom(3.0,-3.0),frandom(3.0,-3.0),
+			frandom(0.2,-0.2),frandom(0.2,-0.2),frandom(0.5,0.1),
+			frandom(0.0,360.0),SXF_CLIENTSIDE|SXF_TRANSFERPOINTERS,0);
+		TNT1 A 4 A_SpawnItemEx("GuncasterZerkStepConnect",0,0,0,0,0,0,0,SXF_TRANSFERPOINTERS);
+		Stop;
+	}
+}
+
+class GuncasterZerkStepConnect : GuncasterStepConnect
+{
+	States
+	{
+	Spawn:
+		TNT1 A 0 NoDelay { 
+			Counter = 25;
+			A_PlaySound("Berserk/Step",6,0.4);
+			if(CountInv("PowerSuitProtect",AAPTR_TARGET) && !CountInv("PowerSuitToken",AAPTR_TARGET) && target.GetCvar("GC_SpikeBoots"))
+			{
+				A_PlaySound("SpikedBoots/Step",5,0.2);
+			}
+		}
+		goto Looplet;
+	}
+}
+
+//Powersuit
+class BishopStepRight : GuncasterStep
+{
+	States
+	{
+	Death:
+		TNT1 A 0 A_SpawnItemEx("BishopStepConnectRight",0,5,0,0,0,0,0,SXF_TRANSFERPOINTERS);
+		Stop;
+	}
+}
+
+class BishopStepLeft : BishopStepRight
+{
+	States
+	{
+	Death:
+		TNT1 A 0 A_SpawnItemEx("BishopStepConnectLeft",0,-5,0,0,0,0,0,SXF_TRANSFERPOINTERS);
+		Stop;
+	}
+}
+
+class BishopStepConnectRight : GuncasterStepConnect
+{
+	Default
+	{
+		DamageType "Shoelaces";
+	}
+	
+	States
+	{
+	Spawn:
+		TNT1 A 0 NoDelay; //A_SpawnItemEx("BishopFootprintRight",0,0,0,0,0,0,0,SXF_CLIENTSIDE);
+		TNT1 A 0 A_Jump(256,"Rest");
+		Goto Rest;
+	Rest:
+		TNT1 A 0 {
+			If(CountInv("PowerMidasMode",AAPTR_TARGET)) { A_Explode((125),12,0,0,12,0,0,"BulletPuff","SuperMidasShoelaces"); }
+			Else { A_Explode((125),12,0,0,12); }
+			Counter = 25;
+			A_PlaySound("Bishop/Step",6,0.3);
+			A_PlaySound("Bishop/Thud",5,0.3);
+			A_SpawnItemEx("BishopStepDustSpawner",0,0,0,0,0,0,0,SXF_CLIENTSIDE);
+			if(!CountInv("AugurZoomed",AAPTR_TARGET)) { A_QuakeEx(1,1,1,15,0,128,"none",QF_SCALEDOWN); }
+		}
+		Goto Looplet;
+	Looplet:
+		TNT1 A 1 {
+			A_Warp(AAPTR_TARGET,0,0,-25.0,0,WARPF_NOCHECKPOSITION);
+			Counter--;
+			Return A_JumpIf(Counter <= 0, "Null");
+		}
+		Loop;
+	}
+}
+
+class BishopStepConnectLeft : BishopStepConnectRight
+{
+	Default
+	{
+		DamageType "Shoelaces";
+	}
+	
+	States
+	{
+	Spawn:
+		TNT1 A 0 NoDelay; //A_SpawnItemEx("BishopFootprintLeft",0,0,0,0,0,0,0,SXF_CLIENTSIDE);
+		TNT1 A 0 A_Jump(256,"Rest");
+	}
+}
+
+//Powersuit zerk
+class BishopZerkStepRight : BishopStepRight
+{
+	Default
+	{
+		DamageType "SuperShoelaces";
+	}
+	
+	States
+	{
+	Death:
+		TNT1 A 0 A_SpawnItemEx("BishopZerkStepConnectRight",0,5,0,0,0,0,0,SXF_TRANSFERPOINTERS);
+		Stop;
+	}
+}
+
+class BishopZerkStepLeft : BishopStepRight
+{
+	Default
+	{
+		DamageType "SuperShoelaces";
+	}
+	
+	States
+	{
+	Death:
+		TNT1 A 0 A_SpawnItemEx("BishopZerkStepConnectLeft",0,-5,0,0,0,0,0,SXF_TRANSFERPOINTERS);
+		Stop;
+	}
+}
+
+class BishopZerkStepConnectRight : BishopStepConnectRight
+{
+	States
+	{
+	Rest:
+		TNT1 A 0 {
+			If(CountInv("PowerMidasMode",AAPTR_TARGET)) { A_Explode((125),12,0,0,12,0,0,"BulletPuff","SuperMidasShoelaces"); }
+			Else { A_Explode((125),12,0,0,12); }
+			Counter = 25;
+			A_PlaySound("Bishop/Step",6,0.3);
+			A_PlaySound("Bishop/Thud",5,0.3);
+			A_SpawnItemEx("BishopStepDustSpawner",0,0,0,0,0,0,0,SXF_CLIENTSIDE);
+			if(!CountInv("AugurZoomed",AAPTR_TARGET)) { A_QuakeEx(1,1,1,15,0,128,"none",QF_SCALEDOWN); }
+		}
+		TNT1 AAAAAA 0 A_SpawnItemEx("BerserkStep_Effect",
+			frandom(3.0,-3.0),frandom(3.0,-3.0),frandom(3.0,-3.0),
+			frandom(0.2,-0.2),frandom(0.2,-0.2),frandom(0.5,0.1),
+			frandom(0.0,360.0),SXF_TRANSFERPOINTERS|SXF_TRANSFERPOINTERS);
+	Looplet:
+		TNT1 A 1 {
+			A_Warp(AAPTR_TARGET,0,0,-25.0,0,WARPF_NOCHECKPOSITION);
+			Counter--;
+			Return A_JumpIf(Counter <= 0, "Null");
+		}
+		Loop;
+	}
+}
+
+class BishopZerkStepConnectLeft : BishopZerkStepConnectRight
+{
+	States
+	{
+	Spawn:
+		TNT1 A 0 NoDelay A_SpawnItemEx("BishopFootprintLeft",0,0,0,0,0,0,0,SXF_CLIENTSIDE);
+		TNT1 A 0 A_Jump(256,"Rest");
+		Goto Rest;
+	}
+}
+
+//Stuff
+class BishopFootprintRight : Actor
+{
+	Default
+	{
+		Renderstyle "Translucent";
+		Alpha 0.6;
+		+NOTIMEFREEZE;
+	}
+	
+	States
+	{
+	Spawn:
+		TNT1 A 0 NoDelay A_JumpIf(CallACS("WaterBollocks") == True, "Null");
+		TNT1 A 0 A_JumpIf(CallACS("FrostbiteBollocks") >= 1, "Null");
+		BTPR A 105 A_CheckSight("Null");
+		Loop;
+	}
+}
+
+class BishopFootprintLeft : BishopFootprintRight {}
+
+class BishopStepDustSpawner : Actor
+{
+	Default
+	{
+		+NOINTERACTION
+		+NOTIMEFREEZE
+	}
+	
+	int Counter;
+	
+	States
+	{
+	Spawn:
+		TNT1 A 0 NoDelay { Counter = random(10,15); }
+	Phase1:
+		TNT1 A 0 {
+			A_SpawnItemEx("WalkerDust",0,0,0,frandom(2.0,1.0),0,frandom(1.0,0.5),frandom(0.0,360.0),SXF_TRANSFERPOINTERS,20);
+			Counter--;
+			Return A_JumpIf(Counter >= 1, "Phase1");
+		}
+	Phase2Setup:
+		TNT1 A 0 { Counter = random(2,7); }
+	Phase2:
+		TNT1 A random(1,2) {
+			A_SpawnItemEx("WalkerDust",0,0,0,frandom(2.0,1.0),0,frandom(1.0,0.5),frandom(0.0,360.0),SXF_TRANSFERPOINTERS,20);
+			Counter--;
+			A_JumpIf(Counter >= 1, "Phase2");
+		}
+		Stop;
+	}
+}
+
+class WalkerDust : Actor
+{
+	Default
+	{
+		Radius 4;
+		Height 8;
+		Speed 20;
+		Renderstyle "Translucent";
+		Projectile;
+		BounceFactor 0.6;
+		WallBounceFactor 0.6;
+		Scale 0;
+		Alpha 0;
+		+BOUNCEONWALLS
+		+THRUACTORS
+		+NOTRIGGER
+		+NOTIMEFREEZE
+	}
+	
+	States
+	{
+	Spawn:
+		TNT1 A 0 NoDelay {
+			A_ScaleVelocity(frandom(0.8,1.2));
+			A_FadeIn(frandom(0.1,0.2));
+			A_SetScale(frandom(0.1,0.15));
+		}
+	FrameSetup:
+		TNT1 A 0 A_Jump(256,"FrameA","FrameB","FrameC","FrameD");
+	FrameA:
+		DUST A 0;
+	FrameB:
+		DUST B 0;
+	FrameC:
+		DUST C 0;
+	FrameD:
+		DUST D 0;
+	Main:
+		"####" "#" 0 A_SetScale(Scale.X + frandom(0.002,0.005));
+		"####" "#" 1 A_FadeOut(frandom(0.004,0.007));
+		Loop;
+	}
+}
+
+//Prophet walk cycle
+class ProphetStepDustSpawner : BishopStepDustSpawner
+{
+	States
+	{
+	Spawn:
+		TNT1 A 0 NoDelay { Counter = random(13,19); }
+	Phase1:
+		TNT1 A 0 {
+			A_SpawnItemEx("MechaWalkerDust",0,0,0,frandom(1.0,3.0),0,frandom(0.5,1.5),frandom(0.0,360.0),SXF_TRANSFERPOINTERS|SXF_CLIENTSIDE,20);
+			Counter--;
+			Return A_JumpIf(Counter >= 1, "Phase1");
+		}
+	Phase2Setup:
+		TNT1 A 0 { Counter = random(2,7); }
+	Phase2:
+		TNT1 A random(1,2) {
+			A_SpawnItemEx("MechaWalkerDust",0,0,0,frandom(1.0,3.0),0,frandom(0.5,1.5),frandom(0.0,360.0),SXF_TRANSFERPOINTERS|SXF_CLIENTSIDE,20);
+			Counter--;
+			A_JumpIf(Counter >= 1, "Phase2");
+		}
+		Stop;
+	}
+}
+
+class MechaWalkerDust : WalkerDust
+{
+	States
+	{
+	Spawn:
+		TNT1 A 0 NoDelay {
+			A_ScaleVelocity(frandom(0.8,1.2));
+			A_FadeIn(frandom(0.1,0.2));
+			A_SetScale(frandom(0.2,0.25));
+		}
+		goto Super::FrameSetup;
+	}
+}
+
+//Powersuit Jet
+class RocketPackEmitter : Powerup
+{
+	override void DoEffect()
+	{
+		owner.A_SpawnItemEx("Rocketpack_Flare",-48+frandom(1.0,-1.0),frandom(1.0,-1.0),25+frandom(1.0,-1.0),0,0,0,0,SXF_CLIENTSIDE,20);
+		owner.A_SpawnItemEx("Rocketpack_Cloud",-48+frandom(5.0,-5.0),frandom(5.0,-5.0),25+frandom(5.0,-5.0),frandom(-1.0,1.0),frandom(1.0,-1.0),frandom(-2.0,-6.0),0,SXF_SETTARGET,20);
+		owner.A_SpawnItemEx("Rocketpack_Smoke",-48+frandom(5.0,-5.0),frandom(5.0,-5.0),25+frandom(5.0,-5.0),frandom(-1.0,1.0),frandom(1.0,-1.0),frandom(-2.0,-6.0),0,SXF_CLIENTSIDE,20);
+		owner.A_SpawnItemEx("Rocketpack_Ember",-48+frandom(5.0,-5.0),frandom(5.0,-5.0),25+frandom(5.0,-5.0),frandom(-1.0,1.0),frandom(1.0,-1.0),frandom(-2.0,-6.0),0,SXF_CLIENTSIDE,224);
+		owner.A_SpawnItemEx("Rocketpack_GLDEF",frandom(5.0,-5.0),frandom(5.0,-5.0),frandom(5.0,-5.0),frandom(-1.0,1.0),frandom(1.0,-1.0),frandom(-1.0,-3.0),0,SXF_CLIENTSIDE);
+	}
+}
+
+class RocketPack_Emitter : PowerupGiver
+{
+	Default
+	{
+		Powerup.Type "RocketPackEmitter";
+		Powerup.Duration 20;
+		Inventory.MaxAmount 0;
+		+INVENTORY.AUTOACTIVATE
+	}
+}
+
+class Rocketglide_Emitter : CustomInventory
+{
+	Default
+	{
+		Inventory.MaxAmount 0;
+		+INVENTORY.AUTOACTIVATE
+	}
+	States
+	{
+	Spawn:
+		TNT1 A 0;
+		Stop;
+	Use:
+		TNT1 A 0 A_SpawnItemEx("Rocketpack_Flare",-55+frandom(3.0,-3.0),frandom(3.0,-3.0),25+frandom(3.0,-3.0),0,0,0,0,SXF_CLIENTSIDE,20);
+		TNT1 A 0 A_SpawnItemEx("Rocketpack_Cloud",-55+frandom(5.0,-5.0),frandom(5.0,-5.0),25+frandom(5.0,-5.0),frandom(-6.0,-2.0),frandom(1.0,-1.0),frandom(1.0,-1.0),0,SXF_SETTARGET,20);
+		TNT1 A 0 A_SpawnItemEx("Rocketpack_Smoke",-55+frandom(5.0,-5.0),frandom(5.0,-5.0),25+frandom(5.0,-5.0),frandom(-6.0,-2.0),frandom(1.0,-1.0),frandom(1.0,-1.0),0,SXF_CLIENTSIDE,20);
+		TNT1 A 0 A_SpawnItemEx("Rocketpack_Ember",-55+frandom(5.0,-5.0),frandom(5.0,-5.0),25+frandom(5.0,-5.0),frandom(-6.0,-2.0),frandom(1.0,-1.0),frandom(1.0,-1.0),0,SXF_CLIENTSIDE,224);
+		TNT1 A 0 A_SpawnItemEx("Rocketpack_GLDEF",frandom(5.0,-5.0),frandom(5.0,-5.0),frandom(5.0,-5.0),frandom(-3.0,-1.0),frandom(1.0,-1.0),frandom(1.0,-1.0),0,SXF_CLIENTSIDE);
+		Stop;
+	}
+}
+
+class Rocketglide_Emitter_Vertical : CustomInventory
+{
+	Default
+	{
+		Inventory.MaxAmount 0;
+		+INVENTORY.AUTOACTIVATE
+	}
+	States
+	{
+	Spawn:
+		TNT1 A 0;
+		Stop;
+	Use:
+		TNT1 A 0 A_SpawnItemEx("Rocketpack_Flare",-55+frandom(3.0,-3.0),frandom(3.0,-3.0),25+frandom(3.0,-3.0),0,0,0,0,SXF_CLIENTSIDE,20);
+		TNT1 A 0 A_SpawnItemEx("Rocketpack_Cloud",-55+frandom(5.0,-5.0),frandom(5.0,-5.0),25+frandom(5.0,-5.0),frandom(-1.0,-1.0),frandom(1.0,-1.0),frandom(-2.0,-6.0),0,SXF_SETTARGET,20);
+		TNT1 A 0 A_SpawnItemEx("Rocketpack_Smoke",-55+frandom(5.0,-5.0),frandom(5.0,-5.0),25+frandom(5.0,-5.0),frandom(-1.0,-1.0),frandom(1.0,-1.0),frandom(-2.0,-6.0),0,SXF_CLIENTSIDE,20);
+		TNT1 A 0 A_SpawnItemEx("Rocketpack_Ember",-55+frandom(5.0,-5.0),frandom(5.0,-5.0),25+frandom(5.0,-5.0),frandom(-1.0,-1.0),frandom(1.0,-1.0),frandom(-2.0,-6.0),0,SXF_CLIENTSIDE,224);
+		TNT1 A 0 A_SpawnItemEx("Rocketpack_GLDEF",frandom(5.0,-5.0),frandom(5.0,-5.0),frandom(5.0,-5.0),frandom(-1.0,-1.0),frandom(1.0,-1.0),frandom(3.0,-1.0),0,SXF_CLIENTSIDE);
+		Stop;
+	}
+}
+
+class Rocketkick_Emitter : Actor
+{
+	Default
+	{
+		Projectile;
+		+NOINTERACTION
+		+NOTIMEFREEZE
+		+DONTSPLASH
+	}
+	
+	int Counter;
+	
+	States
+	{
+	Spawn:
+		TNT1 A 0 NoDelay { Counter = 15; }
+	Looplet:
+		TNT1 A 1 {
+			A_Warp(AAPTR_MASTER,0,0,0,0,WARPF_INTERPOLATE|WARPF_NOCHECKPOSITION);
+			A_SpawnItemEx("Rocketpack_Flare",-55+frandom(3.0,-3.0),frandom(3.0,-3.0),25+frandom(3.0,-3.0),0,0,0,0,SXF_CLIENTSIDE,20);
+			A_SpawnItemEx("Rocketpack_Cloud",-55+frandom(5.0,-5.0),frandom(5.0,-5.0),25+frandom(5.0,-5.0),frandom(-6.0,-2.0),frandom(1.0,-1.0),frandom(1.0,-1.0),0,SXF_SETTARGET,20);
+			A_SpawnItemEx("Rocketpack_Smoke",-55+frandom(5.0,-5.0),frandom(5.0,-5.0),25+frandom(5.0,-5.0),frandom(-6.0,-2.0),frandom(1.0,-1.0),frandom(1.0,-1.0),0,SXF_CLIENTSIDE,20);
+			A_SpawnItemEx("Rocketpack_Ember",-55+frandom(5.0,-5.0),frandom(5.0,-5.0),25+frandom(5.0,-5.0),frandom(-6.0,-2.0),frandom(1.0,-1.0),frandom(1.0,-1.0),0,SXF_CLIENTSIDE,224);
+			A_SpawnItemEx("Rocketpack_GLDEF",frandom(5.0,-5.0),frandom(5.0,-5.0),frandom(5.0,-5.0),frandom(-3.0,-1.0),frandom(1.0,-1.0),frandom(1.0,-1.0),0,SXF_CLIENTSIDE);
+			Counter--;
+			Return A_JumpIf(Counter <= 0, "Null");
+		}
+		Loop;
+	}
+}
+
+class Rocketpack_GLDEF : Actor
+{
+	Default
+	{
+		+NOINTERACTION
+		+NOTIMEFREEZE
+		+DONTSPLASH
+	}
+	
+	States
+	{
+	Spawn:
+		TNT1 A 15;
+		Stop;
+	}
+}
+
+class Rocketpack_Flare : Actor
+{
+	Default
+	{
+		RenderStyle "Add";
+		Scale 0.25;
+		Alpha 0.95;
+		+NOGRAVITY
+		+NOINTERACTION
+		+THRUGHOST
+		+DONTSPLASH
+		+NOTIMEFREEZE
+	}
+	
+	States
+	{
+		Spawn:
+			FLER A 1 Bright NoDelay {
+				A_FadeOut(0.3);
+				A_SetScale(Scale.X - FRandom(0.005, 0.0075));
+				Return A_JumpIf(Scale.X <= 0.0, "Null");
+			}
+			Loop;
+	}
+}
+
+class Rocketpack_Cloud : Actor
+{
+	Default
+	{
+		Alpha 0.65;
+		RenderStyle "Add";
+		DamageType "Fire";
+		+NOINTERACTION
+		+NOGRAVITY
+		+FORCEXYBILLBOARD
+		+NOTONAUTOMAP
+		+NOTIMEFREEZE
+		+DONTSPLASH
+	}
+	
+	States
+	{
+		Spawn:
+			TNT1 A 0 NoDelay A_Jump(256, "SpriteA", "SpriteB", "SpriteC", "SpriteD",
+										 "SpriteE", "SpriteF", "SpriteG", "SpriteH");
+		SpriteA:
+			CLOD A 0 A_Jump(256, "FadeIn");
+		SpriteB:
+			CLOD B 0 A_Jump(256, "FadeIn");
+		SpriteC:
+			CLOD C 0 A_Jump(256, "FadeIn");
+		SpriteD:
+			CLOD D 0 A_Jump(256, "FadeIn");
+		SpriteE:
+			CLOD E 0 A_Jump(256, "FadeIn");
+		SpriteF:
+			CLOD F 0 A_Jump(256, "FadeIn");
+		SpriteG:
+			CLOD G 0 A_Jump(256, "FadeIn");
+		SpriteH:
+			CLOD H 0 A_Jump(256, "FadeIn");
+		FadeIn:
+			"####" "#" 0 Bright A_SetScale(frandom(0.5, 0.6));
+			Goto Idle;
+		Idle:
+			"####" "#" 2 Bright A_Jump(190, "FadeOut");
+			Loop;
+		FadeOut:
+			"####" "#" 1 Bright {
+				A_FadeOut(0.035);
+				if(Alpha > 0.2) { A_Explode((3),64,0); }
+				A_ScaleVelocity(frandom(1.01, 1.03));
+				A_SetScale(Scale.X - frandom(0.01, 0.03));
+				Return A_JumpIf(Scale.X <= 0, "Null");
+			}
+			Loop;
+	}
+}
+
+class Rocketpack_Smoke : Rocketpack_Cloud
+{
+	Default
+	{
+		Alpha 0.0;
+		RenderStyle "Translucent";
+		+DONTSPLASH
+	}
+	
+	States
+	{
+		Spawn:
+		    TNT1 A 4;
+			TNT1 A 0 A_Jump(256, "SpriteA", "SpriteB", "SpriteC", "SpriteD");
+		SpriteA:
+			DYMI A 0 A_Jump(256, "FadeIn");
+		SpriteB:
+			DYMI B 0 A_Jump(256, "FadeIn");
+		SpriteC:
+			DYMI C 0 A_Jump(256, "FadeIn");
+		SpriteD:
+			DYMI D 0 A_Jump(256, "FadeIn");
+		FadeIn:
+			"####" "#" 0 A_SetScale(FRandom(0.3, 0.4));
+			Goto RealFadeIn;
+		RealFadeIn:
+			"####" "#" 1 A_FadeIn(FRandom(0.01, 0.03));
+			"####" "#" 0 A_JumpIf(Alpha >= 0.35, "Idle");
+			Loop;
+		Idle:
+			"####" "#" 5 A_Jump(200, "FadeOut");
+			Loop;
+		FadeOut:
+			"####" "#" 1 {
+				A_FadeOut(FRandom(0.02,0.025));
+				A_ScaleVelocity(0.96);
+				A_SetScale(Scale.X + FRandom(0.02, 0.025));
+			}
+			Loop;
+	}
+}
+
+class Rocketpack_Ember : Rocketpack_Cloud
+{
+	Default
+	{
+		Alpha 0.99;
+		RenderStyle "Add";
+		+DONTSPLASH
+	}
+	
+	States
+	{
+		Spawn:
+			TNT1 A 0 NoDelay A_Jump(256, "SpriteA","SpriteB","SpriteC",
+										 "SpriteD","SpriteE","SpriteF");
+		SpriteA:
+			EMBR A 0 A_Jump(256, "FadeIn");
+		SpriteB:
+			EMBR B 0 A_Jump(256, "FadeIn");
+		SpriteC:
+			EMBR C 0 A_Jump(256, "FadeIn");
+		SpriteD:
+			EMBR D 0 A_Jump(256, "FadeIn");
+		SpriteE:
+			EMBR E 0 A_Jump(256, "FadeIn");
+		SpriteF:
+			EMBR F 0 A_Jump(256, "FadeIn");
+		FadeIn:
+			"####" "#" 0 Bright A_SetScale(FRandom(0.035, 0.055));
+			Goto Idle;
+		Idle:
+			"####" "#" 2 Bright A_Jump(200, "FadeOut");
+			Loop;
+		FadeOut:
+			"####" "#" 1 Bright {
+				A_Weave(FRandom(0.9, 1.0), FRandom(0.9, 1.0),
+							FRandom(70, 90), FRandom(70, 90));
+				A_ChangeVelocity(Vel.X * FRandom(0.93, 0.99),
+										  Vel.Y * FRandom(0.93, 0.99),
+										  Vel.Z - FRandom(0.1, 0.2),
+										  CVF_REPLACE);
+				A_SetScale(Scale.X - FRandom(0.0025, 0.0015));
+				Return  A_JumpIf(Scale.X <= 0.0, "Null");
+			}
+			Loop;
+	}
+}
+
+//Prophet suit jet
+class Nasa_RocketPackEmitter : Powerup
+{
+	override void DoEffect()
+	{
+		for(int kebab = 0; kebab < 3; kebab++) {
+			owner.A_SpawnItemEx("Nasa_RocketPack_Cloud",-48+frandom(5.0,-5.0),frandom(5.0,-5.0),25+frandom(5.0,-5.0),frandom(-1.0,1.0),frandom(1.0,-1.0),frandom(-17.0,-25.0),0,SXF_SETTARGET,20);
+		}
+		owner.A_SpawnItemEx("Nasa_RocketPack_Flare",-48+frandom(1.0,-1.0),frandom(1.0,-1.0),25+frandom(1.0,-1.0),0,0,0,0,SXF_CLIENTSIDE,20);
+		owner.A_SpawnItemEx("Nasa_RocketPack_Smoke",-48+frandom(5.0,-5.0),frandom(5.0,-5.0),25+frandom(5.0,-5.0),frandom(-1.0,1.0),frandom(1.0,-1.0),frandom(-17.0,-22.0),0,SXF_CLIENTSIDE,20);
+		owner.A_SpawnItemEx("Nasa_RocketPack_Ember",-48+frandom(5.0,-5.0),frandom(5.0,-5.0),25+frandom(5.0,-5.0),frandom(-1.0,1.0),frandom(1.0,-1.0),frandom(-4.0,-17.0),0,SXF_CLIENTSIDE,192);
+		owner.A_SpawnItemEx("Nasa_RocketPack_GLDEF",frandom(5.0,-5.0),frandom(5.0,-5.0),frandom(5.0,-5.0),frandom(-1.0,1.0),frandom(1.0,-1.0),frandom(-1.0,-6.0),0,SXF_CLIENTSIDE);
+	}
+}
+
+class Nasa_RocketPack_Emitter : PowerupGiver
+{
+	Default
+	{
+		Powerup.Type "Nasa_RocketPackEmitter";
+		Powerup.Duration 20;
+		Inventory.MaxAmount 0;
+		+INVENTORY.AUTOACTIVATE
+	}
+}
+
+class NasaRocketglide_Emitter : CustomInventory
+{
+	Default
+	{
+		Inventory.MaxAmount 0;
+		+INVENTORY.AUTOACTIVATE
+	}
+	States
+	{
+	Spawn:
+		TNT1 A 0;
+		Stop;
+	Use:
+		TNT1 A 0 {
+			for(int kebab = 0; kebab < 3; kebab++) {
+				A_SpawnItemEx("Nasa_RocketPack_Cloud",-55+frandom(5.0,-5.0),frandom(5.0,-5.0),25+frandom(5.0,-5.0),frandom(-20.0,-12.0),frandom(1.0,-1.0),frandom(1.0,-1.0),0,SXF_SETTARGET,20);
+			}
+			A_SpawnItemEx("Nasa_RocketPack_Flare",-55+frandom(3.0,-3.0),frandom(3.0,-3.0),25+frandom(3.0,-3.0),0,0,0,0,SXF_CLIENTSIDE,20);
+			A_SpawnItemEx("Nasa_RocketPack_Smoke",-55+frandom(5.0,-5.0),frandom(5.0,-5.0),25+frandom(5.0,-5.0),frandom(-17.0,-12.0),frandom(1.0,-1.0),frandom(1.0,-1.0),0,SXF_CLIENTSIDE,20);
+			A_SpawnItemEx("Nasa_RocketPack_Ember",-55+frandom(5.0,-5.0),frandom(5.0,-5.0),25+frandom(5.0,-5.0),frandom(-9.0,-5.0),frandom(1.0,-1.0),frandom(1.0,-1.0),0,SXF_CLIENTSIDE,192);
+			A_SpawnItemEx("Nasa_RocketPack_GLDEF",frandom(5.0,-5.0),frandom(5.0,-5.0),frandom(5.0,-5.0),frandom(-6.0,-2.0),frandom(1.0,-1.0),frandom(1.0,-1.0),0,SXF_CLIENTSIDE);
+		}
+		Stop;
+	}
+}
+
+class NasaRocketglide_Emitter_Vertical : CustomInventory
+{
+	Default
+	{
+		Inventory.MaxAmount 0;
+		+INVENTORY.AUTOACTIVATE
+	}
+	States
+	{
+	Spawn:
+		TNT1 A 0;
+		Stop;
+	Use:
+		TNT1 A 0 {
+			for(int kebab = 0; kebab < 3; kebab++) {
+				A_SpawnItemEx("Nasa_RocketPack_Cloud",-55+frandom(5.0,-5.0),frandom(5.0,-5.0),25+frandom(5.0,-5.0),frandom(-2.0,-2.0),frandom(2.0,-2.0),frandom(-17.0,-25.0),0,SXF_SETTARGET,20);
+			}
+			A_SpawnItemEx("Nasa_RocketPack_Flare",-55+frandom(3.0,-3.0),frandom(3.0,-3.0),25+frandom(3.0,-3.0),0,0,frandom(-2.0,-8.0),0,SXF_CLIENTSIDE,20);
+			A_SpawnItemEx("Nasa_RocketPack_Smoke",-55+frandom(5.0,-5.0),frandom(5.0,-5.0),25+frandom(5.0,-5.0),frandom(2.0,-2.0),frandom(2.0,-2.0),frandom(-17.0,-23.0),0,SXF_CLIENTSIDE,20);
+			A_SpawnItemEx("Nasa_RocketPack_Ember",-55+frandom(5.0,-5.0),frandom(5.0,-5.0),25+frandom(5.0,-5.0),frandom(2.0,-2.0),frandom(2.0,-2.0),frandom(-4.0,-17.0),0,SXF_CLIENTSIDE,192);
+			A_SpawnItemEx("Nasa_RocketPack_GLDEF",frandom(5.0,-5.0),frandom(5.0,-5.0),frandom(5.0,-5.0),frandom(2.0,-2.0),frandom(2.0,-2.0),frandom(-1.0,-9.0),0,SXF_CLIENTSIDE);
+		}
+		Stop;
+	}
+}
+
+class NasaRocketkick_Emitter : Actor
+{
+	Default
+	{
+		Projectile;
+		+NOINTERACTION
+		+NOTIMEFREEZE
+		+DONTSPLASH
+	}
+	
+	int Counter;
+	
+	States
+	{
+	Spawn:
+		TNT1 A 0 NoDelay { Counter = 15; }
+	Looplet:
+		TNT1 A 1 {
+			A_Warp(AAPTR_MASTER,0,0,0,0,WARPF_INTERPOLATE|WARPF_NOCHECKPOSITION);
+			for(int kebab = 0; kebab < 3; kebab++) {
+				A_SpawnItemEx("Nasa_RocketPack_Cloud",-55+frandom(5.0,-5.0),frandom(5.0,-5.0),25+frandom(5.0,-5.0),frandom(-14.0,-7.0),frandom(2.0,-2.0),frandom(2.0,-2.0),0,SXF_SETTARGET,20);
+			}
+			A_SpawnItemEx("Nasa_RocketPack_Flare",-55+frandom(3.0,-3.0),frandom(3.0,-3.0),25+frandom(3.0,-3.0),0,0,0,0,SXF_CLIENTSIDE,20);
+			A_SpawnItemEx("Nasa_RocketPack_Smoke",-55+frandom(5.0,-5.0),frandom(5.0,-5.0),25+frandom(5.0,-5.0),frandom(-12.0,-6.0),frandom(1.0,-1.0),frandom(1.0,-1.0),0,SXF_CLIENTSIDE,20);
+			A_SpawnItemEx("Nasa_RocketPack_Ember",-55+frandom(5.0,-5.0),frandom(5.0,-5.0),25+frandom(5.0,-5.0),frandom(-9.0,-5.0),frandom(1.0,-1.0),frandom(1.0,-1.0),0,SXF_CLIENTSIDE,192);
+			A_SpawnItemEx("Nasa_RocketPack_GLDEF",frandom(5.0,-5.0),frandom(5.0,-5.0),frandom(5.0,-5.0),frandom(-6.0,-2.0),frandom(1.0,-1.0),frandom(1.0,-1.0),0,SXF_CLIENTSIDE);
+			Counter--;
+			Return A_JumpIf(Counter <= 0, "Null");
+		}
+		Loop;
+	}
+}
+
+class Nasa_RocketPack_GLDEF : Actor
+{
+	Default
+	{
+		+NOINTERACTION
+		+NOTIMEFREEZE
+		+DONTSPLASH
+	}
+	
+	States
+	{
+	Spawn:
+		TNT1 A 17;
+		Stop;
+	}
+}
+
+class Nasa_RocketPack_Flare : Actor
+{
+	Default
+	{
+		RenderStyle "Add";
+		Scale 0.4;
+		Alpha 0.95;
+		+NOGRAVITY
+		+NOINTERACTION
+		+THRUGHOST
+		+DONTSPLASH
+		+NOTIMEFREEZE
+	}
+	
+	States
+	{
+		Spawn:
+			FLER A 1 Bright NoDelay {
+				A_FadeOut(0.2);
+				A_SetScale(Scale.X - frandom(0.005, 0.0075));
+				Return A_JumpIf(Scale.X <= 0.0, "Null");
+			}
+			Loop;
+	}
+}
+
+class Nasa_RocketPack_Cloud : Actor
+{
+	Default
+	{
+		Alpha 0.65;
+		RenderStyle "Add";
+		DamageType "Fire";
+		+NOINTERACTION
+		+NOGRAVITY
+		+FORCEXYBILLBOARD
+		+NOTONAUTOMAP
+		+NOTIMEFREEZE
+		+DONTSPLASH
+	}
+	
+	States
+	{
+		Spawn:
+			TNT1 A 0 NoDelay A_Jump(256, "SpriteA", "SpriteB", "SpriteC", "SpriteD",
+										 "SpriteE", "SpriteF", "SpriteG", "SpriteH");
+		SpriteA:
+			CLOD A 0 A_Jump(256, "FadeIn");
+		SpriteB:
+			CLOD B 0 A_Jump(256, "FadeIn");
+		SpriteC:
+			CLOD C 0 A_Jump(256, "FadeIn");
+		SpriteD:
+			CLOD D 0 A_Jump(256, "FadeIn");
+		SpriteE:
+			CLOD E 0 A_Jump(256, "FadeIn");
+		SpriteF:
+			CLOD F 0 A_Jump(256, "FadeIn");
+		SpriteG:
+			CLOD G 0 A_Jump(256, "FadeIn");
+		SpriteH:
+			CLOD H 0 A_Jump(256, "FadeIn");
+		FadeIn:
+			"####" "#" 0 Bright A_SetScale(frandom(0.9, 1.1));
+			Goto Idle;
+		Idle:
+			"####" "#" 2 Bright A_Jump(190, "FadeOut");
+			Loop;
+		FadeOut:
+			"####" "#" 1 Bright {
+				A_FadeOut(0.03);
+				if(Alpha > 0.2) { A_Explode(random(2,3),96,0); }
+				A_ScaleVelocity(frandom(1.01, 1.03));
+				A_SetScale(Scale.X - frandom(0.01, 0.03));
+				Return A_JumpIf(Scale.X <= 0, "Null");
+			}
+			Loop;
+	}
+}
+
+class Nasa_RocketPack_Smoke : Nasa_RocketPack_Cloud
+{
+	Default
+	{
+		Alpha 0.0;
+		RenderStyle "Translucent";
+		+DONTSPLASH
+	}
+	
+	States
+	{
+		Spawn:
+		    TNT1 A 4;
+			TNT1 A 0 A_Jump(256, "SpriteA", "SpriteB", "SpriteC", "SpriteD");
+		SpriteA:
+			DYMI A 0 A_Jump(256, "FadeIn");
+		SpriteB:
+			DYMI B 0 A_Jump(256, "FadeIn");
+		SpriteC:
+			DYMI C 0 A_Jump(256, "FadeIn");
+		SpriteD:
+			DYMI D 0 A_Jump(256, "FadeIn");
+		FadeIn:
+			"####" "#" 0 A_SetScale(frandom(0.7, 0.8));
+			Goto RealFadeIn;
+		RealFadeIn:
+			"####" "#" 1 A_FadeIn(frandom(0.01, 0.03));
+			"####" "#" 0 A_JumpIf(Alpha >= 0.35, "Idle");
+			Loop;
+		Idle:
+			"####" "#" 5 A_Jump(200, "FadeOut");
+			Loop;
+		FadeOut:
+			"####" "#" 1 {
+				A_FadeOut(frandom(0.02,0.025));
+				A_ScaleVelocity(0.96);
+				A_SetScale(Scale.X + frandom(0.015, 0.02));
+			}
+			Loop;
+	}
+}
+
+class Nasa_RocketPack_Ember : Nasa_RocketPack_Cloud
+{
+	Default
+	{
+		Alpha 0.99;
+		RenderStyle "Add";
+		+DONTSPLASH
+	}
+	
+	States
+	{
+		Spawn:
+			TNT1 A 0 NoDelay A_Jump(256, "SpriteA","SpriteB","SpriteC",
+										 "SpriteD","SpriteE","SpriteF");
+		SpriteA:
+			EMBR A 0 A_Jump(256, "FadeIn");
+		SpriteB:
+			EMBR B 0 A_Jump(256, "FadeIn");
+		SpriteC:
+			EMBR C 0 A_Jump(256, "FadeIn");
+		SpriteD:
+			EMBR D 0 A_Jump(256, "FadeIn");
+		SpriteE:
+			EMBR E 0 A_Jump(256, "FadeIn");
+		SpriteF:
+			EMBR F 0 A_Jump(256, "FadeIn");
+		FadeIn:
+			"####" "#" 0 Bright A_SetScale(frandom(0.05, 0.06));
+			Goto Idle;
+		Idle:
+			"####" "#" 2 Bright A_Jump(200, "FadeOut");
+			Loop;
+		FadeOut:
+			"####" "#" 1 Bright {
+				A_Weave(frandom(0.9, 1.0), frandom(0.9, 1.0),
+							frandom(70, 90), frandom(70, 90));
+				A_ChangeVelocity(Vel.X * frandom(0.93, 0.99),
+										  Vel.Y * frandom(0.93, 0.99),
+										  Vel.Z - frandom(0.1, 0.2),
+										  CVF_REPLACE);
+				A_SetScale(Scale.X - frandom(0.0025, 0.0015));
+				Return  A_JumpIf(Scale.X <= 0.0, "Null");
+			}
+			Loop;
+	}
+}
+
+// Ledge thingo
+class LedgeSitter : Actor
+{
+	Default
+	{
+		Height 2;
+		Radius 2;
+		Renderstyle "None";
+		+DONTSPLASH
+		+DONTTHRUST
+		+THRUACTORS
+		+MOVEWITHSECTOR
+		+NOTIMEFREEZE
+	}
+	
+	States
+	{
+		Spawn:
+		TNT1 A 1;
+		Loop;
+	}
+}
+
+// Custom damage multipliers, woo
+class CustomPain : Inventory
+{
+	Default
+	{
+		+INVENTORY.UNTOSSABLE
+	}
+
+	override void ModifyDamage(int damage, Name damageType, out int newdamage, bool passive)
+	{
+		// Attack damage
+		if(!passive && damage > 0)
+		{
+			newdamage = damage * GetCvar("GC_PlayerAttackMult");
+		}
+		// Defense damage
+		if(passive && damage > 0)
+		{
+			newdamage = damage * GetCvar("GC_PlayerDefenseMult");
+		}
+	}
+}
+
+class MoneyPointer : Actor
+{
+	Default
+	{
+		Radius 1;
+		Height 2;
+		Renderstyle "Add";
+		+NOINTERACTION
+		+NOTRIGGER
+		+NOTIMEFREEZE
+	}
+	
+	States
+	{
+		Spawn:
+			POIN T 0;
+			POIN T 1 {
+				if(!target || !target.CountInv("PowerVeilVision"))
+				{
+					return ResolveState("Null");
+				}
+				return ResolveState(null);
+			}
+			Loop;
+	}
+}
+
+//Deadmaker stuff.
+class DeadmakerCharger : Inventory { Default { Inventory.MaxAmount 1; } }
+
+class DeadmakerStep : Actor
+{
+	Default
+	{
+		Radius 10;
+		Height 12;
+		Projectile;
+		+BLOODLESSIMPACT
+		+DONTBLAST
+		-ACTIVATEIMPACT
+		+NOTIMEFREEZE
+	}
+	
+	int count;
+	
+	States
+	{
+	Spawn:
+		TNT1 A 1 NoDelay;
+		Stop;
+	Death:
+		TNT1 A 0 A_SpawnItemEx("DeadmakerStepConnect",0,0,0,0,0,0,0,SXF_TRANSFERPOINTERS);
+		Stop;
+	}
+}
+
+class DeadmakerStepConnect : Actor
+{
+	Default
+	{
+		Projectile;
+		DamageType "SuperShoelaces";
+		-ACTIVATEIMPACT
+		+FORCERADIUSDMG
+		+NOINTERACTION
+		+NOTIMEFREEZE
+	}
+	
+	int count;
+	
+	States
+	{
+	Spawn:
+		TNT1 A 0 NoDelay {
+			count = 35;
+			if(!CountInv("AugurZoomed",AAPTR_TARGET)) { A_QuakeEx(1,1,2,8,0,128,"none",QF_SCALEDOWN); }
+			If(CountInv("PowerMidasMode",AAPTR_TARGET)) { A_Explode((150),72,0,0,72,0,0,"BulletPuff","SuperMidasShoelaces"); }
+			Else { A_Explode((150),96,0,0,72); }
+			A_SpawnItemEx("BishopStepDustSpawner",0,0,0,0,0,0,0,SXF_TRANSFERPOINTERS|SXF_CLIENTSIDE);
+			A_PlaySound("Deadmaker/Step",5);
+		}
+		TNT1 A 1 {
+			count--;
+			A_Warp(AAPTR_TARGET,0,0,-42.0,0,WARPF_NOCHECKPOSITION);
+			Return A_JumpIf(count <= 0, "Null");
+		}
+		Wait;
+	}
+}
+
+//Mechamaker stuff.
+class MechamakerStep : Actor
+{
+	Default
+	{
+		Radius 10;
+		Height 12;
+		Projectile;
+		+BLOODLESSIMPACT
+		+DONTBLAST
+		-ACTIVATEIMPACT
+		+NOTIMEFREEZE
+	}
+	
+	int count;
+	
+	States
+	{
+	Spawn:
+		TNT1 A 1 NoDelay;
+		Stop;
+	Death:
+		TNT1 A 0 A_SpawnItemEx("MechamakerStepConnect",0,0,0,0,0,0,0,SXF_TRANSFERPOINTERS);
+		Stop;
+	}
+}
+
+class MechamakerStepConnect : Actor
+{
+	Default
+	{
+		Projectile;
+		DamageType "SuperShoelaces";
+		-ACTIVATEIMPACT
+		+FORCERADIUSDMG
+		+NOINTERACTION
+		+NOTIMEFREEZE
+	}
+	
+	int count;
+	
+	States
+	{
+	Spawn:
+		TNT1 A 0 NoDelay {
+			count = 35;
+			A_AlertMonsters(256);
+			if(!CountInv("AugurZoomed",AAPTR_TARGET)) { A_QuakeEx(1,1,2,8,0,128,"none",QF_SCALEDOWN); }
+			If(CountInv("PowerMidasMode",AAPTR_TARGET)) { A_Explode((200),128,0,0,92,0,0,"BulletPuff","SuperMidasShoelaces"); }
+			Else { A_Explode((200),128,0,0,92);}
+			// A_SpawnItemEx("ProphetStepWave",0,0,0,0,0,0,0,SXF_CLIENTSIDE);
+			A_SpawnItemEx("ProphetStepDustSpawner",0,0,0,0,0,0,0,SXF_TRANSFERPOINTERS|SXF_CLIENTSIDE);
+			A_StartSound("Prophet/Step",888,0,0.7,0.8);
+			A_PlaySound("Deadmaker/Step",5,1.0,0,0.8);
+		}
+		TNT1 A 1 {
+			count--;
+			A_Warp(AAPTR_TARGET,0,0,-42.0,0,WARPF_NOCHECKPOSITION);
+			Return A_JumpIf(count <= 0, "Null");
+		}
+		Wait;
+	}
+}
+
+// SIT ON HIM!
+Class gotSatOn : Inventory
+{
+	int RechargeTimer;
+	
+	Default
+	{
+		Inventory.Maxamount 1;				// How many can be on an actor
+	}
+	
+	override void AttachToOwner(Actor user)
+	{
+		if(!user) { self.Destroy(); Return; }
+		RechargeTimer = 20;
+		Super.AttachToOwner(user);
+	}
+	
+	Override Void DoEffect()
+	{
+		if(!owner) { self.Destroy(); Return; }
+		owner.Speed = owner.Speed * 0.25;	// getting crushed
+		RechargeTimer--;
+		if(RechargeTimer <= 0)
+		{
+			owner.Speed = GetDefaultByType(owner.GetClass()).Speed;
+			owner.RemoveInventory(self);
+		}
+	}
+	
+	override void OwnerDied()
+	{
+		if(!owner) { Self.Destroy(); Return; }
+		owner.Speed = GetDefaultByType(owner.GetClass()).Speed;
+		owner.RemoveInventory(self); // I was berated for using Destroy() here.
+	}
+}
+
+class RoflcopterDustSpawner : Actor
+{
+	Default
+	{
+		Scale 0.75;
+		+NOINTERACTION
+		+NOTIMEFREEZE
+	}
+	
+	Override Void PostBeginPlay()
+	{
+		SetOrigin((Pos.X,Pos.Y,FloorZ),FALSE);
+		Super.PostBeginPlay();
+	}
+	
+	int Counter;
+	
+	States
+	{
+	Spawn:
+		TNT1 A 0 NoDelay { Counter = random(25,35); }
+	Phase1:
+		TNT1 A 0 {
+			A_SpawnItemEx("RoflCopterDust",0,0,0,frandom(5.0 * (Scale.X * 1.333),3.0 * (Scale.X * 1.333)),0,frandom(1.0,0.5),frandom(0.0,360.0),SXF_TRANSFERSCALE|SXF_TRANSFERPOINTERS,20);
+			Counter--;
+			Return A_JumpIf(Counter >= 1, "Phase1");
+		}
+	Phase2Setup:
+		TNT1 A 0 { Counter = random(2,7); }
+	Phase2:
+		TNT1 A random(1,2) {
+			A_SpawnItemEx("RoflCopterDust",0,0,0,frandom(4.0 * (Scale.X * 1.333),2.0 * (Scale.X * 1.333)),0,frandom(1.0,0.5),frandom(0.0,360.0),SXF_TRANSFERSCALE|SXF_TRANSFERPOINTERS,20);
+			Counter--;
+			A_JumpIf(Counter >= 1, "Phase2");
+		}
+		Stop;
+	}
+}
+
+class Flight_RoflcopterDustSpawner : Actor
+{
+	Default
+	{
+		Scale 0.5;
+		+NOINTERACTION
+		+NOTIMEFREEZE
+	}
+	
+	Override Void PostBeginPlay()
+	{
+		SetOrigin((Pos.X,Pos.Y,FloorZ),FALSE);
+		Super.PostBeginPlay();
+	}
+	
+	int Counter;
+	
+	States
+	{
+	Spawn:
+		TNT1 A 0 NoDelay { Counter = random(25,35); }
+	Phase1:
+		TNT1 A 0 {
+			A_SpawnItemEx("RoflCopterDust",16.0 * (Scale.X * 0.433),16.0 * (Scale.X * 0.433),0,frandom(6.5 * (Scale.X * 0.433),4.0 * (Scale.X * 0.433)),0,frandom(2.5,1.5),frandom(0.0,360.0),SXF_TRANSFERSCALE|SXF_TRANSFERPOINTERS,20);
+			Counter--;
+			Return A_JumpIf(Counter >= 1, "Phase1");
+		}
+	Phase2Setup:
+		TNT1 A 0 { Counter = random(2,7); }
+	Phase2:
+		TNT1 A random(1,2) {
+			A_SpawnItemEx("RoflCopterDust",10.0 * (Scale.X * 0.433),10.0 * (Scale.X * 0.433),0,frandom(5.0 * (Scale.X * 0.433),3.0 * (Scale.X * 0.433)),0,frandom(2.5,1.5),frandom(0.0,360.0),SXF_TRANSFERSCALE|SXF_TRANSFERPOINTERS,20);
+			Counter--;
+			A_JumpIf(Counter >= 1, "Phase2");
+		}
+		Stop;
+	}
+}
+
+class RoflCopterDust : Actor
+{
+	Default
+	{
+		Radius 4;
+		Height 8;
+		Speed 20;
+		Renderstyle "Translucent";
+		Projectile;
+		BounceFactor 0.6;
+		WallBounceFactor 0.6;
+		Scale 1.0;
+		Alpha 0;
+		+BOUNCEONWALLS
+		+THRUACTORS
+		+NOTRIGGER
+		+NOTIMEFREEZE
+		+DONTSPLASH
+		RoflCopterDust.realScaleLow 0.1;
+		RoflCopterDust.realScaleHigh 0.15;
+	}
+	
+	double realScaleLow;
+	double realScaleHigh;
+	
+	Property realScaleLow : realScaleLow;
+	Property realScaleHigh : realScaleHigh;
+	
+	Override Void PostBeginPlay()
+	{
+		let scalingAdjust = 
+			frandom(
+			scale.X * 
+			realScaleLow,
+			scale.Y * 
+			realScaleHigh);
+		Scale.X *= scalingAdjust;
+		Scale.Y *= scalingAdjust;
+		Super.PostBeginPlay();
+	}
+	
+	States
+	{
+	Spawn:
+		TNT1 A 0 NoDelay {
+			A_ScaleVelocity(frandom(0.8,1.2));
+			A_FadeIn(frandom(0.1,0.2));
+			// A_SetScale(frandom(0.1,0.15));
+		}
+	FrameSetup:
+		TNT1 A 0 A_Jump(256,"FrameA","FrameB","FrameC","FrameD");
+	FrameA:
+		DUST A 0;
+	FrameB:
+		DUST B 0;
+	FrameC:
+		DUST C 0;
+	FrameD:
+		DUST D 0;
+	Main:
+		"####" "#" 0 A_SetScale(Scale.X + frandom(realScaleLow * 0.002,realScaleHigh * 0.0333));
+		"####" "#" 1 A_FadeOut(frandom(0.004,0.007));
+		Loop;
+	}
+}

@@ -1,0 +1,7 @@
+The aim of this addon/patch is to make Clusterfuck4.3+ compatible with the Guncaster mod and GC_Addon.
+
+While most of the things in this patch are modifications of the original Gc actors, some stuff, including
+graphics and modification to the HUD and the proper zscript death/money adapter are an exclusive content 
+created by TonynUBares.
+
+No one is allowed to use, steal, "borrow" or distribute that content without TonynUBares' permission.

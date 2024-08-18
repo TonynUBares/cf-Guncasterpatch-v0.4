@@ -1,0 +1,41 @@
+to do:
+
+- Rework Guncaster's HUD  (I welcome any volunteer here)
+    Add all the CF item icons to Guncaster's hud
+    Add weapon slots
+    Make the armor icons appear via Zscript(?) 
+- Solve any sprite conflict if there's more (with iNexus maybe?)
+
+cf-Guncasterpatch-v0.3
+
+- Fixed some weird VM abors with Guncaster menu
+- Fixed a small issue with the money dropper
+- Temporarily patched the money dropper not working with Chaos spawners
+- Made the patch more compatible with GC_Addon
+- Completely removed CF player (CLEARPLAYERCLASSES in KEYCONF)
+  Decorate file is probably useless now
+
+cf-Guncasterpatch-v0.2
+
+- Fixed a problem with Midas deaths
+- Added a universal money dropper for map monsters
+
+cf-Guncasterpatch-v0.1
+
+- Made Guncaster compatible with CF4.3
+    Fixed inheritance for Megasphere
+    (re)Fixed the MENUDEF
+    Removed ModReplacer and CheckerEvent scripts
+- Added all the extra funny/coloured/midas deaths of Guncaster
+    Now they work universally or so
+
+
+cf-Guncasterpatch-v0hot
+
+- Minor fixes
+- Added some CF icons to the HUD
+
+
+cf-Guncasterpatch-v0
+
+- Made Guncaster compatible with CF4.2+

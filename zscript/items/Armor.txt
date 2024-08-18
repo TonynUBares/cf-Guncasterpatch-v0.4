@@ -1,0 +1,336 @@
+#region Armor
+//$Color 2
+
+//Base armor bringer, for handling armor pickup behavior.
+class GC_ArmorPickup : BasicArmorPickup
+{
+	//Class<BasicArmorPickup> ArmorToGive;
+	double RestrictPenalty;
+	
+	//Property ArmorToGive: ArmorToGive;
+	Property RestrictivePenalty: RestrictPenalty;
+	
+	Default
+	{
+		Inventory.PickupSound "Armor/Pickup";
+		//GC_ArmorPickup.ArmorToGive "BasicArmorPickup";
+		GC_ArmorPickup.RestrictivePenalty 1.0;
+	}
+	
+	override bool TryPickup (in out Actor toucher)
+	{
+		bool GiveTheArmor = FALSE;
+		let toucherarmor = BasicArmor(toucher.FindInventory("BasicArmor"));
+		
+		// If we have more armor than this pickup contains, don't grant the armor, period.
+		if(toucherarmor.Amount >= SaveAmount)
+		{
+			return false;
+		}
+			
+		// Restrictive armor bounds check. 
+		else if(toucher.player && CVar.GetCVar("GC_RestrictiveArmorBehavior", toucher.player).GetInt() == 1)
+		{
+			// The one exception to the restrictive rule: Always give the player armor of better quality.
+			// The SavePercent property on an armor pickup, despite being represented as a double, must 
+			// be divised by 100 manually...
+			if((SavePercent * .01) > toucherarmor.SavePercent)
+			{
+				//Console.Printf("SavePercent of %s (%f) was greater than player's %s (%f)",
+				//				thisarmor.GetClassName(), thisarmor.SavePercent, 
+				//				toucherarmor.ArmorType, toucherarmor.SavePercent);
+				GiveTheArmor = TRUE;
+			}
+			// The restrictive armor setting multiplies the SaveAmount of this armor by the
+			// RestrictPenalty to get the armor amount the player must have less than to collect
+			// the armor.
+			// If the armor we're touching is of lesser quality than the armor we're collecting,
+			// add an additional penalty in the form of our armor's SaveAmount over the max amount
+			// of proper armor on the toucher, if any.
+			else
+			{
+				int restrictamount;
+				int MaxArmorReceive;
+				
+				// This right here is a fresh portal to GZDoom hell. The player's armor maxamount can
+				// equal the ridiculous max value of an ArmorBonus pickup!
+				Class<BasicArmorPickup> ToucherArmorType = toucherarmor.ArmorType;
+				// Make sure the player is wearing real armor!
+				if(ToucherArmorType)
+				{
+					MaxArmorReceive = GetDefaultByType(ToucherArmorType).SaveAmount; //+
+									//(10 * toucher.CountInv("MoltenArmor"));
+					restrictamount = ceil((SaveAmount * RestrictPenalty) * (MaxArmorReceive > 
+									SaveAmount ? double(SaveAmount) / MaxArmorReceive : 1.0));
+				}
+				// If we're not wearing real armor, ignore any stupidly huge maximums
+				// by not applying the second penalty.
+				else
+				{
+					restrictamount = ceil((SaveAmount * RestrictPenalty));
+				}
+				
+				// Round the result to a nice multiple of 5, if it isn't already.
+				if((restrictamount % 5))
+				{
+					if((restrictamount % 5) < 3)
+					{
+						restrictamount = (restrictamount - (restrictamount % 5));
+					}
+					else
+					{
+						restrictamount = ((restrictamount - (restrictamount % 5)) + 5);
+					}
+				}
+				
+				//Console.Printf("Restrictive cvar is set, armor amount must be under %d to pick up.", restrictamount);
+				
+				if(toucherarmor.Amount < int(restrictamount))
+				{
+					GiveTheArmor = TRUE;
+				}
+				else
+				{
+					return false;
+				}
+			}
+		}
+		
+		// Button-based check. Only pick up the armor if the toucher is pressing use.
+		else if(toucher.player && CVar.GetCVar("GC_RestrictiveArmorBehavior", toucher.player).GetInt() == 2)
+		{
+			if((toucher.GetPlayerInput(INPUT_BUTTONS) & BT_USE) || toucher.CountInv("GCCantFire"))
+			{
+				GiveTheArmor = TRUE;
+			}
+			else
+			{
+				return false;
+			}
+		}
+		
+		// If none of the above checks are valid, give the armor.
+		else
+		{
+			GiveTheArmor = TRUE;
+		}
+		
+		if(GiveTheArmor)
+		{
+			/*
+			// The armor itself.
+			toucher.GiveInventory(ArmorToGive, 1);
+			// Set the armor's value to account for the MoltenArmor bonus.
+			toucherarmor.Amount = ArmorValue;
+			// I can set the max amount here, but like I've discovered above
+			// it won't stay the maximum forever - thanks ArmorBonuses!
+			toucherarmor.MaxAmount = ArmorValue;
+			GoAwayAndDie();
+			*/
+			if(Super.TryPickup(toucher))
+			{
+				return true;
+			}
+		}
+		
+		return false;
+	}
+}
+
+
+// Bringers for the armors.
+/*
+class VestGiver : GC_ArmorBringer
+{
+	Default
+	{
+		//$Title Combat Vest
+		Height 12;
+		Scale 0.9;
+		Tag "Combat Vest";
+		Inventory.PickupMessage "Obtained a combat vest.";
+		GC_ArmorBringer.ArmorToGive "CombatVest";
+		GC_ArmorBringer.RestrictivePenalty 0.67;
+	}
+	
+	States
+	{
+		Spawn:
+		1ARM A -1;
+		Stop;
+	}
+}
+
+class CombatGiver : GC_ArmorBringer
+{
+	Default
+	{
+		//$Title Combat Armor
+		Height 12;
+		Scale 0.9;
+		Tag "Combat Armor";
+		Inventory.PickupMessage "Obtained combat armor.";
+		GC_ArmorBringer.ArmorToGive "CombatArmor";
+		GC_ArmorBringer.RestrictivePenalty 0.5;
+	}
+	
+	States
+	{
+		Spawn:
+		2ARM A -1;
+		Stop;
+	}
+}
+
+class AssaultGiver : GC_ArmorBringer
+{
+	Default
+	{
+		//$Title Assault Armor
+		Height 12;
+		Scale 0.9;
+		Tag "Assault Armor";
+		Inventory.PickupMessage "Obtained assault armor!";
+		GC_ArmorBringer.ArmorToGive "AssaultArmor";
+		GC_ArmorBringer.RestrictivePenalty 0.5;
+	}
+	
+	States
+	{
+		Spawn:
+		3ARM A -1;
+		Stop;
+	}
+}
+
+class TankGiver : GC_ArmorBringer
+{
+	Default
+	{
+		//$Title Tank Armor
+		Height 12;
+		Scale 0.9;
+		Tag "Tank Armor";
+		Inventory.PickupMessage "Protected with almighty Tank Armor!";
+		GC_ArmorBringer.ArmorToGive "TankArmor";
+		GC_ArmorBringer.RestrictivePenalty 0.5;
+	}
+	
+	States
+	{
+		Spawn:
+		4ARM A -1;
+		Stop;
+	}
+}
+*/
+
+// The actual armors.
+class CombatVest : GC_ArmorPickup
+{
+	Default
+	{
+		Height 12;
+		armor.saveamount 75;
+		armor.savepercent 25;
+		inventory.pickupmessage "Got yourself a combat vest.";
+		inventory.pickupsound "Armor/Pickup";
+		inventory.icon '1ARMA0';
+		Scale 0.9;
+		GC_ArmorPickup.RestrictivePenalty 0.67;
+	}
+	states
+	{
+	Spawn:
+		1ARM A -1;
+		Stop;
+	}
+}
+
+class CombatArmor : GC_ArmorPickup
+{
+	Default
+	{
+		Height 12;
+		armor.saveamount 100;
+		armor.savepercent 40;
+		inventory.pickupmessage "Got yourself a combat armor.";
+		inventory.pickupsound "Armor/Pickup";
+		inventory.icon '2ARMA0';
+		Scale 0.9;
+		GC_ArmorPickup.RestrictivePenalty 0.5;
+	}
+	
+	states
+	{
+	Spawn:
+		2ARM A -1;
+		Stop;
+	}
+}
+
+class AssaultArmor : GC_ArmorPickup
+{
+	Default
+	{
+		Height 12;
+		armor.saveamount 200;
+		armor.savepercent 50;
+		inventory.pickupmessage "Got yourself an assault armor!";
+		inventory.pickupsound "Armor/Pickup";
+		inventory.icon '3ARMA0';
+		Scale 0.9;
+		GC_ArmorPickup.RestrictivePenalty 0.5;
+	}
+	
+	states
+	{
+	Spawn:
+		3ARM A -1;
+		Stop;
+	}
+}
+
+class TankArmor : GC_ArmorPickup
+{
+	Default
+	{
+		Height 12;
+		armor.saveamount 300;
+		armor.savepercent 75;
+		inventory.pickupmessage "Now, you got yourself a Tank Armor!";
+		inventory.pickupsound "Armor/Pickup";
+		inventory.icon '4ARMA0';
+		Scale 0.9;
+		GC_ArmorPickup.RestrictivePenalty 0.5;
+	}
+	
+	states
+	{
+	Spawn:
+		4ARM A -1;
+		Stop;
+	}
+}
+
+// Spawners.
+//Silver Shield & Green Armor
+class BasicArmorSpawner : RandomSpawner replaces SilverShield
+{
+	Default
+	{
+		DropItem "CombatVest", 256, 2;
+		DropItem "CombatArmor", 256, 1;
+	}
+}
+
+//Enchanted Shield & Blue Armor
+class AdvancedArmorSpawner : RandomSpawner replaces EnchantedShield
+{
+	Default
+	{
+		DropItem "AssaultArmor", 256, 6;
+		DropItem "TankArmor", 256, 2;
+		//DropItem "MoltenArmorGiver", 256, 1;
+	}
+}

@@ -1,0 +1,128 @@
+#region Poweroops
+//$Color 10
+
+
+class InvulnerabilitySphere2 : CustomInventory
+{
+	Default
+	{
+		//$Title Invulnerability Sphere
+		Tag "\c[Dark Green]Invulnerability Sphere\c-";
+		Inventory.PickupMessage "\c[Dark Green]Invulnerability Sphere!";
+		Inventory.PickupSound "Invulnerability/Pickup";
+		Renderstyle "Add";
+		Inventory.RespawnTics TICRATE * 300;
+		+INVENTORY.AUTOACTIVATE
+		+INVENTORY.ALWAYSPICKUP
+		+COUNTITEM
+		+FLOATBOB
+	}
+	
+	int User_Fade;
+	
+	States
+	{
+	Spawn:
+		PINV AAAABBBBCCCCDDDDEEEEFFFFEEEEDDDDCCCCBBBB 1 Bright { 
+		If(!(GC_PickupParticleChoker || A_CheckSight("Null")))
+		{
+			if(Invoker.User_Fade % 4 == 0)
+			{
+				A_SpawnItemEx("InvulFade",0,0,0,0,0,0,0,SXF_CLIENTSIDE,0);
+				Invoker.User_Fade = 0;
+			}
+				Invoker.User_Fade++;
+				
+				let mo = Spawn("InvulsphereParticle", pos + (
+						frandom(-10, 10),
+						frandom(-10, 10),
+						frandom(-10, 10) + 35));
+					
+					mo.vel = (
+						frandom(-0.6, 0.6),
+						frandom(-0.6, 0.6),
+						frandom(1.2,0.4));
+				/*A_SpawnItemEx("InvulsphereParticle",
+					frandom(10.0,-10.0),frandom(10.0,-10.0),
+					35+frandom(10.0,-10.0),frandom(0.6,-0.6),
+					frandom(0.6,-0.6),frandom(1.2,0.4),
+					frandom(0.0,360.0),SXF_CLIENTSIDE,64);*/
+			}
+		}
+		Loop;
+	Use:
+		TNT1 A 0 {
+			A_GiveInventory("InvulnerabilityGiver");
+			A_GiveInventory("GodModeExtender");
+			A_SetBlend("Yellow",0.2,35);
+			ACS_NamedExecuteWithResult("InvulnerableFix",1);
+		}
+		Stop;
+	}
+}
+
+class PowerGodMode : PowerInvulnerable
+{
+	Default
+	{
+		Inventory.Icon "GDMOD0";
+	}
+	
+	override void DoEffect()
+	{
+		if(owner.CountInv("PowerExtremeDamage"))
+		{
+			Icon = TexMan.CheckForTexture("", TexMan.Type_Sprite);
+		}
+		else
+		{
+			Icon = GetDefaultByType("PowerGodMode").Icon;
+		}
+		Super.DoEffect();
+		return;
+	}
+}
+
+class InvulnerabilityGiver : PowerupGiver
+{
+	Default
+	{
+		Powerup.Type "PowerGodMode";
+		Powerup.Color "Yellow", 0.05;
+		Powerup.Duration -45;
+		Inventory.PickupMessage "\c[Dark Green]Invulnerability Sphere!";
+		Inventory.PickupSound "Invulnerability/Pickup";
+		+INVENTORY.AUTOACTIVATE
+		+INVENTORY.ALWAYSPICKUP
+		+INVENTORY.ADDITIVETIME
+	}
+}
+
+class InvulFade : actor
+{
+	Default
+	{
+		Renderstyle "Add";
+		+NOINTERACTION
+		+NOTONAUTOMAP
+	}
+	States
+	{
+	Spawn:
+		PINV C 0 NoDelay A_FadeOut(0.12);
+		PINV C 1 A_SetScale(Scale.X + 0.02);
+		Loop;
+	}
+}
+
+class GodModeExtender : PowerupExtender
+{
+    override void AttachToOwner(Actor user)
+    {
+		ExtendThese.Push("PowerGodMode");
+		
+		Super.AttachToOwner(user);
+    }
+}
+
+#endregion

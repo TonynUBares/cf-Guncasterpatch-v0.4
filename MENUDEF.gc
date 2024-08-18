@@ -1,0 +1,470 @@
+DEFAULTLISTMENU
+{
+	Font "BigFont"
+
+	IfGame(Heretic, Hexen)
+	{
+		Selector "GCHEAD1", -28, -3 //-28, -1
+		Linespacing 20
+		Font "BigFont", White
+	}
+	IfGame(Strife)
+	{
+		Selector "GCHEAD1", -28, -5
+		Linespacing 19
+		Font "BigFont", "Gold"
+	}
+	IfGame(Doom, Chex)
+	{
+		Selector "GCHEAD1", -28, -6
+		Linespacing 16
+		Font "BigFont", "Red"
+	}
+}
+
+ListMenu "MainMenu"
+{
+	Size "Clean"
+	IfGame (DOOM)
+	{
+	  ifOption(OpenAL) { StaticPatch 80,-5, "MDOOMHD" }
+	  else { StaticPatch 80,-25, "MDOOMHD" }
+	  Position 93,90
+	}
+	Font "BIGFONT", "DarkGray" , "White"
+	TextItem "New Game",			"n",	"PlayerclassMenu"
+	TextItem "Mod Options",			"c",	"ModMenu"
+	TextItem "$ExtraInfo",			"h",	"ExtraInfo"
+	TextItem "Options",				"o",	"OptionsMenu"
+	TextItem "Load",				"l",	"LoadGameMenu"
+	TextItem "Save",				"s",	"SaveGameMenu"
+	TextItem "Exit",				"q",	"QuitMenu"
+	Position 1, 1
+}
+
+
+OptionMenu "ModMenu"
+{
+	Title "Mod Options"
+	SubMenu "CF Options","OptionsCF"
+	StaticText " "
+	SubMenu "CF-GC Compatibility","Compatibility"
+	StaticText " "
+	SubMenu "Here be Dragons","CasterMenu"
+	StaticText " "
+	SubMenu "GC Controls","ControlMenu"
+	StaticText " "
+}
+
+
+OptionMenu "Compatibility"
+{
+	Title "CF-GC Compatibility Options"
+
+	StaticText " "
+	Option "$WeaponryExtensionOption1",	"weaponExt",	"WeapExtension"
+	StaticText " "
+	StaticText "$CompO11"
+	StaticText "$CompO12"
+	StaticText " "
+	StaticText "$CompO13"
+	StaticText "$CompO14"
+	StaticText " "
+}
+
+OptionValue "WeapExtension"
+{
+    0, "ModOnly"
+    1, "All"
+}
+
+OptionMenu "CasterMenu"
+{
+	Title "EXTRA STUFFS"
+	StaticText ""
+	StaticText "Performance and little comforts of life.", 1
+	Submenu "Convenience Options",		"ConvenienceMenu"
+	StaticText ""
+	StaticText "Because we all love hoarding.", 1
+	Submenu "Loot Options",			"LootMenu"
+	StaticText ""
+	StaticText "Stuff that affects the game in a way.", 1
+	Submenu "Gameplay Options",		"GameplayMenu"
+	StaticText ""
+	StaticText "If you are a first timer,", 1
+	Slider "Fix your goddamn crosshair.",		"crosshairscale", 0.0, 2.0, 0.05, 2
+	
+}
+
+OptionValue "SecretMessageSettings"
+{
+	0, "No mod!"
+	1, "Default"
+	2, "Heretic"
+	3, "Doom"
+	4, "Hexen"
+	5, "Strife"
+	6, "Praise Mima"
+}
+
+OptionValue "DynamiteSettings"
+{
+	0, "Shootable"
+	1, "Non-shootable"
+}
+
+OptionValue "FamiliarSettings"
+{
+	0, "Selective"
+	1, "Random"
+}
+
+OptionValue "ManaRegenSettings"
+{
+	0, "Off"
+	1, "Extreme"
+	2, "Default"
+	3, "Low"
+	4, "Very Low"
+	5, "Snail Speed"
+}
+
+OptionValue "AutoUseSettings"
+{
+	0, "None"
+	1, "Only when Full"
+	2, "Always"
+}
+
+OptionValue "AutoArtifactsSettings"
+{
+	0, "No"
+	1, "Yes"
+	2, "Mana Shield Only"
+}
+
+OptionValue "ArmorSettings"
+{
+	0, "Standard"
+	1, "Restrictive"
+	2, "Button-based"
+}
+
+OptionValue "TilterSettings"
+{
+	0, "Velocity-based"
+	1, "Input-based"
+}
+
+OptionValue "ThrowupSettings"
+{
+	0, "Hell no I'mma throw up"
+	1, "I'm on a boat"
+}
+
+OptionValue "ShopkeeperSettings"
+{
+	// kd: These two settings will be done if we ever decide to add a second
+	// shopkeeper for some reason (it's easily feasible but won't make sense).
+	// -3,   "Random when opened"
+	// -2,   "Automatic Pick"
+	-1,   "No shopkeeper"
+	 0,   "Nithor"
+	// 2, "Korax" // one like = one Cleric killed
+}
+
+OptionValue "CommentarySettings"
+{
+	-1,   "Same as active shopkeeper"
+	 0,   "Nithor"
+}
+
+OptionValue "BelongSettings"
+{
+	0,	"Pls stay"
+	1,	"You don't belong in this world!"
+}
+
+OptionValue "HpStyleSettings"
+{
+	0,	"%"
+	1,	"HP"
+}
+
+OptionValue "ShopSelectSettings"
+{
+	 0,   "Spells"
+	 1,   "Stratocasters"
+	 2,   "Common items"
+	 3,   "Artefacts"
+}
+
+OptionValue "YeaNo"
+{
+	0, "no"
+	1, "yea"
+}
+
+OptionValue "NoYea"
+{
+	0, "yea"
+	1, "no"
+}
+
+OptionValue "AgreeDisagree"
+{
+	0, "disagreed"
+	1, "agreed"
+}
+
+OptionValue "VmAbort"
+{
+	0, "Utsuho / Seinfeld"
+	1, "Simon's Quest"
+	2, "Random"
+}
+
+OptionMenu "LootMenu"
+{
+	class "gc_tipmenu"
+	Title "LOOT OPTIONS"
+	ScrollTop 2
+	StaticText "Scroll down for more options.", "Orange"
+	StaticText ""
+	StaticText "For all your looting needs", "Untranslated"
+	TextField "Starting Dosh", "GC_Doshmeter" //Slider "Starting Dosh", "GC_Doshmeter", 0, 99999, 1, 0
+	Option "Armor Restriction", "GC_RestrictiveArmorBehavior", "ArmorSettings"
+	Option "Loadsamoney Mode", "GC_Loadsamoney", "OnOff"
+	Option "Hoarding Headache", "GC_HoardingHeadache", "OnOff"
+	Option "Mana Headache", "GC_ManaAlwaysPick", "OnOff"
+	Option "Hammerspace Backpack", "GC_Hammerspace", "OnOff"
+	Option "Money Sharing", "GC_MoneyShare", "OnOff"
+	Option "Special Item Sharing", "GC_SpecialShare", "OnOff"
+	Option "Key Sharing", "GC_KeyShare", "OnOff"
+	StaticText ""
+	StaticText "" // Leave it be so the description doesn't cover up the option itself.
+}
+
+OptionMenu "ConvenienceMenu"
+{
+	class "gc_tipmenu"
+	Title "CONVENIENCE OPTIONS"
+	ScrollTop 2
+	StaticText "Scroll down for more options.", "Orange"
+	StaticText ""
+	StaticText "Shop Non-Mouse Control", "Untranslated"
+	Option "Mouseless mode", "gc_joypadmode", "OnOff"
+	Slider "Mouseless speed", "gc_joypadspeed", 0.5, 3, 0.1, 1
+	StaticText ""
+	StaticText "Mobility Options", "Untranslated"
+	Slider "Glide Timer",		"GC_GlideTimer",	0, 35, 1, 0 
+	Slider "Ledge Timer",		"GC_LedgeTimer",	0, 35, 1, 0
+	Option "Ledge Immersion", 	"GC_LedgeImmersion", "OnOff"
+	Option "Spiked suit boots", "GC_SpikeBoots", 	 "OnOff"
+	StaticText ""
+	StaticText "OH THANK GOD-", "Untranslated"
+	Option "Toaster Mode", "GC_ToasterMode", "OnOff"
+	Option "Turn Gore Off", "GC_ToasterGore", "OnOff"
+	Option "Disable Pickup/Barrel Particles", "GC_PickupParticleChoker", "OnOff"
+	StaticText ""
+	StaticText "Recoil Control", "Untranslated"
+	Slider "Weapon Recoil", "GC_WeaponRecoil", 0.0, 2.0, 0.1, 1
+	Option "Weapon screen shaking", "GC_QuakeRecoil", "OnOff"
+	Option "FOV recoil", "GC_ZoomRecoil", "OnOff"
+	Slider "Physical recoil", "GC_PhysicalRecoil", 0.0, 2.0, 0.1, 1
+	StaticText ""
+	StaticText "Muh immersion!", "Untranslated"
+	Option "Powersuit Helmet HUD", "GC_HUDHelmet", "OnOff"
+	Option "Force normal steps", "GC_ForceNormalSteps", "OnOff"
+	Option "Keep default size", "GC_NoExtraHeight", "OnOff"
+	StaticText ""
+	StaticText "HP Viewer", "Untranslated"
+	Option "Show target health",	"gc_hpview_show",			"YeaNo"
+	Option "Allies only",			"gc_hpview_alliesonly",		"YeaNo"
+	Option "Health style",			"gc_hpview_style",			"HpStyleSettings"
+	Slider "Scale",					"gc_hpview_scale",			0.5, 4, 0.1, 1
+	Option "Drop HP slowly",		"gc_hpview_slow",			"YeaNo"
+	Option "Allow shaking",			"gc_hpview_shake",			"YeaNo"
+	Option "Agree with Chillgrasp",	"gc_hpview_prefergrasped",	"YeaNo"
+	Option "Ignore too dark rooms",	"gc_hpview_nodark",			"YeaNo"
+	StaticText ""
+	StaticText "Shop", "Untranslated"
+	Slider "Ring opacity%",			"gc_shop_scale",			0.05, 1, 0.05, 1
+	Slider "Sprite scale",			"gc_shop_scale",			1, 3, 0.5, 1
+	Option "Nearest scaling",		"gc_shop_roughscale",		"NoYea"
+	Option "Use wide message box",	"gc_shop_smallbox",			"NoYea"
+	StaticText ""
+	StaticText "Seasick Simulator (view tilt)", "Untranslated"
+	Option "Enabled?",		"gc_tilt_enabled", "ThrowupSettings"
+	Slider "Forward angle",	"gc_tilt_movesway", 0, 3.0, 0.25, 2
+	Slider "Sideway angle",	"gc_tilt_sidesway", 0, 3.0, 0.25, 2
+	Slider "Turning angle",	"gc_tilt_looksway", 0, 3.0, 0.25, 2
+	Option "Allow Pitching", "gc_tilt_pitchsway_on", "YeaNo"
+	StaticText ""
+	//Why use tacky haxes when I can use a native option I didn't know about, lol.
+	StaticText "Miscellaneous", "Untranslated"
+	Option "VM Abort Style", "gc_abortmode", "VmAbort"
+	Option "Secret message style", "gc_secretmode", "SecretMessageSettings"
+	Option "Force Default Crosshair", "crosshairforce", "OnOff" //Option "Crosshair Mode", "GC_Crosshair", "OnOff"
+	Slider "Shout Chance",		"GC_ShoutChance",			0, 100, 1, 0
+	Option "Mute Ironblast Spirit", "GC_MuteShotgun", "OnOff"
+	Option "Third person dance taunt", "gc_dancecam", "YeaNo"
+	Option "Special item tips", "GC_Tips", "OnOff"
+	Option "Auto-activate artifacts", "GC_AutoArtifact", "AutoArtifactsSettings"
+	Option "Auto-activate consumables", "GC_AutoUse", "AutoUseSettings"
+	StaticText ""
+	StaticText ""
+}
+
+OptionMenu "GameplayMenu"
+{
+	class "gc_tipmenu"
+	Title "GAMEPLAY OPTIONS"
+	ScrollTop 2
+	StaticText "Scroll down for more options.", "Orange"
+	StaticText ""
+	StaticText "This mod unbal, pls fix", "Untranslated"
+	Slider "Damage Given", "GC_PlayerAttackMult", 0.0, 5.0, 0.01, 2
+	Slider "Damage Taken", "GC_PlayerDefenseMult", 0.0, 5.0, 0.01, 2
+	// StaticText ""
+	// Option "Hard-on Mode", "GC_HardOn", "OnOff" // Made it a generalized option in case I'd want to expand it.
+	StaticText ""
+	StaticText "Extras", "Untranslated"
+	Option "Autohealing", "GC_AutoHeal", "OnOff"
+	Slider "Autoheal Lower Limit", "GC_AutoHealLimit", 0, 100, 1, 0
+	Option "Mana Regeneration", "GC_ManaRegenSpeed", "ManaRegenSettings"
+	Option "Instant TNT Toss", "GC_TraditionalQuickToss", "OnOff"
+	Option "Infinite Dergovision", "GC_TraditionalVision", "OnOff"
+	Option "Asbestos suit animation", "GC_TraditionalSuit", "OffOn"
+	Option "Shootable Dynamite", "GC_ShootableTNT", "DynamiteSettings"
+	//Option "Extremesphere Wyvern Mode", "GC_WyvernEffect", "OnOff"
+	//Option "Wyvern Casting Mode", "GC_WyvernMode", "FamiliarSettings"
+	Option "Gunslinger Mode", "GC_Gunslinger", "OnOff"
+	Option "Unlock all shop items", "gc_shop_unlockall", "yeano"
+	StaticText ""
+	StaticText ""
+}
+
+OptionMenu "ControlMenu"
+{
+	Title 	"CUSTOMIZE MOD CONTROLS"
+	ScrollTop 2
+	StaticTextSwitchable 	"ENTER to change, BACKSPACE to clear", "Press new key for control, ESC cancels.", "ControlMessage"
+	StaticText 	""
+	StaticText "If you want some alternates or weird stuff", 1
+	Submenu "Non-mandatory Controls",		"ExtraControlMenu"
+	StaticText 	""
+	StaticText "Mandatory Controls", "Untranslated"
+	StaticText ""
+	Control 	"Fire",					"+attack"
+	Control 	"Altfire / Cast Spell",	"+altattack"
+	Control 	"Toggle Strat (Reload)", "+reload"
+	Control 	"Kick (Zoom)",			"+zoom"
+	StaticText 	""
+	Control 	"Jump / Flight",		"+jump"
+	Control 	"Crouch / Pound",		"+crouch"
+	Control 	"Use / Open",			"+use"
+	Control 	"Move forward",			"+forward"
+	Control 	"Move backward",		"+back"
+	Control 	"Strafe left",			"+moveleft"
+	Control 	"Strafe right",			"+moveright"
+	StaticText 	""
+	Control 	"Call Shopkeeper",		"+Gimbostratus"
+	StaticText 	""
+	StaticText 	"Context Menus / Quick Access", "Untranslated"
+	StaticText 	"Hold button to summon a context menu.", White
+	StaticText 	"Hover over item, release, done.", White
+	StaticText 	""
+	Control 	"Quick Spell Wheel", 		"+huhuhumrsoup"
+	Control 	"Quick Weapon Wheel", 		"+leavenoenemystanding"
+	Control 	"Quick Inventory Wheel", 	"+monsieurcandyshop"
+	StaticText 	""
+	StaticText "Inventory", "Untranslated"
+	StaticText 	"There's a bunch of items in this mod!", White
+	StaticText 	""
+	Control 	"Use item",				"invuse"
+	Control 	"Next item",			"invnext"
+	Control 	"Previous item",		"invprev"
+	Control 	"Drop Item",			"invdrop"
+	StaticText 	""
+	StaticText 	"Useful Extras", "Untranslated"
+	StaticText 	""
+	Control 	"Dergovision",			"Vision"
+	Control 	"Quick Heal",			"UbermenschUnlimited"
+	Control 	"TNT Quick-Toss",		"BobsBrainBestExplosiveEver"
+	StaticText 	""
+	StaticText  "For giant holes or co-op traps.", White
+	Control		"Teleport to Start",	"QuickEscape"
+	StaticText 	""
+	StaticText "Nonsensical stuff", "Untranslated"
+	StaticText 	"Not necessary, but feel free to be dumb.", White
+	StaticText 	""
+	Control 	"Taunt",				"DragonBragon"
+	Control 	"Taunt Unusually",		"DancingDerg"
+	StaticText 	""
+	StaticText 	""
+}
+
+OptionMenu "ExtraControlMenu"
+{
+	Title 	"CUSTOMIZE MOD CONTROLS"
+	ScrollTop 2
+	StaticTextSwitchable 	"ENTER to change, BACKSPACE to clear", "Press new key for control, ESC cancels.", "ControlMessage"
+	StaticText 	""
+	StaticText "Non-Mandatory Controls", "Untranslated"
+	StaticText  ""
+	StaticText 	"Spellcasting", "Untranslated"
+	StaticText 	"Alternative ways for accessing spells.", White
+	StaticText 	""
+	StaticText 	"Spell Cycling", "Untranslated"
+	StaticText 	"Standard cycling through.", White
+	StaticText 	""
+	Control 	"Next Spell",			"deckforward"
+	Control 	"Previous Spell",		"deckbackward"
+	StaticText 	""
+	StaticText 	"Spell Assigning", "Untranslated"
+	StaticText 	"Hover over spell of choice in shop,", White
+	StaticText 	"press appropiate button to assign.", White
+	StaticText 	"Now you can access that spell with", White
+	StaticText 	"that button.", White
+	StaticText 	""
+	Control 	"Quick Spell 1",		"+mustardforgeese"
+	Control 	"Quick Spell 2",		"+youarestupidmansidiot"
+	Control 	"Quick Spell 3",		"+youllbeamistofatoms"
+	Control 	"Quick Spell 4",		"+iveconqueredthesun"
+	Control 	"Quick Spell 5",		"+thegreatestfaceinkoridai"
+	StaticText 	""
+	StaticText "Weapons", "Untranslated"
+	StaticText 	"GUNS! WANT 'EM! NEED 'EM!", White
+	StaticText 	"SHOOT ME IN THE FACE!!", White
+	StaticText 	""
+	Control 	"Next Weapon",				"weapnext"
+	Control 	"Previous Weapon",			"weapprev"
+	StaticText 	""
+	Control		"Slot 1",					"slot 1"
+	Control		"Slot 2",					"slot 2"
+	Control		"Slot 3",					"slot 3"
+	Control		"Slot 4",					"slot 4"
+	Control		"Slot 5",					"slot 5"
+	Control		"Slot 6",					"slot 6"
+	Control		"Slot 7",					"slot 7"
+  /*Control		"Slot 8",					"slot 8" // Not ever really needed in GC.
+	Control		"Slot 9",					"slot 9"
+	Control		"Slot 0",					"slot 0"*/
+	StaticText 	""
+	StaticText 	"Miscellaneous", "Untranslated"
+	StaticText 	""
+	StaticText 	"In case of Hexen/Strife, check your keyring.", White
+	Control 	"Keys list",			"showpop 2"
+	StaticText 	""
+	StaticText 	"Quick Item Usage", "Untranslated"
+	StaticText 	"In case you need something immediately.", White
+	StaticText 	""
+	Control 	"Tome of Power/Amplifier",	"+PowerOverwhelming"
+	Control 	"Rejuv Potion/Capsule",		"+ItsOver9000"
+	Control 	"Asbestos Suit",			"Rubberfruit"
+	Control 	"Gunzerk",					"+HolyDogShit"
+	Control 	"Berserk",					"+TentativeButtsecks"
+	Control 	"Midas Tome",				"MoneyShot"
+	Control 	"Quick Ironblast Exorcism",	"ShotgunExorcism"
+}

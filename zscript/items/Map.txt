@@ -1,0 +1,15 @@
+class MapScroll : SuperMap replaces SuperMap
+{
+	Default
+	{
+		Inventory.PickupMessage "\c[tan]Floating scroll with vertices\c-! How joyful!";
+		Inventory.PickupSound "Map/Pickup";
+	}
+	
+	States
+	{
+	Spawn:
+		SPMP A -1;
+		Stop;
+	}
+}

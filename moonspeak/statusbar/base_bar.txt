@@ -1,0 +1,1673 @@
+/*	KeksDose / MemeDose (kd):
+	
+	Everything shared between status bars (lol OOP).
+	
+	*/
+
+class NoHudZone : Inventory {
+	default {
+		Inventory.MaxAmount 1;
+	}
+}
+
+class Gc_StatusBar : BaseStatusBar {
+	
+	// Some settings:
+	const mug_alpha_tics		= 50;	// Full alpha time
+	const draugh_alpha_tics		= 25;	// Draugh alpha time
+	
+	const o2_bar_fade_tics		= 8;
+	const cr_bar_fade_tics		= 12;
+	const vp_bar_fade_tics		= 12;
+	const mb_bar_fade_tics		= 20;
+	const mb_bar_bob_tics		= 8;
+	const as_bar_bob_tics		= 14;
+	const as_bar_fade_tics		= 20;
+	const medbag_fade_tics		= 14;
+	const tnt_fade_tics			= 14;
+	const midas_fade_tics		= 14;
+	const bishop_fade_tics		= 20;	// Bishop helmet animation time
+	const cool_fade_tics		= 20;	// Any cooldown timers going on screen
+	const gold_bob_tics			= 8;
+	const gold_fade_tics		= 10;
+	
+	const bg_alpha_tics			= 30;
+	const automap_alpha_tics	= 10;
+	
+	// Specific about molten armor bonus:
+	protected int						molten_bonus;
+
+	// Initial data that can change with mods to GC:
+	protected Gc_SbarData				sbar_data_handler;
+	
+	// Spell list:
+	protected Gc_SpellIcons				spell_icons;
+	
+	// Health, armour, mana and vision bars / meters:
+	protected Gc_SbarHealthMeter		hp_bar, hp_lag;		// Health
+	protected Gc_SbarArmorMeter			ap_bar, ap_lag;		// Armor
+	protected Gc_SbarInvMeter			mp_bar, mp_lag;		// Mana
+	protected Gc_SbarInvMeter			mb_bar;				// Medbag
+	protected Gc_SbarInvMeter			as_bar;				// Asbestos Suit
+	protected Gc_SbarAirMeter			o2_bar;				// Air
+	protected Gc_SbarInvMeter			cr_bar;				// Riftwalk Mana
+	protected Gc_SbarInvMeter			vp_bar;				// Dergovision
+	
+	// Particle overlays for the above bars:
+	protected Gc_VerClipOverlay			hp_fx, o2_fx;
+	protected Gc_HorClipOverlay			ap_fx, mp_fx, vp_fx, cr_fx;
+	
+	// Timers to make them show up:
+	protected FadeTick					o2_bar_t, cr_bar_t, vp_bar_t, mb_bar_t, as_bar_t;
+	
+	// Timers to make them bounce or something:
+	protected FadeTick					mb_bob_t, as_bob_t;
+	protected FadeTick					gold_alpha_t, gold_bob_t;
+	
+	// Cooldown stuff:
+	protected Gc_SbarInvMeter			draugh_cool,	tnt_cool,	midas_cool;
+	protected Gc_SbarPowerupMeter		medbag_cool;
+	protected FadeTick					draugh_cool_t,	tnt_cool_t,	midas_cool_t, medbag_cool_t;
+	// 1-t cool-t magic key lol
+	
+	// The inventory bar:
+	protected Gc_InvBarControl			inv_control;
+	protected Gc_InvBar					inv_bar;
+	protected TextureId					box_sprite;
+	
+	// Assorted stuff:
+	protected Gc_SbarMugshot			mug_shot;
+	protected Gc_SbarPowerups			powerups;
+	protected Gc_SbarEye				left_eye,		right_eye;
+	protected Gc_SbarEyeCycle			left_eye_cycle,	right_eye_cycle;
+	protected Gc_SbarSupermags			supermags;
+	// protected Gc_InventoryBar				inv_bar;
+	// protected InventoryBarState			inv_bar;
+	
+	// Waterlevel handling:
+	protected int						water_level;
+	protected int						old_water_level;
+	
+	// Item equip handling:
+	protected Gc_InvObserver			vision_inv;
+	protected Gc_InvObserver			riftwalk_inv;
+	protected Gc_InvObserver			bishop_inv;
+	protected Gc_InvObserver			medbag_inv;
+	protected Gc_InvObserver			tnt_inv;
+	protected Gc_InvObserver			draugh_inv;
+	protected Gc_InvObserver			midas_inv;
+	protected Gc_InvObserver			gunzerk_inv;
+	protected Gc_InvObserver			mb_bob_inv;
+	
+	protected Gc_WeapObserver			bishop_activate_weap;
+	protected Gc_WeapObserver			bishop_deactivate_weap;
+	
+	// Statues, backgrounds and such:
+	protected Gc_SbarSprite				statue_left;
+	protected Gc_SbarSprite				statue_right;
+	protected Gc_SbarSprite				mug_bg;
+	protected Gc_SbarSprite				inv_bg;
+	
+	// Bishop stuff:
+	protected Gc_SbarSprite				light_left;
+	protected Gc_SbarSprite				light_right;	// lol
+	protected Gc_SbarMoveSprite			chin_left;
+	protected Gc_SbarMoveSprite			chin_right;
+	protected Gc_SbarMoveSprite			helmet_left;
+	protected Gc_SbarMoveSprite			helmet_right;
+	
+	// Timers:
+	protected FadeTick					mug_fade_t;
+	
+	protected FadeTick					medbag_delay_t;
+	protected FadeTick					tnt_delay_t;
+	protected FadeTick					midas_delay_t;
+	protected FadeTick					bishop_t;
+	
+	protected FadeTick					bg_alpha_t;
+	protected FadeTick					automap_alpha_t;
+	
+	const spell_switch_tics				= 6;
+	const inv_switch_tics				= 6;
+	
+	protected FadeTick					spell_out_t;
+	protected FadeTick					spell_in_t;
+	
+	protected bool						smells_gold;
+	protected bool						old_smells_gold; // ahahahaiwoeurqwiout
+	
+	// Fonts:
+	protected HudFont					small_font;
+	protected HudFont					mid_font;
+	protected HudFont					ammo_font;
+	protected HudFont					text_font;
+	protected HudFont					mono_font;
+	
+	protected vector2					mug_bg_pos;
+	protected vector2					inv_bg_pos;
+	protected vector2					statue_left_pos;
+	protected vector2					statue_right_pos;
+	
+	private Gc_FontColors				extra_colors;
+	
+	// Some cached alphas:
+	protected double					base_alpha;
+	protected double					automap_alpha;	// has base_alpha appl.
+	
+	/*	KeksDose / MemeDose (kd):
+		
+		This entire code is based around like, two ideas:
+		
+		1. Observe inventory item changes to trigger special animations; use
+		the FadeTick struct to move stuff on the screen and fade in / out
+		
+		2. Tons of meters
+		
+		Every little bit is its own small obstacle, but nothing daunting. There
+		is always these three states:
+		
+		1. Getting loaded (usually at map start) or triggered
+		2. Getting drawn (perhaps for a certain duration)
+		3. Maybe unloading (if it's some icon that doesn't persist all game)
+		
+		I tried to make the code kinda self-explanatory, but sometimes, it ends
+		up kinda vulgar anyway. I guess it's still mostly fine.
+		
+		*/
+	
+	protected Cvar						cvar_blocks;
+	protected Cvar						cvar_alt_hud;
+	protected Gc_ChangingSpellIcons		changing_spell_icons;
+	
+	virtual void PreInit () {}
+	virtual void PostInit () {}
+	
+	override void Init () {
+		CacheSbarDataHandler();
+		PreInit();
+		super.Init();
+		SetSize(0, 320, 200);
+		InitBaseSbar();
+		PostInit();
+	}
+	
+	void InitBaseSbar () {
+		molten_bonus = ActorEx.MoltenBonus();
+		empty_sprite = Gc_Sprite.Empty();
+		
+		vision_inv.		Observe("VisionCounter");
+		riftwalk_inv.	Observe("DraughRiftwalking");
+		bishop_inv.		Observe("PowerSuitToken");
+		medbag_inv.		Observe("PowerMedbagFake");
+		tnt_inv.		Observe("DynamiteTossTimer");
+		draugh_inv.		Observe("DraughUseCooldown");
+		midas_inv.		Observe("MidasTimer");
+		gunzerk_inv.	Observe("PowerGunzerking");
+		
+		bishop_activate_weap.	Observe("CygborgActivateWeapon");
+		bishop_deactivate_weap.	Observe("CygborgDeactivateWeapon");
+		
+		LoadFontData();
+		LoadNormalElements();
+		LoadMeters();
+		LoadBishopHelmet();
+		
+		spell_in_t.Force(spell_switch_tics);
+		spell_out_t.Force(0);
+		
+		cvar_blocks		= Cvar.GetCvar("screenblocks", cplayer);
+		cvar_alt_hud	= Cvar.GetCvar("hud_althud", cplayer);
+		
+		if(10 < cvar_blocks.GetInt()) {
+			AlignMeterTextFullscreen();
+		}
+		
+		else {
+			AlignMeterTextNormal();
+		}
+		
+		/*inv_bar = InventoryBarState.Create(
+			small_font,
+			Font.cr_gold,
+			boxgfx: "");*/
+		
+		inv_bar.Init(items_shown_: 11, box_size_: (32, 32));
+		box_sprite = Gc_Sprite.Load("selectbo");
+		
+		if(sbar_data_handler) {
+			changing_spell_icons = new("Gc_ChangingSpellIcons");
+			changing_Spell_icons.Init();
+			
+			sbar_data_handler.CopyPowerupsTo(powerups);
+			sbar_data_handler.CopyMugshotsTo(mug_shot);
+			sbar_data_handler.CopyFontColorsTo(extra_colors);
+			supermags	= sbar_data_handler.SupermagsPtr();
+			spell_icons	= changing_spell_icons.Icons();
+			left_eye	= sbar_data_handler.LeftEyePtr();
+			right_eye	= sbar_data_handler.RightEyePtr();
+			
+			supermags.Init();
+			
+			if(spell_icons) {
+				console.printf("yes!");
+			}
+			
+			else {
+				console.printf("no!");
+			}
+		}
+	}
+	
+	override void NewGame () {
+		super.NewGame();
+		ResetTimers();
+		supermags.Reset();
+		// kd: I need this in a place juuuuust after the player is created!
+		// ResetMeters();
+	}
+	
+	override void Tick () {
+		super.Tick();
+		
+		changing_spell_icons.TickFirebreathIcon(cplayer.mo);
+		changing_spell_icons.TickSigilIcon(cplayer.mo);
+		
+		CacheUserSettings();
+		mug_shot.CacheData(cplayer.mo);
+		supermags.Tick(self, cplayer);
+		
+		NextAlphaTimers();
+		NextAutomap();
+		
+		NextEyes();
+		NextMetersLarge();
+		NextMeters();			// Health, Armour, Mana, Air, Vision
+		NextCooldownMeters();	// TNT and Midas cooldown
+		NextItemMeters();		// Medbag and Asbestos Suit
+		NextRiftwalk();			// Trigger face translucency
+		NextBishopHud();		// Trigger Bishop HUD
+		NextGoldSmell();		// Gold smell text
+		NextSpellIcon();		// Spell switch animation
+		NextInventoryIcon();	// Inventory switch animation
+		NextInventoryBar();		// Inventory bar handling
+	}
+	
+	// kd: This handles scrolling the inventory bar. The internals are a bit of
+	// a mess, but this looks pretty good to me.
+	void NextInventoryBar () {
+		inv_control.BeginCheck(cplayer.mo, IsInventoryBarVisible());
+		
+		if(inv_control.JustActivated()) {
+			inv_bar.FillFromPlayer(cplayer.mo);
+			inv_bar.Show();
+		}
+		
+		else if(inv_control.JustDeactivated()) {
+			inv_bar.Hide();
+		}
+		
+		if(inv_control.HasSelectionChanged()) {
+			inv_bar.FillFromPlayer(cplayer.mo);
+			
+			if(inv_control.IsScrollLeft()) {
+				S_Sound("spell/yes", 0, 0.5);
+				inv_bar.ScrollLeft();
+			}
+			
+			else if(inv_control.IsScrollRight()) {
+				S_Sound("spell/yes", 0, 0.5);
+				inv_bar.ScrollRight();
+			}
+			
+			// kd: Guess the item wasn't neighbouring, so just force it in
+			// place like the old inventory bar.
+			else {
+				S_Sound("spell/yes", 0, 0.5);
+				inv_bar.ForcedScroll();
+			}
+		}
+		
+		inv_bar.NextState();
+	}
+	
+	protected TextureId				prev_spell_sprite;
+	protected TextureId				spell_sprite;
+	protected int					cycle_dir;
+	
+	void NextSpellIcon () {
+		let caster				= Guncaster(cplayer.mo);
+		
+		if(!caster) {
+			return;
+		}
+		
+		let old_spell_sprite	= spell_sprite;
+		spell_sprite			= spell_icons.At(caster.SpellIndex());
+		
+		if(spell_sprite != old_spell_sprite) {
+			prev_spell_sprite = old_spell_sprite;
+			spell_out_t.To(spell_switch_tics, from: 0);
+			cycle_dir = caster.is_cycling_forwards ? 1 : -1;
+		}
+		
+		spell_out_t.Next();
+		
+		if(spell_out_t.IsDone()) {
+			spell_out_t.Force(0);
+		}
+	}
+	
+	protected TextureId				prev_inv_sprite;
+	protected TextureId				inv_sprite;
+	protected FadeTick				inv_out_t;
+	protected vector2				inv_size;
+	protected TextureId				empty_sprite;
+	
+	void NextInventoryIcon () {
+		let old_inv_sprite = inv_sprite;
+		
+		if(cplayer.mo.invsel) {
+			[inv_sprite, inv_size] = GetIcon(
+					cplayer.mo.invsel,
+					DI_ARTIFLASH | DI_ITEM_CENTER | DI_SCREEN_BOTTOM);
+		}
+		
+		else {
+			inv_sprite	= empty_sprite;
+			inv_size	= (1, 1);
+		}
+		
+		if(inv_sprite != old_inv_sprite) {
+			prev_inv_sprite = old_inv_sprite;
+			inv_out_t.To(inv_switch_tics, from: 0);
+		}
+		
+		inv_out_t.Next();
+		
+		if(inv_out_t.IsDone()) {
+			inv_out_t.Force(0);
+		}
+	}
+	
+	// kd: t is the fractional tic.
+	override void Draw (int state, double t) {
+		super.Draw(state, t);	// kd: Not sure what this does!
+		BeginStatusBar();		// Dunno about this either.
+		BeginHud();				// But I know this fixes the screen coordinates!
+		
+		CacheClipRect();
+		
+		// kd: Cache the alphas. We're not using them for gameplay reasons,
+		// so this is ok to do.
+		base_alpha =
+			bg_alpha_t.RenderStandardDelta(bg_alpha_tics, t);
+		
+		automap_alpha = base_alpha *
+			automap_alpha_t.RenderStandardDelta(automap_alpha_tics, t);
+		
+		// kd: The Bishop helmet outlasts the time you have the token inventory,
+		// so instead, draw as long as the thing is being animated.
+		if(0 < bishop_t.Now()) {
+			DrawBishopHelmet(automap_alpha, t);
+		}
+		
+		supermags.Draw(self, t);
+		
+		// kd: The state var is aids.
+		int blocks = cvar_blocks.GetInt();
+		
+		if(10 < blocks) {
+			AlignMeterTextFullscreen();
+			DrawMetersLarge(t);
+		}
+		
+		else {
+			AlignMeterTextNormal();
+			DrawElements(base_alpha);
+			DrawEyes(t: t);
+			DrawMeters(t);
+		}
+		
+		DrawItemMeters(t);
+		RestoreClipRectFromCache();
+		
+		DrawCurrentAmmo();
+		DrawDoshAmount();
+		DrawCooldownMeters(t);
+		DrawMugshot(143, -32, t);
+		DrawSpellIcon(-149, -23, t: t);
+		DrawInventory(121.5, 15, t: t);
+		DrawInventoryBar(pos: (0, 48), t: t);
+		DrawGoldSmell(47, -72, t);
+		
+		RestoreClipRectFromCache();
+	}
+	
+	protected void DrawGoldSmell (int x, int y, double t = 1) const {
+		double alpha	= gold_alpha_t.RenderStandardDelta(gold_fade_tics, t);
+		double bob_alpha= gold_bob_t.RenderStandardDelta(gold_bob_tics, t);
+		
+		String gold_str = String.Format(
+			"I smell gold... %i", cvar_gold_distance.GetInt() / 30);
+		
+		DrawString(
+			text_font, gold_str,
+			(x, y),
+			DI_ITEM_LEFT_TOP | DI_TEXT_ALIGN_LEFT | DI_SCREEN_LEFT_BOTTOM,
+			translation: Font.cr_gold,
+			alpha: alpha);
+		DrawString(
+			text_font, gold_str,
+			(x, y),
+			DI_ITEM_LEFT_TOP | DI_TEXT_ALIGN_LEFT | DI_SCREEN_LEFT_BOTTOM,
+			translation: Font.cr_white,
+			alpha: bob_alpha);
+	}
+	
+	virtual void DrawFullscreen (double t) {
+		
+	}
+	
+	protected int	screen_blocks;
+	protected bool	is_alt_hud;
+	
+	protected void CacheUserSettings () {
+		screen_blocks	= cvar_blocks	? cvar_blocks.GetInt()		: 10;
+		is_alt_hud		= cvar_alt_hud	? cvar_alt_hud.Getbool()	: false;
+	}
+	
+	protected bool NoHud () const {
+		return
+			12 <= screen_blocks ||
+			is_alt_hud ||
+			0 < cplayer.mo.CountInv("NoHudZone");
+	}
+	
+	protected void NextAlphaTimers () {
+		bg_alpha_t.Next();
+		automap_alpha_t.Next();
+	}
+	
+	protected void LoadBishopHelmet () {
+		light_left.		Load("helmovr3");
+		light_right.	Load("helmovr4");
+		chin_left.		Load("helmleft");
+		chin_right.		Load("helmrght");
+		helmet_left.	Load("helmlft2");
+		helmet_right.	Load("helmrgt2");
+		
+		chin_left.		StartRelativeToSize(-1, 0.404);
+		chin_right.		StartRelativeToSize( 1, 0.404);
+		helmet_left.	StartRelativeToSize(-1, -0.1337);
+		helmet_right.	StartRelativeToSize( 1, -0.1337);
+		chin_left.		EndRelativeToSize(-0.2, 0.04);
+		chin_right.		EndRelativeToSize( 0.2, 0.04);
+		helmet_left.	EndRelativeToSize(-0.2, -0.1);
+		helmet_right.	EndRelativeToSize( 0.2, -0.1);
+	}
+	
+	protected void DrawBishopHelmet (double alpha = 1, double t = 1) {
+		
+		// kd: The helmet parts move in, then lock into place.
+		double anim_f =
+			Gc_PulseFunc.over_pulse2f(bishop_t.RenderStandardTarget(t));
+		
+		light_left.		DrawTopLeft		(self, (0, 0),   anim_f * 0.8 *	alpha);
+		light_right.	DrawTopRight	(self, (0, 0),   anim_f * 0.8 *	alpha);
+		chin_left.		DrawBottomLeft	(self, anim_f,					alpha);
+		chin_right.		DrawBottomRight	(self, anim_f,					alpha);
+		helmet_left.	DrawTopLeft		(self, anim_f,					alpha);
+		helmet_right.	DrawTopRight	(self, anim_f,					alpha);
+	}
+	
+	// kd: fdjskfljakdlsjfkdajsfkljdsaklghklfsjhgklfjsdkljklhjfdklsgjklfsdjg
+	// jfgkljsdgkjfdklsgjfklsdgjklsfdjgklsfdjgklsd
+	
+	// fsf
+	
+	// f
+	
+	protected void DrawInventoryBar (
+	vector2	pos			= (0, 32),
+	double	t			= 1) {
+		if(inv_bar.fade_t.Now() <= 0 || inv_bar.count < 1) {
+			return;
+		}
+		
+		let alpha		= inv_bar.fade_t.RenderStandardDelta(inv_bar.fade_tics, t);
+		let anim_f		= inv_bar.scroll_t.RenderStandardDelta(inv_bar.scroll_tics, t);
+		let i			= inv_bar.draw_index;
+		let base_pos	= (
+			pos.x - inv_bar.HorOffset(anim_f) - 0.5 * inv_bar.box_size.x,
+			-(0.75 + 0.25 * Gc_Interpol.trerp_unit(alpha)) * pos.y);
+		let draw_pos	= base_pos;
+		
+		for(let j = 0; j < inv_bar.ItemsShown(); j++) {
+			let total_alpha = inv_bar.Alpha(draw_pos.x) * alpha;
+			
+			DrawTexture(
+				inv_bar.sprite [i],
+				draw_pos,
+				DI_ITEM_CENTER | DI_SCREEN_CENTER_BOTTOM,
+				total_alpha,
+				(inv_bar.box_width [i], inv_bar.box_height [i]));
+			
+			if(1 < inv_bar.amount [i]) {
+				DrawString(
+					small_font,
+					"" .. inv_bar.amount [i],
+					draw_pos + 0.5 * inv_bar.box_size,
+					DI_SCREEN_CENTER_BOTTOM | DI_TEXT_ALIGN_RIGHT,
+					Font.cr_gold,
+					total_alpha);
+			}
+			
+			draw_pos.x -= inv_bar.box_size.x;
+			
+			i--;
+			
+			if(i < 0) {
+				i = inv_bar.count -1;
+			}
+		}
+		
+		// kd: The box sprite, too.
+		DrawTexture(
+			box_sprite,
+			(pos.x, base_pos.y),
+			DI_SCREEN_CENTER_BOTTOM | DI_ITEM_VCENTER,
+			alpha);
+	}
+	
+	protected void DrawInventory (
+	double	x,
+	double	y,
+	int		box_size_x	= 32,
+	int		box_size_y	= 32,
+	double	t			= 1) {
+		let anim_f = 2 * inv_out_t.RenderStandardDelta(inv_switch_tics, t);
+		let sprite = inv_sprite;
+		
+		if(1 < anim_f) {
+			anim_f -= 2 - 1.0 / inv_switch_tics;
+		}
+		
+		else if(0 < anim_f) {
+			sprite = prev_inv_sprite;
+		}
+		
+		DrawTexture(
+			sprite,
+			(x, 15 * anim_f - y),
+			DI_ITEM_CENTER | DI_SCREEN_BOTTOM,
+			1 - abs(anim_f),
+			(box_size_x, box_size_y),
+			inv_size);
+		
+		if(cplayer.mo.invsel != NULL) {
+			let amount = cplayer.mo.invsel.amount;
+			
+			if(1 < amount) {
+				DrawRightNumBottom(
+					cplayer.mo.invsel.amount,
+					x + 20, -10,
+					small_font, Font.cr_gold);
+			}
+		}
+	}
+	
+	override void DrawPowerups () {
+		powerups.DrawTopRight(self, small_font, -22, 25);
+	}
+	
+	// kd:
+	// When the automap starts, certain elements might be in the way. This
+	// allows us to control which should fade out when the player needs the
+	// automap to be visible.
+	
+	protected bool old_automap_active;
+	
+	protected void NextAutomap () {
+		bool automap_just_activated = automapactive && !old_automap_active;
+		bool automap_just_deactivated = !automapactive && old_automap_active;
+		
+		if(automap_just_activated) {
+			FadeAutomapAlpha(0.1337);
+		}
+		
+		else if(automap_just_deactivated) {
+			FadeAutomapAlpha(1);
+		}
+		
+		old_automap_active = automapactive;
+	}
+	
+	protected void NextItemMeters () {
+		// kd: Triggers a bob animation for the medbag whenever used:
+		mb_bob_inv.Next(cplayer.mo);
+		TickIfUsed(mb_bob_t, mb_bob_inv, mb_bar_bob_tics);
+		
+		// kd: Makes the asbestos suit grow a bit while in use:
+		TickUntilDepleted(as_bob_t, "PowerSuitProtect", as_bar_bob_tics);
+	}
+	
+	protected void NextCooldownMeters () {
+		// kd: Only show up if we have cooldown inventory at all.
+		TickUntilDepleted(draugh_cool_t, "DraughUseCooldown", cool_fade_tics);
+		TickUntilDepleted(tnt_cool_t, "DynamiteTossTimer", cool_fade_tics);
+		TickUntilDepleted(midas_cool_t, "MidasTimer", cool_fade_tics);
+		TickUntilDepleted(medbag_cool_t, "PowerMedbagFake", cool_fade_tics);
+		
+		draugh_cool.Next("DraughUseCooldown", cplayer.mo);
+		tnt_cool.InversedNext("DynamiteTossTimer", cplayer.mo);
+		midas_cool.Next("MidasTimer", cplayer.mo);
+		medbag_cool.InversedNext("PowerMedbagFake", cplayer.mo);
+	}
+	
+	protected void NextMeters () {
+		hp_bar.Next(cplayer.mo);
+		ap_bar.Next(cplayer.mo, molten_bonus);
+		mp_bar.Next("Mana", cplayer.mo);
+		cr_bar.Next("Shadows_Tracker", cplayer.mo);
+		vp_bar.Next("VisionCounter", cplayer.mo);
+		o2_bar.Next(cplayer);
+		mb_bar.Next("Medbag", cplayer.mo);
+		as_bar.Next("Envirosuit", cplayer.mo);
+		
+		hp_fx.Scroll();
+		ap_fx.Scroll();
+		mp_fx.Scroll();
+		o2_fx.Scroll();
+		cr_fx.Scroll();
+		vp_fx.Scroll();
+		
+		hp_bar.CacheAmountInt();
+		ap_bar.CacheAmountInt();
+		mp_bar.CacheAmountInt();
+		o2_bar.CacheAmountInt();
+		cr_bar.CacheAmountInt();
+		vp_bar.CacheAmountInt();
+		mb_bar.CacheAmountInt();
+		as_bar.CacheAmountInt();
+		
+		// kd: These bars aren't always visible!
+		TickUntilRefilled(cr_bar_t, "Shadows_Tracker",	cr_bar_fade_tics);
+		TickUntilRefilled(vp_bar_t, "VisionCounter",	vp_bar_fade_tics);
+		TickUntilDepleted(o2_bar_t, "UnderwaterToken",	o2_bar_fade_tics);
+		TickUntilDepleted(mb_bar_t, "Medbag",			mb_bar_fade_tics);
+		TickUntilDepleted(as_bar_t, "Envirosuit",		as_bar_fade_tics);
+	}
+	
+	protected void ResetTimers () {
+		mug_fade_t.Force(mug_alpha_tics);
+		bg_alpha_t.Force(bg_alpha_tics);
+		automap_alpha_t.Force(automap_alpha_tics);
+	}
+	
+	protected void ResetMeters () {
+		/* hp_bar.ToHealth(self);
+		mp_bar.ToInventory(self, "Mana");
+		ap_bar.ToArmor(self);
+		hp_bar.Force();
+		ap_bar.Force();
+		mp_bar.Force(); */
+	}
+	
+	protected void NextEyes () {
+		left_eye_cycle.AllInOrder(cplayer, left_eye);
+		right_eye_cycle.AllInOrder(cplayer, right_eye);
+		
+		left_eye_cycle.Cycle();
+		right_eye_cycle.Cycle();
+	}
+	
+	protected void NextRiftwalk () {
+		riftwalk_inv.Next(cplayer.mo);
+		
+		if(riftwalk_inv.Got()) {
+			mug_fade_t.ContinueTo(draugh_alpha_tics);
+		}
+		
+		else if(riftwalk_inv.Lost()) {
+			mug_fade_t.ContinueTo(mug_alpha_tics);
+		}
+		
+		mug_fade_t.Next();
+	}
+	
+	void TickUntilRefilled (
+	FadeTick			fade_t,
+	class <Inventory>	inv,
+	int					tics	= 100) {
+		int amount, max_amount;
+		[amount, max_amount] = GetAmount(inv);
+		
+		fade_t.ContinueTo(amount < max_amount ? tics : 0);
+		fade_t.Next();
+	}
+	
+	void TickUntilDepleted (
+	FadeTick			fade_t,
+	class <Inventory>	inv,
+	int					tics	= 100) {
+		int amount, max_amount;
+		[amount, max_amount] = GetAmount(inv);
+		
+		fade_t.ContinueTo(0 < amount ? tics : 0);
+		fade_t.Next();
+	}
+	
+	void TickIfUsed (
+	FadeTick			fade_t,
+	Gc_InvObserver		inv,
+	int					tics	= 100) {
+		if(inv.Dropped()) {
+			fade_t.ContinueTo(tics);
+		}
+		
+		else if(fade_t.IsDone()) {
+			fade_t.ContinueTo(0);
+		}
+		
+		fade_t.Next();
+	}
+	
+	protected transient Cvar		cvar_bishop_hud;
+	protected bool					bishop_active;
+	protected bool					bishop_inactive;
+	protected bool					old_bishop_active;
+	protected bool					old_bishop_inactive;
+	
+	protected void NextBishopHud () {
+		cvar_bishop_hud = Cvar.GetCvar("gc_hudhelmet", cplayer);
+		bishop_inv.Next(cplayer.mo);
+		
+		old_bishop_active	= bishop_active;
+		bishop_active		= bishop_inv.Has() && cvar_bishop_hud.GetBool();
+		
+		bool trigger_bishop_hud = bishop_active && !old_bishop_active;
+		bool detrigger_bishop_hud = !bishop_active && old_bishop_active;
+		
+		if(trigger_bishop_hud) {
+			bishop_t.ContinueTo(bishop_fade_tics);
+		}
+		
+		else if(detrigger_bishop_hud) {
+			bishop_t.ContinueTo(0);
+		}
+		
+		if(bishop_inv.Got()) {
+			LoadBishopElements();
+		}
+		
+		else if(bishop_inv.Lost()) {
+			LoadNormalElements();
+		}
+		
+		bishop_t.Next();
+	}
+	
+	protected transient Cvar		cvar_gold_detected;
+	protected transient Cvar		cvar_gold_distance;
+	
+	protected void NextGoldSmell () {
+		cvar_gold_detected	= Cvar.GetCvar("gc_golddetected", cplayer);
+		cvar_gold_distance	= Cvar.GetCvar("gc_golddistance", cplayer);
+		
+		old_smells_gold	= smells_gold;
+		smells_gold		= cvar_gold_detected.GetBool();
+		
+		if(smells_gold && !old_smells_gold) {
+			gold_bob_t.To(0, from: gold_bob_tics);
+			gold_alpha_t.Force(gold_fade_tics);
+		}
+		
+		else if(!smells_gold && old_smells_gold) {
+			gold_bob_t.ContinueTo(0);
+			gold_alpha_t.ContinueTo(0);
+		}
+		
+		gold_alpha_t.Next();
+		gold_bob_t.Next();
+	}
+	
+	protected bool CacheSbarDataHandler () {
+		sbar_data_handler = Gc_SbarData(Gc_SbarData.Find("Gc_SbarData"));
+		return sbar_data_handler != NULL;
+	}
+	
+	protected void FadeBackgroundAlpha (double f) {
+		bg_alpha_t.ContinueTo(clamp(f, 0, 1) * bg_alpha_tics);
+	}
+	
+	protected void FadeAutomapAlpha (double f) {
+		automap_alpha_t.ContinueTo(clamp(f, 0, 1) * automap_alpha_tics);
+	}
+	
+	protected void DrawMugshot (int x, int y, double t) {
+		DrawTexture(GetMugShot(
+				mug_shot.PainStates(),
+				stateflags: mug_shot.DisplayFlags(),
+				default_face: mug_shot.SpriteName()),
+			(x, y), DI_ITEM_OFFSETS,
+			mug_fade_t.RenderStandardTarget(t));
+	}
+	
+	protected void DrawEyes (
+	int		left_x	= 0,
+	int		left_y	= 0,
+	int		right_x	= 0,
+	int		right_y	= 0,
+	double	t		= 1) {
+		
+		// Left eye:
+		left_eye_cycle.CacheAlpha();
+		DrawTexture(
+			left_eye_cycle.CurrentSprite(),
+			(left_x, left_y),
+			DI_ITEM_LEFT_BOTTOM | DI_SCREEN_LEFT_BOTTOM,
+			alpha: left_eye_cycle.CurrentAlpha());	
+		DrawTexture(
+			left_eye_cycle.NextSprite(),
+			(left_x, left_y),
+			DI_ITEM_LEFT_BOTTOM | DI_SCREEN_LEFT_BOTTOM,
+			alpha: left_eye_cycle.NextAlpha());	
+		
+		// console.printf("%02.2f", left_eye_cycle.CurrentAlpha());
+		
+		// Right eye:
+		right_eye_cycle.CacheAlpha();
+		DrawTexture(
+			right_eye_cycle.CurrentSprite(),
+			(right_x, right_y),
+			DI_ITEM_RIGHT_BOTTOM | DI_SCREEN_RIGHT_BOTTOM,
+			alpha: right_eye_cycle.CurrentAlpha());	
+		DrawTexture(
+			right_eye_cycle.NextSprite(),
+			(right_x, right_y),
+			DI_ITEM_RIGHT_BOTTOM | DI_SCREEN_RIGHT_BOTTOM,
+			alpha: right_eye_cycle.NextAlpha());	
+	}
+	
+	protected void DrawMeters (double t) {
+		DrawBarHor			(hp_bar,	46, -31, t: t);
+		DrawVerClipOverlay	(hp_fx,		46, -31, t: t);
+		
+		DrawBarHor			(ap_bar,	46, -20, t: t);
+		DrawHorClipOverlay	(ap_fx,		46, -20, t: t);
+		
+		DrawBarHor			(mp_bar,	46, -9, t: t);
+		DrawHorClipOverlay	(mp_fx,		46, -9, t: t);
+		
+		// kd: Let's do bars that don't always show up.
+		double cr_alpha = cr_bar_t.RenderStandardDelta(cr_bar_fade_tics, t);
+		double vp_alpha = vp_bar_t.RenderStandardDelta(vp_bar_fade_tics, t);
+		double o2_alpha = o2_bar_t.RenderStandardDelta(o2_bar_fade_tics, t);
+		
+		DrawBarHor			(o2_bar,	46, -31,
+			bg_alpha: o2_alpha, alpha: o2_alpha, t: t);
+		DrawVerClipOverlay	(o2_fx,		46, -31, alpha: o2_alpha, t: t);
+		
+		DrawBarHor			(vp_bar,	46, -20,
+			bg_alpha: vp_alpha, alpha: vp_alpha, t: t);
+		DrawHorClipOverlay	(vp_fx,		46, -20, alpha: vp_alpha, t: t);
+		
+		DrawBarHor			(cr_bar,	46, -9,
+			bg_alpha: cr_alpha, alpha: cr_alpha, t: t);
+		DrawHorClipOverlay	(cr_fx,		46, -9, alpha: cr_alpha, t: t);
+		
+		// Draw amounts on top of everything else:
+		DrawBarRealAmount	(ap_bar,	46, -20, small_font, Font.cr_yellow);
+		DrawBarRealAmount	(mp_bar,	46, -9,  small_font, Font.cr_yellow);
+		DrawBarRealAmount	(hp_bar,	46, -31, small_font, Font.cr_yellow);
+		DrawBarRealAmount	(o2_bar,	46, -31, small_font,
+			Font.cr_sapphire, alpha: o2_alpha);
+		DrawBarRealAmount	(vp_bar,	46, -20, small_font,
+			Font.cr_white, alpha: vp_alpha);
+		DrawBarRealAmount	(cr_bar,	46, -9, small_font,
+			Font.cr_white, alpha: cr_alpha);
+	}
+	
+	// kd: The medbag and suit in the corners.
+	protected void DrawItemMeters (double t) {
+		double mb_alpha = mb_bar_t.RenderStandardDelta(mb_bar_fade_tics, t);
+		double as_alpha = as_bar_t.RenderStandardDelta(as_bar_fade_tics, t);
+		double mb_scale = mb_bob_t.RenderStandardDelta(mb_bar_bob_tics, t);
+		double as_scale = as_bob_t.RenderStandardDelta(as_bar_bob_tics, t);
+		
+		mb_scale = 1 + 0.75 * sin(mb_scale * 360.0 / mb_bar_bob_tics);
+		as_scale = 1 + 0.75 * sin(as_scale * 360.0 / as_bar_bob_tics);
+		
+		DrawBarVerRev(
+			mb_bar,  26, -13, bg_alpha: mb_alpha, alpha: mb_alpha,
+			scale: mb_scale, t: t);
+		DrawBarVerRev(
+			as_bar, -20, -17, bg_alpha: as_alpha, alpha: as_alpha,
+			scale: as_scale, t: t);
+		
+		DrawBarRealAmount(
+			mb_bar,  26, -13, small_font, Font.cr_yellow, alpha: mb_alpha);
+		DrawBarRealAmount(
+			as_bar, -20, -17, small_font, Font.cr_yellow, alpha: as_alpha);
+	}
+	
+	// kd: For fullscreen. No bars get drawn and there are no special animations
+	// for any of it, either.
+	protected bool is_curse_scrolled;
+	protected bool old_is_curse_scrolled;
+	protected FadeTick cr_large_t;
+	
+	protected bool is_veil_scrolled;
+	protected bool old_is_veil_scrolled;
+	protected FadeTick vp_large_t;
+	
+	protected void NextMetersLarge () {
+		old_is_curse_scrolled = is_curse_scrolled;
+		is_curse_scrolled = 0 < o2_bar_t.Now() && 0 < cr_bar_t.Now();
+		if(!is_curse_scrolled) { is_curse_scrolled = 0 < vp_bar_t.Now() && 0 < cr_bar_t.Now(); }
+		
+		bool scroll_curse_up = is_curse_scrolled & !old_is_curse_scrolled;
+		bool scroll_curse_down = old_is_curse_scrolled & !is_curse_scrolled;
+		
+		if(scroll_curse_up) {
+			cr_large_t.ContinueTo(11);
+		}
+		
+		else if(scroll_curse_down) {
+			cr_large_t.ContinueTo(0);
+		}
+		
+		cr_large_t.Next();
+		
+		old_is_veil_scrolled = is_veil_scrolled;
+		is_veil_scrolled = 0 < o2_bar_t.Now() && 0 < vp_bar_t.Now();
+		
+		bool scroll_veil_up = is_veil_scrolled & !old_is_veil_scrolled;
+		bool scroll_veil_down = old_is_veil_scrolled & !is_veil_scrolled;
+		
+		if(scroll_veil_up) {
+			vp_large_t.ContinueTo(11);
+		}
+		
+		else if(scroll_veil_down) {
+			vp_large_t.ContinueTo(0);
+		}
+		
+		vp_large_t.Next();
+	}
+	
+	protected void DrawMetersLarge (double t = 1) {
+		DrawBarRealAmount(hp_bar, 46, -34, mid_font, Font.cr_red);
+		DrawBarRealAmount(ap_bar, 46, -23, mid_font, Font.cr_green);
+		DrawBarRealAmount(mp_bar, 46, -12, mid_font, Font.cr_blue);
+		
+		double o2_alpha = o2_bar_t.RenderStandardDelta(o2_bar_fade_tics, t);
+		double cr_alpha = cr_bar_t.RenderStandardDelta(cr_bar_fade_tics, t);
+		double cr_y = -45 - cr_large_t.Now() - vp_large_t.Now();
+		double vp_alpha = vp_bar_t.RenderStandardDelta(vp_bar_fade_tics, t);
+		double vp_y = -45 - vp_large_t.Now();
+		
+		DrawBarRealAmount(cr_bar, 46, cr_y, mid_font, Font.cr_purple, alpha: cr_alpha);
+		DrawBarRealAmount(vp_bar, 46, vp_y, mid_font, Font.cr_white, alpha: vp_alpha);
+		DrawBarRealAmount(o2_bar, 46, -45,  mid_font, Font.cr_cyan,  alpha: o2_alpha);
+	}
+	
+	protected void DrawCooldownMeters (double t) {
+		double f = medbag_cool_t.RenderStandardDelta(cool_fade_tics, t);
+		DrawBarVer(medbag_cool, 193, -16, bg_alpha: f, alpha: f);
+		
+		f = tnt_cool_t.RenderStandardDelta(cool_fade_tics, t);
+		DrawBarVer(tnt_cool, 180, -20 * f, alpha: f);
+		
+		f = midas_cool_t.RenderStandardDelta(cool_fade_tics, t);
+		DrawBarVer(midas_cool, 210, -20 * f, alpha: f);
+		
+		f = draugh_cool_t.RenderStandardDelta(cool_fade_tics, t);
+		DrawBarVer(draugh_cool, 225, -21 * f, alpha: f);
+		
+		RestoreClipRectFromCache();
+	}
+	
+	protected void DrawDoshAmount () const {
+		int amount;
+		int max_amount;
+		[amount, max_amount] = GetAmount("Dosh");
+		String amount_str = String.Format("%i", amount);
+		
+		DrawString(
+			mid_font, amount_str,
+			(-61, -34),
+			DI_TEXT_ALIGN_RIGHT | DI_SCREEN_RIGHT_BOTTOM);
+	}
+	
+	protected void DrawElements (double alpha = 1) {
+		statue_left.DrawBottomLeft  (self, statue_left_pos,  alpha: alpha);
+		statue_right.DrawBottomRight(self, statue_right_pos, alpha: alpha);
+		inv_bg.DrawBottomLeft       (self, inv_bg_pos,       alpha: alpha);
+		mug_bg.DrawBottomLeft       (self, mug_bg_pos,       alpha: alpha);
+	}
+	
+	protected void DrawSpellIcon (int x, int y, double t = 1) {
+		// console.printf("%s",
+			// TexMan.GetName(spell_icons.At(caster.SpellIndex())));
+		let anim_f = 2 * spell_out_t.RenderStandardDelta(spell_switch_tics, t);
+		let sprite = spell_sprite;
+		
+		if(1 < anim_f) {
+			anim_f -= 2 - 1.0 / spell_switch_tics;
+		}
+		
+		else if(0 < anim_f) {
+			sprite = prev_spell_sprite;
+		}
+		
+		DrawRightSprite(
+			sprite,
+			x + cycle_dir * 15 * anim_f,
+			y,
+			alpha: 1 - abs(anim_f));
+	}
+	
+	protected void DrawCurrentAmmo () const {
+		Ammo ammo_1;
+		Ammo ammo_2;
+		int amount_1;
+		int amount_2;
+		
+		// kd:
+		// This function orders the ammo around. If your weapon uses only
+		// secondary ammo, it'll be ammo_1.
+		[ammo_1, ammo_2, amount_1, amount_2] = GetCurrentAmmo();
+		
+		if(ammo_1) {
+			TextureId sprite;
+			vector2 scale;
+			int max_amount_1 = ammo_1.maxamount;
+			
+			[sprite, scale] = GetIcon(ammo_1, 0);
+			
+			DrawTexture(
+				sprite, (-84, -10),
+				DI_ITEM_CENTER | DI_SCREEN_RIGHT_BOTTOM);
+			
+			DrawRightNum(amount_1, -93, -16, mid_font);
+			DrawLeftNum(max_amount_1, -76, -16, mid_font);
+		}
+		if(ammo_2) {  //TonynUBares was here
+			TextureId sprite;
+			vector2 scale;
+			int max_amount_2 = ammo_2.maxamount;
+			
+			[sprite, scale] = GetIcon(ammo_2, 0);
+			
+			DrawTexture(
+				sprite, (-84, -10),
+				DI_ITEM_CENTER | DI_SCREEN_RIGHT_BOTTOM);
+			
+			//DrawRightNum(amount_1, -93, -16, mid_font);
+			DrawLeftNum(amount_2, -76, -16, mid_font);
+		}
+	}
+	
+	// kd: All the annoying bars.
+	protected void LoadMeters () {
+		// kd: The following looks worse than it really is. We have to cache a
+		// lot of stuff, because sbarinfo is pretty metal. If we didn't do this,
+		// we'd have to do this when we draw, and nobody, absolutely NOBODY,
+		// wants to remember all the flag names in StatusBar. I forgot them like
+		// 600 times per second, it's terrible.
+		
+		// As a bonus, almost everything is centralised here.
+		hp_bar = hp_bar.Create("gchbar", "hltmpty");
+		ap_bar = ap_bar.Create("gcabar", "armmpty");
+		mp_bar = mp_bar.Create("gcmbar", "mnampty");
+		o2_bar = o2_bar.Create("gcabar2", "gcbbar");
+		cr_bar = cr_bar.Create("cursbar", "visnempt");
+		vp_bar = vp_bar.Create("visnbar", "visnempt");
+		mb_bar = mb_bar.Create("medptchf", "medptche");
+		as_bar = as_bar.Create("suitmskf", "suitmske");
+		
+		hp_fx  = hp_fx.Create("hlthprtc");
+		ap_fx  = ap_fx.Create("armrprtc");
+		mp_fx  = mp_fx.Create("manaprtc");
+		o2_fx  = o2_fx.Create("airprtc");
+		cr_fx  = cr_fx.Create("visnprtc");
+		vp_fx  = vp_fx.Create("visnprtc");
+		
+		hp_bar.SetScreenAlignment(ver: Gc_SbarObject.bottom);
+		ap_bar.SetScreenAlignment(ver: Gc_SbarObject.bottom);
+		mp_bar.SetScreenAlignment(ver: Gc_SbarObject.bottom);
+		mb_bar.SetScreenAlignment(ver: Gc_SbarObject.bottom);
+		as_bar.SetScreenAlignment(
+			hor: Gc_SbarObject.right,
+			ver: Gc_SbarObject.bottom);
+		
+		// kd: Alignment of bars is tricky, because we need to ensure that the
+		// clipping still works. Maybe it could have been avoided by clipping in
+		// a little more lazy way. Oh well.
+		mb_bar.SetSelfAlignment(
+			hor: Gc_SbarObject.center,
+			ver: Gc_SbarObject.center);
+		mb_bar.SetTextPosition((1, 0.5));
+		mb_bar.AddTextAlignment(
+			small_font,
+			amt_hor: Gc_SbarObject.left,
+			amt_ver: Gc_SbarObject.center);
+		mb_bar.CacheOffsetToTopLeft();
+		
+		as_bar.SetSelfAlignment(
+			hor: Gc_SbarObject.center,
+			ver: Gc_SbarObject.center);
+		as_bar.SetTextPosition((-1, 0.5));
+		as_bar.AddTextAlignment(
+			small_font,
+			amt_hor: Gc_SbarObject.left,
+			amt_ver: Gc_SbarObject.center);
+		as_bar.CacheOffsetToTopLeft();
+		
+		hp_fx.SetScreenAlignment(ver: Gc_SbarObject.bottom);
+		ap_fx.SetScreenAlignment(ver: Gc_SbarObject.bottom);
+		mp_fx.SetScreenAlignment(ver: Gc_SbarObject.bottom);
+		o2_fx.SetScreenAlignment(ver: Gc_SbarObject.bottom);
+		cr_fx.SetScreenAlignment(ver: Gc_SbarObject.bottom);
+		vp_fx.SetScreenAlignment(ver: Gc_SbarObject.bottom);
+		
+		// kd: In tics, how long it takes to fill an entire bar.
+		hp_bar.SetFillTics(30);
+		ap_bar.SetFillTics(50);
+		mp_bar.SetFillTics(70);
+		o2_bar.SetFillTics(100);
+		cr_bar.SetFillTics(200);
+		vp_bar.SetFillTics(200);
+		
+		// kd: Scroll speed in sprite pixels (I think???).
+		hp_fx.SetScrollSpeed(-0.666);
+		ap_fx.SetScrollSpeed(1.337 * 0.876);
+		mp_fx.SetScrollSpeed(1.00069);
+		o2_fx.SetScrollSpeed(-0.420);
+		cr_fx.SetScrollSpeed(-0.777);
+		vp_fx.SetScrollSpeed(-0.777);
+		
+		// kd: Observer to make the medbag item bob on use:
+		mb_bob_inv.Observe("Medbag");
+		
+		// kd: These are cooldown bars.
+		medbag_cool	= medbag_cool.Create("medptchf", "medptche");
+		tnt_cool	= tnt_cool.Create("dynaa0", "dynab0");
+		midas_cool	= midas_cool.Create("midca0", "midcb0");
+		draugh_cool	= draugh_cool.Create("draub0", "draua0");
+		
+		medbag_cool.SetScreenAlignment(ver: Gc_SbarObject.bottom);
+		tnt_cool.	SetScreenAlignment(ver: Gc_SbarObject.bottom);
+		midas_cool.	SetScreenAlignment(ver: Gc_SbarObject.bottom);
+		draugh_cool.SetScreenAlignment(ver: Gc_SbarObject.bottom);
+		
+		medbag_cool_t.To(0);
+	}
+	
+	protected void AlignMeterTextNormal () {
+		hp_bar.SetTextPosition((1, 0.5));
+		ap_bar.SetTextPosition((1, 0.5));
+		mp_bar.SetTextPosition((1, 0.5));
+		o2_bar.SetTextPosition((0, 0.5));
+		cr_bar.SetTextPosition((0, 0.5));
+		vp_bar.SetTextPosition((0, 0.5));
+		hp_bar.AddTextAlignment(small_font, amt_hor: Gc_SbarObject.right);
+		ap_bar.AddTextAlignment(small_font, amt_hor: Gc_SbarObject.right);
+		mp_bar.AddTextAlignment(small_font, amt_hor: Gc_SbarObject.right);
+		o2_bar.AddTextAlignment(small_font, amt_hor: Gc_SbarObject.left);
+		cr_bar.AddTextAlignment(small_font, amt_hor: Gc_SbarObject.left);
+		vp_bar.AddTextAlignment(small_font, amt_hor: Gc_SbarObject.left);
+	}
+	
+	protected void AlignMeterTextFullscreen () {
+		hp_bar.SetTextPosition((1, 0));
+		ap_bar.SetTextPosition((1, 0));
+		mp_bar.SetTextPosition((1, 0));
+		o2_bar.SetTextPosition((1, 0));
+		cr_bar.SetTextPosition((1, 0));
+		vp_bar.SetTextPosition((1, 0));
+		hp_bar.AddTextAlignment(small_font,
+			amt_hor: Gc_SbarObject.right,
+			amt_ver: Gc_SbarObject.top);
+		ap_bar.AddTextAlignment(small_font,
+			amt_hor: Gc_SbarObject.right,
+			amt_ver: Gc_SbarObject.top);
+		mp_bar.AddTextAlignment(small_font,
+			amt_hor: Gc_SbarObject.right,
+			amt_ver: Gc_SbarObject.top);
+		o2_bar.AddTextAlignment(small_font,
+			amt_hor: Gc_SbarObject.right,
+			amt_ver: Gc_SbarObject.top);
+		cr_bar.AddTextAlignment(small_font,
+			amt_hor: Gc_SbarObject.right,
+			amt_ver: Gc_SbarObject.top);
+		vp_bar.AddTextAlignment(small_font,
+			amt_hor: Gc_SbarObject.right,
+			amt_ver: Gc_SbarObject.top);
+	}
+	
+	// kd: Changes the statues and ammo bars background to stone-themed ones.
+	protected virtual void LoadNormalElements () {
+		statue_left.Load("gshddlft"); // gsdhleft in heretic, gshdlft2 in hexen
+		statue_right.Load("gshdrght");
+		mug_bg.Load("dragback");
+		inv_bg.Load("invback");
+		
+		statue_left_pos = (0, 0);
+		statue_right_pos = (0, 0);
+		mug_bg_pos = (144, 0);
+		inv_bg_pos = (98, 0);
+	}
+	
+	// kd: Changes the statues and ammo bars background to Bishop-themed ones.
+	protected virtual void LoadBishopElements () {
+		statue_left.Load("gchddlft");	// gchdlft2 in hexen
+		statue_right.Load("gchdrght");
+		mug_bg.Load("cybgback");
+		inv_bg.Load("invback2");
+		
+		statue_left_pos		= (0, 0);
+		statue_right_pos	= (0, 0);
+		mug_bg_pos			= (144, 0);
+		inv_bg_pos			= (98, 0);
+	}
+	
+	// kd:
+	// Certain fonts and colours aren't loaded by default, so we load them here.
+	protected virtual void LoadFontData () {
+		Font index_font		= Font.FindFont("indexfont");
+		Font middle_font	= Font.FindFont("hudfont_gcdoom");
+		// Font normal_font	= Font.FindFont("smallfont2");
+		
+		text_font	= HudFont.Create("smallfont", spacing: 0, false);
+		mono_font	= HudFont.Create("smallfont", spacing: 6, true);
+		ammo_font	= HudFont.Create(index_font, spacing: 4, true);
+		mid_font	= HudFont.Create(middle_font, spacing: 0, false);
+		
+		// kd: not till the fat lady sings
+		// text_font	= HudFont.Create(normal_font, monospacing: mono_off);
+		// mono_font	= HudFont.Create("smallfont", spacing: 6, monospacing: mono_cellright);
+		// ammo_font	= HudFont.Create(index_font, spacing: 4, monospacing: mono_cellright);
+		// mid_font	= HudFont.Create(middle_font, spacing: 0, monospacing: mono_off);
+		small_font	= ammo_font;
+	}
+	
+	// kd:
+	// Helper functions for drawing.
+	
+	// The clipping rectangle has to be manually restored. Since we know exactly
+	// when we need to do this, we only need to cache and restore once whilst
+	// the bars are being drawn.
+	
+	protected int						clip_x;
+	protected int						clip_y;
+	protected int						clip_width;
+	protected int						clip_height;
+	
+	void CacheClipRect () {
+		[clip_x, clip_y, clip_width, clip_height] = Screen.GetClipRect();
+	}
+	
+	void RestoreClipRectFromCache () const {
+		Screen.SetClipRect(clip_x, clip_y, clip_width, clip_height);
+	}
+	
+	// kd:
+	// This bar fills from left to right. width and height are measured from the
+	// size of the sprite you used, but it allows .5 too for interpolation and
+	// such things.
+	
+	void DrawRightBar (
+	TextureId sprite,
+	double x, double y,
+	double width, double height,
+	double alpha = 1) const {
+		SetClipRect(x, y, width, height);
+		DrawTexture(sprite, (x, y), DI_ITEM_LEFT_TOP, alpha);
+	}
+	
+	void DrawRightBarBottom (
+	TextureId sprite,
+	double x, double y,
+	double width, double height,
+	double alpha = 1) const {
+		SetClipRect(x, y, width, height);
+		DrawTexture(sprite, (x, y), DI_ITEM_LEFT_TOP | DI_SCREEN_BOTTOM, alpha);
+	}
+	
+	void DrawRightBarBottomRight (
+	TextureId sprite,
+	double x, double y,
+	double width, double height,
+	double alpha = 1) const {
+		SetClipRect(x, y, width, height);
+		DrawTexture(sprite, (x, y), DI_ITEM_LEFT_TOP | DI_SCREEN_RIGHT_BOTTOM, alpha);
+	}
+	
+	void DrawRightBarAmount (
+	TextureId sprite,
+	double x, double y,
+	double width, double height,
+	double amount, double max_amount,
+	double alpha = 1) const {
+		SetClipRect(x, y, amount * width / max_amount, height);
+		DrawTexture(sprite, (x, y), DI_ITEM_LEFT_TOP, alpha);
+	}
+	
+	void DrawRightBarRemainder (
+	Color fill_color,
+	double x, double y,
+	double width, double height,
+	double amount, double max_amount, double shown_amount,
+	double alpha = 1) const {
+		let draw_color = Color(int(alpha * 255), fill_color.r, fill_color.g, fill_color.b);
+		let draw_x = amount * width / max_amount;
+		let width = shown_amount * width / max_amount - draw_x;
+		
+		if(0 < width) {
+			Fill(draw_color, x + draw_x, y, width, height);
+		}
+	}
+	
+	void DrawRightNum (
+	int		amount,
+	int		x,
+	int		y,
+	HudFont	ffont,
+	int		font_color = font.cr_untranslated,
+	double	alpha = 1) const {
+		String amount_str = String.Format("%i", amount);
+		
+		DrawString(
+			ffont, amount_str,
+			(x, y),
+			DI_TEXT_ALIGN_RIGHT,
+			translation: font_color,
+			alpha: alpha);
+	}
+	
+	void DrawRightNumBottom (
+	int		amount,
+	int		x,
+	int		y,
+	HudFont	ffont,
+	int		font_color = font.cr_untranslated,
+	double	alpha = 1) const {
+		String amount_str = String.Format("%i", amount);
+		
+		DrawString(
+			ffont, amount_str,
+			(x, y),
+			DI_TEXT_ALIGN_RIGHT | DI_SCREEN_BOTTOM,
+			translation: font_color,
+			alpha: alpha);
+	}
+	
+	void DrawLeftNum (
+	int		amount,
+	int		x,
+	int		y,
+	HudFont	ffont,
+	int		font_color = font.cr_untranslated,
+	double	alpha = 1) const {
+		String amount_str = String.Format("%i", amount);
+		
+		DrawString(
+			ffont, amount_str,
+			(x, y),
+			DI_TEXT_ALIGN_LEFT,
+			translation: font_color,
+			alpha: alpha);
+	}
+	
+	void DrawRightInvNum (class <Inventory> inv, int x, int y, HudFont ffont) const {
+		int amount;
+		int max_amount;
+		[amount, max_amount] = GetAmount(inv);
+		String amount_str = String.Format("%i", amount);
+		
+		DrawString(
+			ffont, amount_str,
+			(x, y),
+			DI_TEXT_ALIGN_RIGHT);
+	}
+	
+	void DrawLeftInvNum (class <Inventory> inv, int x, int y, HudFont ffont) const {
+		int amount;
+		int max_amount;
+		[amount, max_amount] = GetAmount(inv);
+		String amount_str = String.Format("%i", amount);
+		
+		DrawString(
+			ffont, amount_str,
+			(x, y),
+			DI_TEXT_ALIGN_LEFT);
+	}
+	
+	void DrawRightSprite (
+	TextureId	sprite,
+	int			x,
+	int			y,
+	double		alpha = 1) const {
+		DrawTexture(
+			sprite, (x, y), DI_ITEM_LEFT_TOP | DI_SCREEN_RIGHT_BOTTOM, alpha);
+	}
+	
+	void DrawAllKeysTopRight (
+	int			x,
+	int			y,
+	double		scale = 1,
+	double		alpha = 1) const {
+		int y_space = 0;
+		
+		for(let inv = cplayer.mo.inv; inv != NULL; inv = inv.inv)
+		if(inv is 'Key' && inv.icon.IsValid()) {
+			DrawTexture(
+				inv.icon, (x, y),
+				DI_SCREEN_RIGHT_TOP | DI_ITEM_RIGHT_TOP,
+				alpha: alpha,
+				scale: scale * (1, 1));
+			
+			// kd: Offset to the left, break line if necessary.
+			vector2 sprite_size = scale * TexMan.GetScaledSize(inv.icon);
+			
+			x -= sprite_size.x + 2;
+			y_space = max(y_space, sprite_size.y);
+			
+			if(x <= -120 * Screen.GetAspectRatio()) {
+				x = 0;
+				y += y_space;
+				y_space = 0;
+			}
+		}
+	}
+	
+	void DrawBarHor (
+	Gc_SbarMeterEx	bar,
+	int				x,
+	int				y,
+	double			bg_alpha	= 1,
+	double			alpha		= 1,
+	double			scale		= 1,
+	double			t			= 1) const {
+		RestoreClipRectFromCache();
+		int align = bar.AlignFlags();
+		let clip_pos = (x, y) + scale * bar.OffsetToTopLeft();
+		
+		DrawTexture(
+			bar.BackSprite(), (x, y), align, alpha: bg_alpha,
+			scale: scale * (1, 1));
+		SetClipRect(
+			clip_pos.x, clip_pos.y,
+			scale * bar.ClippedWidth(t), scale * bar.SpriteHeight());
+		DrawTexture(
+			bar.MeterSprite(), (x, y), align, alpha: alpha,
+			scale: scale * (1, 1));
+	}
+	
+	void DrawBarHorRev (
+	Gc_SbarMeterEx	bar,
+	int				x,
+	int				y,
+	double			bg_alpha	= 1,
+	double			alpha		= 1,
+	double			scale		= 1,
+	double			t			= 1) const {
+		RestoreClipRectFromCache();
+		double	width	= bar.ClippedWidth(t);
+		int align = bar.AlignFlags();
+		let clip_pos = (x, y) + scale * bar.OffsetToTopLeft();
+		
+		DrawTexture(
+			bar.BackSprite(), (x, y), align, alpha: bg_alpha,
+			scale: scale * (1, 1));
+		SetClipRect(
+			clip_pos.x + scale * bar.RemainderX(width),
+			clip_pos.y,
+			scale * width, scale * bar.SpriteHeight());
+		DrawTexture(
+			bar.MeterSprite(), (x, y), align, alpha: alpha,
+			scale: scale * (1, 1));
+	}
+	
+	void DrawBarVer (
+	Gc_SbarMeterEx	bar,
+	int				x,
+	int				y,
+	double			bg_alpha	= 1,
+	double			alpha		= 1,
+	double			scale		= 1,
+	double			t			= 1) const {
+		int align = bar.AlignFlags();
+		RestoreClipRectFromCache();
+		let clip_pos = (x, y) + scale * bar.OffsetToTopLeft();
+		
+		DrawTexture(
+			bar.BackSprite(), (x, y), align, alpha: bg_alpha,
+			scale: scale * (1, 1));
+		SetClipRect(
+			clip_pos.x,
+			clip_pos.y,
+			scale * bar.SpriteWidth(),
+			scale * bar.ClippedHeight());
+		DrawTexture(
+			bar.MeterSprite(), (x, y), align, alpha: alpha,
+			scale: scale * (1, 1));
+	}
+	
+	void DrawBarVerRev (
+	Gc_SbarMeterEx	bar,
+	int				x,
+	int				y,
+	double			bg_alpha	= 1,
+	double			alpha		= 1,
+	double			scale		= 1,
+	double			t			= 1) const {
+		RestoreClipRectFromCache();
+		int align = bar.AlignFlags();
+		double	height	= bar.ClippedHeight(t);
+		let clip_pos = (x, y) + scale * bar.OffsetToTopLeft();
+		
+		DrawTexture(
+			bar.BackSprite(), (x, y), align, alpha: bg_alpha,
+			scale: scale * (1, 1));
+		SetClipRect(
+			clip_pos.x,
+			clip_pos.y + scale * bar.RemainderY(height),
+			scale * bar.SpriteWidth(),
+			scale * height);
+		DrawTexture(
+			bar.MeterSprite(), (x, y), align, alpha: alpha,
+			scale: scale * (1, 1));
+	}
+	
+	void DrawBarRealAmount (
+	Gc_SbarMeterEx	bar,
+	int				x,
+	int				y,
+	HudFont			ffont,
+	int				col		= Font.cr_untranslated,
+	double			scale	= 1,
+	double			alpha	= 1) {
+		RestoreClipRectFromCache();
+		
+		DrawString(
+			ffont,
+			bar.AmountString(),
+			(x, y) + scale * (bar.OffsetToTopLeft() + bar.AmountOffset()),
+			bar.AlignFlags() | bar.AmountAlignFlags(),
+			translation: col,
+			alpha: alpha);
+	}
+	
+	void DrawBarMaxAmount (
+	Gc_SbarMeterEx	bar,
+	int				x,
+	int				y,
+	HudFont			ffont,
+	int				col		= Font.cr_untranslated,
+	double			alpha	= 1) {
+		RestoreClipRectFromCache();
+		
+		DrawString(
+			ffont,
+			bar.MaxAmountString(),
+			(x, y) + bar.MaxAmountOffset(),
+			bar.AlignFlags() | bar.MaxAmountAlignFlags(),
+			translation: col,
+			alpha: alpha);
+	}
+	
+	void DrawHorClipOverlay (
+	Gc_HorClipOverlay	overlay,
+	int					x,
+	int					y,
+	double				alpha		= 1,
+	double				t			= 1) const {
+		// kd: Do not restore the clip rect. This is intentional: Call it after
+		// you drew something that gets clipped, IMMEDIATELY.
+		
+		TextureId	sprite	= overlay.OverlaySprite();
+		double		offset	= overlay.RenderOffset(t);
+		int			align	= overlay.AlignFlags() | DI_ITEM_LEFT_TOP;
+		
+		DrawTexture(
+			sprite,
+			(x + offset, y),
+			align,
+			alpha: alpha);
+		
+		DrawTexture(
+			sprite,
+			(x + offset + overlay.SpriteWidth(), y),
+			align,
+			alpha: alpha);
+	}
+	
+	void DrawVerClipOverlay (
+	Gc_VerClipOverlay	overlay,
+	int					x,
+	int					y,
+	double				alpha		= 1,
+	double				t			= 1) const {
+		// kd: Do not restore the clip rect. This is intentional: Call it after
+		// you drew something that gets clipped, IMMEDIATELY.
+		
+		TextureId	sprite	= overlay.OverlaySprite();
+		double		offset	= overlay.RenderOffset(t);
+		int			align	= overlay.AlignFlags() | DI_ITEM_LEFT_TOP;
+		
+		DrawTexture(
+			sprite,
+			(x, y + offset),
+			align,
+			alpha: alpha);
+		
+		DrawTexture(
+			sprite,
+			(x, y + offset + overlay.SpriteHeight()),
+			align,
+			alpha: alpha);
+	}
+}

@@ -1,0 +1,866 @@
+// For world events, such as things feeling pain or dying.
+class GC_WorldEventHandler : EventHandler
+{
+	// Arrays for powerups to extend.
+	static const string GunzerkPowerups [] = {
+	"PowerGunzerking",		// The main powerup.
+	"PowerGunzerkNotDamage",// Damage resistance.
+	"PowerAmmoRegen"		// Ammo regeneration, soon to be removed.
+	};
+	
+	static const string BerserkPowerups [] = {
+	"PowerBerserkDamage",	// The main damage booster.
+	"PowerSpeeding",		// Speed boost.
+	"PowerJumping",			// Jump boost.
+	"PowerBerserkNotDamage"	// Damage resistance.
+	};
+	
+	static const string AmplifyPowerups [] = {
+	"PowerTomeEffect"		// Just one powerup for spells stronk.
+	};
+	
+	static const string QuadDamagePowerups [] = {
+	"PowerQuadDamage"		// One Quad to rule them all.
+	};
+	
+	// Arrays full of damagetypes to check to ensure extending is valid.
+	static const string GunzerkDamageTypes [] = {
+	"Hitscan",				// Bullets/pellets.
+	"Shrapnel",				// Ironblast.
+	"Matriarch",			// Explosives.
+	"Spirytus",				// Spiritcannon.
+	"LightningBlue",		// Augur rails.
+	"Tiberium",				// Dreadful balls.
+	"BlueTiberium"			// Dreadful empowered.
+	};
+	
+	static const string BerserkDamageTypes [] = {
+	"SuperCloseCombat",		// Pawnch.
+	"SuperMidasCloseCombat",// Pawnch, Midas Edition.
+	"SuperShoelaces",		// Kick.
+	"SuperMidasShoelaces",	// Kick, Midas Edition.
+	"Swordsman",			// Sord.
+	"Extreme"				// EXTREMELY SATISFYING~
+	};
+	
+	static const string AmplifyDamageTypes [] = {
+	"Fire",					// Firebreath, Skullfire, Flamewave.
+	"Lightning",			// Thunderstruck.
+	"Ice",					// Frostbite, Chillgrasp.
+	"Acid",					// Gumpop.
+	"Breath",				// Scourgebreath, Apocalypse.
+	"Flesh",				// Corpseblast.
+	"Crow",					// Trap Ravens.
+	"Crow2",				// Normal Ravens.
+	"Manuel",				// Threadcutter.
+	"UndeadGoHome",			// Hammersmite.
+	"Meteorfist",			// Meteorfist impact.
+	"Annihilation",			// Annihilation.
+	"Baaah",				// Sheepshield.
+	"Spirytus",				// Spiritcannon.
+	"Dark"					// Darkpath.
+	};
+	
+	static const string QuadDamageTypes [] = {
+	"Normal",
+	"Hitscan",
+	"Shrapnel",
+	"Matriarch",
+	"Spirytus",	
+	"LightningBlue",
+	"Tiberium",	
+	"BlueTiberium",
+	"CloseCombat",
+	"Shoelaces",
+	"SuperCloseCombat",
+	"SuperMidasCloseCombat",
+	"SuperShoelaces",
+	"SuperMidasShoelaces",
+	"Swordsman",
+	"Fire",
+	"Lightning",
+	"Ice",
+	"Acid",
+	"Breath",
+	"Flesh",
+	"Crow",
+	"Crow2",
+	"Manuel",
+	"UndeadGoHome",
+	"Meteorfist",
+	"Annihilation",
+	"Baaah",
+	"Spirytus",
+	"Dark"
+	};
+	
+	// Types of money items, for fun and fancy reasons
+	static const string GoldTypes [] = {
+	"Dosh1",				// 1 gold.
+	"Dosh5",				// 5 gold.
+	"Dosh10",				// 10 gold.
+	"Dosh25",				// 25 gold.
+	"Dosh35",				// 35 gold.
+	"Amber",				// 50 gold.
+	"Ruby",					// 100 gold.
+	"Emerald",				// 250 gold.
+	"Sapphire",				// 400 gold.
+	"Diamond",				// 20000 gold.
+	// Midas coins.
+	/*"SmallMidasCoin",
+	"BigMidasCoin",*/
+	"SmallMidasCoinStationary",
+	"BigMidasCoinStationary"
+	};
+	
+	Guncaster thisplayer;
+	int playerCount;
+	bool weGotThis;
+	bool youSuck;
+	
+	Gc_StaticGlobalVariables		sgvars;
+	Gc_GlobalVariables				gvars;
+	Gc_GlobalDataHandler			ghandler;
+	
+	// Initialize global var stuff.
+	override void OnRegister () {
+		// sgvars		= Gc_StaticGlobalVariables.Get();
+		// gvars		= Gc_GlobalVariables.Get();
+		// ghandler	= Gc_GlobalDataHandler.Get();
+	}
+	
+	override void WorldTick()
+	{
+		// let sgvars = GC_StaticGlobalVariables.Get();
+		
+		// Check that we're playing multiplayer and that the SV_Norespawn flag is set
+		// Otherwise, this does nothing.
+		if(multiplayer && sv_norespawn && (gameinfo.gametype != Game_HEXEN))
+		{
+			weGotThis = FALSE;
+			for(int i = 0; i < playerCount; i++)
+			{
+				if(!playeringame[i]) { Continue; }
+				thisplayer = Guncaster(players[i].mo);
+				if(thisplayer.health > 0) { 
+					weGotThis = TRUE; 
+					youSuck = FALSE;
+				}
+			}
+			if((weGotThis != TRUE) && (youSuck != TRUE)) { 
+				sgvars.inventoryRevert = TRUE;
+				youSuck = TRUE;
+				CallACS("EveryoneSucks",0,0,0,0); 
+			}
+		}
+	}
+	
+	Override Void WorldLoaded(WorldEvent e)
+	{
+		// console.printf("wlordl wloaded");
+		gvars		= Gc_GlobalVariables.Get();
+		ghandler	= Gc_GlobalDataHandler.Get();
+		sgvars		= Gc_StaticGlobalVariables.Get();
+		
+		/*
+		// Debugging bullshit. -Dino
+		let mapDisplayNumber = sgvars.MapsCompletedList.size();
+		console.printf("current map score is "..mapDisplayNumber);
+		*/
+		
+		// If we're not playing multiplayer or using the SV_NORESPAWN flag or this is a hub map, terminate this script in advance
+		if(!multiplayer || !sv_norespawn || e.IsReopen) { return; }
+		
+		// Set up our player count
+		for(int i = 0; i < MAXPLAYERS; i++)
+		{
+			if(!playeringame[i]) { Continue; }
+			thisplayer = Guncaster(players[i].mo);
+			playerCount++;
+		}
+		
+		// handle multiplayer inventory reset stuff
+		if(sgvars && sgvars.inventoryRevert && sgvars.MapsCompletedList.Size()) {
+			// console.printf("You suck...");
+			for(int i = 0; i < MAXPLAYERS; i++)
+			{
+				// console.printf("loading");
+				if(!playeringame[i]) { Continue; }
+				thisplayer = Guncaster(players[i].mo);
+				// Console.printf("This is player "..i);
+				thisplayer.A_SetHealth(sgvars.GCMPCachedHealth[i]);
+				let thisPlayerNumber = i;
+				let rangeDiff = sgvars.GCMPCachedItemCounts[i];
+				let thisRangeMax = rangeDiff * (1 + i);
+				let thisRangeMin = rangeDiff * (i);
+				/*
+				if(i > 0) {
+					let rangeDiff = thisRangeMax;
+					// console.printf("starting at player 2");
+					thisRangeMax = thisRangeMax + sgvars.GCMPCachedItemCounts[i - 1];
+					thisRangeMin = sgvars.GCMPCachedItemCounts[i - 1];
+				}
+				*/
+				// Console.printf("this range max is %i, and min is, %i",thisRangeMax,thisRangeMin);
+				for(int i = thisRangeMin; i < thisRangeMax; i++)
+				{
+					// console.printf("Checking an item");
+					string thisItem = sgvars.GCMPCachedItems[i];
+					int previousCount = sgvars.GCMPCachedItemAmounts[i];
+					let thisCount = thisplayer.CountInv(thisItem);
+					// Console.printf("this count is "..thiscount.." for "..thisItem);
+					if(thisCount != previousCount) { 
+						let inv = thisplayer.FindInventory(thisItem); 
+						if((thisCount > 0) && (previousCount == 0)) {
+							inv.amount = 1;
+							thisPlayer.A_TakeInventory(thisItem,1);
+						}
+						else if(thisCount != previousCount) { 
+							if(inv is "BasicArmor") {
+								if(sgvars.GCMPCachedarmor[thisPlayerNumber] == 0.25) { 
+									thisplayer.A_GiveInventory("CombatVest",1);
+								}
+								else if(sgvars.GCMPCachedarmor[thisPlayerNumber] == 0.40) { 
+									thisplayer.A_GiveInventory("CombatArmor",1);
+								}
+								else if(sgvars.GCMPCachedarmor[thisPlayerNumber] == 0.50) { 
+									thisplayer.A_GiveInventory("AssaultArmor",1);
+								}
+								else if(sgvars.GCMPCachedarmor[thisPlayerNumber] == 0.75) { 
+									thisplayer.A_GiveInventory("TankArmor",1);
+								}
+								else {
+									thisplayer.A_GiveInventory("PurpleBonus",1);
+								}
+							}
+							else { thisPlayer.A_GiveInventory(thisItem); }
+							if(inv && inv.amount && previouscount) { inv.amount = previousCount; }
+						}
+					}
+					// else { console.printf("It matches"); }
+				}
+				// else { Console.printf("Something has gone terribly wrong"); }
+			}
+			sgvars.inventoryRevert = FALSE;
+		}
+		else if(sgvars && multiplayer && sv_norespawn && sgvars.MapsCompletedList.Size()) {
+			// console.printf("setting up multiplayer cache");
+			// Clear old junk
+			while(sgvars.GCMPCachedItems.Size()) { sgvars.GCMPCachedItems.Delete(0); }
+			while(sgvars.GCMPCachedItemAmounts.Size()) { sgvars.GCMPCachedItemAmounts.Delete(0); }
+			
+			for(int i = 0; i < MAXPLAYERS; i++)
+			{
+				if(!playeringame[i]) { Continue; }
+				thisplayer = Guncaster(players[i].mo);
+				double thisPlayerArmorPercent;
+				int playerItemListRange;
+				thisPlayerArmorPercent = 0.0;
+				let thisRangeMax = ghandler.GCInventoryList.Size();
+				let thisRangeMin = 0;
+				// Console.printf("This is player "..i);
+				for(int i = thisRangeMin; i < thisRangeMax; i++)
+				{
+					string thisItem = ghandler.GCInventoryList[i].GetClassName();
+					let thisCount = thisplayer.CountInv(thisItem);
+					sgvars.GCMPCachedItems.Push(thisItem); 
+					sgvars.GCMPCachedItemAmounts.Push(thisCount);
+					if((thisCount > 0) && (ghandler.GCInventoryList[i] is "BasicArmor")) {
+						BasicArmor inv;
+						//inv = ghandler.GCInventoryList[i];
+						//console.printf("inv is %s",inv.GetClassName());
+						inv = BasicArmor(thisPlayer.FindInventory(ghandler.GCInventoryList[i]));
+						if(inv) { 
+							thisPlayerArmorPercent = inv.savepercent; 
+						}
+					}
+					//console.printf("This item is "..thisItem.." and I have "..thisCount.." of it");
+					playerItemListRange++;
+				}
+				sgvars.GCMPCachedItemCounts[i] = playerItemListRange;
+				sgvars.GCMPCachedHealth[i] = thisplayer.Health;
+				sgvars.GCMPCachedarmor[i] = clamp(thisPlayerArmorPercent,0.0,1.0);
+				playerItemListRange = 0;
+			}
+		}
+	}
+	
+	Override void WorldUnloaded(WorldEvent e)
+	{	
+		CVar GCAntiReset = CVar.FindCVar('GC_AntiReset');
+		let sgvars = GC_StaticGlobalVariables.Get();
+		
+		// Increment our music number
+		sgvars.this_music_number++;
+		if(sgvars.this_music_number >= sgvars.this_playlist.Size()) { sgvars.this_music_number = 0; }
+		
+		for(int i = 0; i < MAXPLAYERS; i++)
+		{
+			if(!playeringame[i]) { Continue; }
+			thisplayer = Guncaster(players[i].mo);
+			if(thisplayer && GCAntiReset.GetBool() == TRUE) {
+				// If a death exit actually managed to kill us, resurrect the player to prevent item reset
+				if(thisplayer.Health <= 0) { players[i].Resurrect(); }
+				// If the ResetInventory flag is set in mapinfo, hijack all items to prevent clearing them.
+				for (Inventory item = thisplayer.Inv; item != NULL; item = item.Inv) { item.bUNCLEARABLE = TRUE; }
+			}
+		}
+		
+		//if((youSuck != TRUE) && (sgvars.MapsCompletedList.Find(level.GetCheckSum()) == sgvars.MapsCompletedList.Size()))	// This is used for testing only
+		if((youSuck != TRUE) && (sgvars.MapsCompletedList.Find(level.GetCheckSum()) == sgvars.MapsCompletedList.Size()) && (level.time >= 1050))
+		{
+			sgvars.MapsCompletedList.Push(level.GetCheckSum());
+		}
+	}
+	
+	override void WorldThingSpawned(WorldEvent e)
+	{
+		if(!e.thing) { Return; }	// gotta be shitting me... -Dino
+		
+		/*if(e.thing && e.thing.bDONTGIB && e.thing is "Key" && !(e.thing is "GC_UniversalKey"))
+		{
+			Key wwwwww = Key(e.thing);
+			if(!wwwwww.owner) {
+				GC_UniversalKey Bumbler = GC_UniversalKey(e.thing.Spawn("GC_UniversalKey",e.Thing.pos));
+				// This is where the real magic happens.
+				Bumbler.OurKey = wwwwww;
+				// If this was a key, GO NO FURTHER!
+				// -Dino
+				Return;
+			}
+		}*/
+		
+		// Set up damage types without using decorate stuffs
+		if(e.thing && e.Thing.bZDOOMTRANS && e.Thing.bMISSILE) {
+			if(gameinfo.gametype == Game_DOOM) {
+				if(e.Thing is "CacodemonBall") { e.Thing.A_SetDamageType("FIRE"); }
+				else if(e.Thing is "FatShot") { e.Thing.A_SetDamageType("FIRE"); }
+				else if(e.Thing is "DoomImpBall") { e.Thing.A_SetDamageType("FIRE"); }
+				else if(e.Thing is "RevenantTracer") { e.Thing.A_SetDamageType("FuckRevenants"); }
+			}
+			else if(gameinfo.gametype == Game_HEXEN) {
+				if(e.Thing is "MageStaffFX2") { e.Thing.A_SetDamageType("Fire"); }
+				else if(e.Thing is "Demon1FX1") { e.Thing.A_SetDamageType("Fire"); }
+				else if(e.Thing is "DragonExplosion") { e.Thing.A_SetDamageType("Fire"); }
+				else if(e.Thing is "DragonFireball") { e.Thing.A_SetDamageType("Fire"); }
+				else if(e.Thing is "SerpentFX") { e.Thing.A_SetDamageType("Poison"); }
+			}
+		}
+		
+		// Add spawned monsters to the monster list.
+		// This includes monsters from level start.
+		
+		if(e.thing.bismonster && gvars)
+		{
+		 string ttkname = e.thing.GetClassName();
+		 if(ttkname.mid(ttkname.length()-8,ttkname.length()-1) ~== "Spawner") {return;}
+		 else{
+			// hand it a reaversphere adapter
+			e.thing.A_GiveInventory("GC_MonsterTargetTracker");
+			
+			gvars.MonsterList.Push(e.thing);}
+		}
+		
+		if((sgvars.EviternityMapsConfirmed == TRUE) && (e.thing.bNOBLOCKMAP) && !(e.thing.bMISSILE)) {
+			// Cygnis stomps on your sandcastle, and steals your girlfriend.
+			if(e.thing is sgvars.EVITERNITY_BadWeather) { 
+				// let gvars = GC_GlobalVariables.Get();
+				CVar SilenceWeather = CVar.FindCVar('GC_SilentRain');
+				if(!(gvars.sandCastleStomped))
+				{
+					CVar KeksLovesEviternity = CVar.FindCVar('keks_loves_eviternity');
+					// I reject your reality and substitute my own!
+					if(e.thing is sgvars.EVITERNITY_BadRain) { 
+						if(KeksLovesEviternity.GetBool() == TRUE) {
+							let msg1 = StringTable.Localize("$SALTTEXT01");
+							let msg2 = StringTable.Localize("$SALTTEXT02");
+							Console.printf("\cd%s\c",msg1);
+							Console.printf("\ck%s\c",msg2);
+						}
+						GCV_CreateWeather("GCV_WaterRain",9);
+						gvars.sandCastleStomped = TRUE;
+						SilenceWeather.SetBool(TRUE);
+					}
+					else if(e.thing is sgvars.EVITERNITY_BadSnow) { 
+						if(KeksLovesEviternity.GetBool() == TRUE) {
+							let msg1 = StringTable.Localize("$SALTTEXT01");
+							let msg2 = StringTable.Localize("$SALTTEXT02");
+							Console.printf("\cd%s\c",msg1);
+							Console.printf("\ck%s\c",msg2);
+						}
+						GCV_CreateWeather("GCV_SnowFlurry",50);
+						gvars.sandCastleStomped = TRUE;
+						SilenceWeather.SetBool(TRUE);
+					}
+				}
+				// YEET!
+				e.thing.Destroy();
+			}
+		}
+	}
+	
+	override void WorldThingRevived(WorldEvent e)
+	{
+		// Add anything revived to the monster list as well.
+		if(e.thing.bIsMonster)
+		{
+			gvars.MonsterList.Push(e.thing);
+			
+			let corpse_i = gvars.corpselist.find(e.thing);
+			// And remove it from the corpse list.
+			if(corpse_i != gvars.corpselist.size()) {
+				gvars.corpselist.delete(corpse_i);
+			}
+		}
+	}
+
+	override void WorldThingDied(WorldEvent e)
+	{
+		let victim = e.Thing;
+		let killer = e.Thing.Target;
+		string DamageTypeTaken = victim.DamageTypeReceived;
+		int i; // Iterator.
+		
+		// It's dead, add it to the corpse list.
+		if(victim.bIsMonster)
+		{
+			let monster_i = gvars.monsterlist.find(e.thing);
+			
+			if(gvars.monsterlist.size() != monster_i) {
+				gvars.monsterlist.delete(monster_i);
+			}
+			
+			gvars.CorpseList.Push(victim);
+		}
+		
+		// Only run the following for players vs. monsters.
+		if(killer && killer is "PlayerPawn" && victim.bIsMonster && !victim.bFriendly)
+		{
+			// Croesus blessing.
+			if(killer.CountInv("PowerMidasMode") && killer.CountInv("CroesusBlessing"))
+			{
+				victim.A_DropItem("MidasSphere", 1, 3*killer.CountInv("CroesusBlessing"));
+			}
+			
+			//Console.Printf("%s was killed by damagetype %s", victim.GetClassName(), DamageTypeTaken);
+			
+			// Carnage collection.
+			if(killer.CountInv("CarnageCollector"))
+			{
+				// Extending Gunzerking time.
+				if(killer.CountInv(GunzerkPowerups[0]))
+				{
+					for(i = 0; i < GunzerkDamageTypes.Size(); i++)
+					{
+						if(DamageTypeTaken ~== GunzerkDamageTypes[i])
+						{
+							for(i = 0; i < GunzerkPowerups.Size(); i++)
+							{
+								let CurrentPowerup = Powerup(killer.FindInventory(GunzerkPowerups[i]));
+								if(CurrentPowerup) // If the powerup exists, extend it.
+								CurrentPowerup.EffectTics += 20 * killer.CountInv("CarnageCollector");
+							}
+							break;
+						}
+					}
+				}
+				
+				// Extending Berserking time.
+				if(killer.CountInv(BerserkPowerups[0]))
+				{
+					for(i = 0; i < BerserkDamageTypes.Size(); i++)
+					{
+						if(DamageTypeTaken ~== BerserkDamageTypes[i])
+						{
+							for(i = 0; i < BerserkPowerups.Size(); i++)
+							{
+								let CurrentPowerup = Powerup(killer.FindInventory(BerserkPowerups[i]));
+								if(CurrentPowerup) // If the powerup exists, extend it.
+								CurrentPowerup.EffectTics += 20 * killer.CountInv("CarnageCollector");
+							}
+							break;
+						}
+					}
+				}
+				
+				// Extending Amplifier time.
+				if(killer.CountInv(AmplifyPowerups[0]))
+				{
+					for(i = 0; i < AmplifyDamageTypes.Size(); i++)
+					{
+						if(DamageTypeTaken ~== AmplifyDamageTypes[i])
+						{
+							for(i = 0; i < AmplifyPowerups.Size(); i++)
+							{
+								let CurrentPowerup = Powerup(killer.FindInventory(AmplifyPowerups[i]));
+								if(CurrentPowerup) // If the powerup exists, extend it.
+								CurrentPowerup.EffectTics += 20 * killer.CountInv("CarnageCollector");
+							}
+							break;
+						}
+					}
+				}
+				
+				// Extending Quad Damage time.
+				if(killer.CountInv(QuadDamagePowerups[0]))
+				{
+					for(i = 0; i < QuadDamageTypes.Size(); i++)
+					{
+						if(DamageTypeTaken ~== QuadDamageTypes[i])
+						{
+							for(i = 0; i < QuadDamagePowerups.Size(); i++)
+							{
+								let CurrentPowerup = Powerup(killer.FindInventory(QuadDamagePowerups[i]));
+								if(CurrentPowerup) // If the powerup exists, extend it.
+								CurrentPowerup.EffectTics += 10 * killer.CountInv("CarnageCollector");
+							}
+							break;
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	override void WorldThingDestroyed(WorldEvent e)
+	{	
+		if(e.thing.bIsMonster)
+		{
+			let monster_i	= gvars.monsterlist.find(e.thing);
+			let corpse_i	= gvars.corpselist.find(e.thing);
+			
+			// If a monster was somehow destroyed before it died,
+			// also remove it from the monster list.
+			if(monster_i != gvars.monsterlist.size()) {
+				gvars.monsterlist.delete(monster_i);
+			}
+			
+			// Corpses that are destroyed should be removed from
+			// that list as well.
+			if(corpse_i != gvars.corpselist.size()) {
+				gvars.corpselist.delete(corpse_i);
+			}
+		}
+	}
+	
+	Void GCV_CreateWeather(Class<Thinker> weatherType = null, int GCV_WeatherIntensity = 0, bool startThunderstorm = FALSE)
+	{
+		if(weatherType != null) {
+			CVar WeatherIntensity = CVar.FindCVar('GC_WeatherIntensity');
+			Thinker RainHandler = Thinker(new(weatherType));
+			WeatherIntensity.SetInt(GCV_WeatherIntensity);
+		}
+	}
+	
+	// kd: Hey, why not allow doing this on every map if you like? (v:
+	bool has_weather;
+	
+	override void NetworkProcess (ConsoleEvent event) {
+		if(event.name ~== "raindance" && !has_weather) {
+			Gcv_CreateWeather("Gcv_WaterRain", 9);
+			has_weather = true;
+		}
+		
+		else if(event.name ~== "letitsnow" && !has_weather) {
+			Gcv_CreateWeather("Gcv_SnowFlurry", 50);
+			has_weather = true;
+		}
+	}
+}
+
+// A global variables class for data that pertains to individual maps.
+class GC_GlobalVariables : Thinker
+{
+	// Plz Cygnis no bully!
+	bool sandCastleStomped;
+	
+	// Monster list. Many uses, such as checking for nearest to a point.
+	Array<Actor> MonsterList;
+	// Corpse list, for corpseblasting.
+	Array<Actor> CorpseList;
+	// Money list, primarily for the money magnet and locator.
+	Array<Actor> MoneyList;
+	
+	GC_GlobalVariables Init()
+	{
+		ChangeStatNum(STAT_SCRIPTS);
+		return self;
+	}
+	
+	static GC_GlobalVariables Get()
+	{
+		ThinkerIterator ti = ThinkerIterator.Create("GC_GlobalVariables", STAT_SCRIPTS);
+		let gvars = GC_GlobalVariables(ti.Next());
+		if(!gvars)
+		{
+			gvars = new("GC_GlobalVariables").Init();
+		}
+		return gvars;
+	}
+}
+
+// A global variables class for data that pertains all maps played.
+class GC_StaticGlobalVariables : Thinker
+{
+	// simple switch to decide if we are playing Eviternity
+	bool EviternityMapsConfirmed;
+	// simple switch to decide if we are playing DRLA
+	bool DRLAMonstersConfirmed;
+	// This should probably be just a temporary fix
+	// I use this for dynamic monsters, but in this version
+	// it's only needed to make sure the inventory reset
+	// doesn't misfire on the very first map.
+	// -Dino
+	Array<String> MapsCompletedList;
+	
+	// music thing
+	int this_music_number;
+	// music playlist
+	Array<String>	this_playlist;
+	
+	String EVITERNITY_BadWeather;
+	String EVITERNITY_BadRain;
+	String EVITERNITY_BadSnow;
+	
+	string ADAPTER_RLEnemyBulletPuff;
+	
+	// Multiplayer only
+	Array<String> GCCachedItems; 			// Pointers to items. If a pointer doesn't exist, it got baleeted by level transition.
+	bool inventoryRevert;					// Flag to reset everyone's inventory to the current map start.
+	Array<String> GCMPCachedItems; 			// Pointers to items. If a pointer doesn't exist, it got baleeted by level transition.
+	Array<int> GCMPCachedItemAmounts; 		// Item amounts. Matches the above array by index so we know how much to give back.
+	int GCMPCachedItemCounts[MAXPLAYERS]; 	// Item counts. So we know what indices to start and stop at in the Items array for each player.
+	int GCMPCachedHealth[MAXPLAYERS]; 		// Health amount, so we know how much HP each player had.
+	double GCMPCachedarmor[MAXPLAYERS];		// Armor percentage because base GZDoom armor is 0%... -Dino
+
+	GC_StaticGlobalVariables Init()
+	{
+		ChangeStatNum(STAT_STATIC);
+		return self;
+	}
+	
+	static GC_StaticGlobalVariables Get()
+	{
+		ThinkerIterator ti = ThinkerIterator.Create("GC_StaticGlobalVariables", STAT_STATIC);
+		let sgvars = GC_StaticGlobalVariables(ti.Next());
+		if(!sgvars)
+		{
+			//console.printf("This should only be initialized at the start of a game.");
+			sgvars = new("GC_StaticGlobalVariables").Init();
+		}
+		return sgvars;
+	}
+}								
+
+// A global data class for information meant to be pulled from above the game state.
+class GC_GlobalDataHandler : StaticEventHandler
+{
+	// music
+	private Array<String>	musakz;
+	// random setup
+	private Array<String>	random_builder;
+	
+	// Ammo regeneration types and tics for Gunzerking.
+	Array<String> AmmoRegenTypes;
+	Array<Int> AmmoRegenTics;
+	// Artifacts for valid chest drops.
+	Array<String> ChestArtifactList;
+	Array<String> WeaponChestList;
+	
+	// All inventory Cache
+	Array<Class <Inventory> > GCInventoryList;
+	
+	static GC_GlobalDataHandler Get()
+	{
+		return GC_GlobalDataHandler(Find("GC_GlobalDataHandler"));
+	}
+	
+	override void OnRegister()
+	{
+		BuildAmmoRegenLists();
+		Console.Printf("\c[Green]Global Gunzerk ammo regen list created.\c-");
+		BuildArtifactList();
+		Console.Printf("\c[Green]Global chest artifact list created.\c-");
+		BuildWeaponList();
+		Console.Printf("\c[Green]Global weapon chest list created.\c-");
+		BuildGCInventoryList();
+		Console.Printf("\c[Green]Global Inventory Item list created.\c-");
+	}
+	
+	Override Void NewGame()
+	{
+		JurisdictionCheck();
+		BuildAdapterStringsList();
+		BuildJukeBoxStuff();
+	}
+	
+	void BuildAmmoRegenLists()
+	{
+		//Ammo regen ratios.
+		AmmoRegenTypes.Push("LonghornAmmo");
+		AmmoRegenTics.Push(73);
+		AmmoRegenTypes.Push("ShotgunAmmo");
+		AmmoRegenTics.Push(21);
+		AmmoRegenTypes.Push("PulverizerAmmo");
+		AmmoRegenTics.Push(8);
+		AmmoRegenTypes.Push("MatriarchAmmo");
+		AmmoRegenTics.Push(90);
+		AmmoRegenTypes.Push("AugurAmmo");
+		AmmoRegenTics.Push(350);
+		AmmoRegenTypes.Push("TiberiumAmmo");
+		AmmoRegenTics.Push(700);
+		AmmoRegenTypes.Push("TNTAmmo");
+		AmmoRegenTics.Push(350);
+		
+		//Hexen ammo.
+		AmmoRegenTypes.Push("BlueMana");
+		AmmoRegenTics.Push(25);
+		AmmoRegenTypes.Push("GreenMana");
+		AmmoRegenTics.Push(25);
+	}
+	
+	void BuildArtifactList()
+	{
+		// List of chest artifacts to be dropped.
+		ChestArtifactList.Push("CroesusBlessing");
+		ChestArtifactList.Push("VoidwalkersTouch");
+		//ChestArtifactList.Push("TravelersJournal");
+		ChestArtifactList.Push("CarnageCollector");
+		//ChestArtifactList.Push("ArbiterModule");
+		ChestArtifactList.Push("HeavyDutyStompers");
+		ChestArtifactList.Push("PhilosophersTome");
+		ChestArtifactList.Push("ManashieldTome");
+		//ChestArtifactList.Push("GladiusBarrel");
+		ChestArtifactList.Push("DraughTome");
+		ChestArtifactList.Push("TibCore");
+		ChestArtifactList.Push("AlchemyLab");
+		ChestArtifactList.Push("MastersOfPain");
+		ChestArtifactList.Push("SupermagJohnson");
+		ChestArtifactList.Push("SupermagTheta");
+		//ChestArtifactList.Push("StridersLantern");
+		//ChestArtifactList.Push("SplitterShield");
+		//ChestArtifactList.Push("PowerAutoCannon");
+		ChestArtifactList.Push("Demopatch");
+	}
+	
+	void BuildWeaponList()
+	{
+		// List of weapon chest drops to be dropped.
+		WeaponChestList.Push("OldDreadful");
+	}
+	
+	// Check for supported mods
+	Void JurisdictionCheck()
+	{
+		let sgvars = GC_StaticGlobalVariables.Get();
+		
+		string DRLADependentCheck = "RLEnemyBulletPuff";			// since DRLA wants to be 'special'
+		string EviternityDependentCheck = "JOM5_BaseSpawner";		// because eviternity hates players
+		
+		for ( int i = 0; i < AllActorClasses.Size(); ++i)
+		{
+			if(!(sgvars.EviternityMapsConfirmed) && (AllActorClasses[i] is EviternityDependentCheck))
+			{
+				sgvars.EviternityMapsConfirmed = TRUE;
+				Console.Printf("\c[Purple]Eviternity loaded!\c-");
+			}
+			if(AllActorClasses[i] is DRLADependentCheck)
+			{
+				sgvars.DRLAMonstersConfirmed = TRUE;
+				Console.Printf("\c[Purple]DRLA loaded!\c-");
+			}
+		}
+	}
+	
+	// HAHAHAHAHA! WorldLoaded happens in the middle of CheckReplacement!!!
+	// I'm getting a CAT scan! -Dino
+	Void BuildAdapterStringsList()
+	{
+		let sgvars = GC_StaticGlobalVariables.Get();
+		
+		sgvars.EVITERNITY_BadWeather = "JOM5_BaseSpawner";
+		sgvars.EVITERNITY_BadRain = "JOM5_RainDropSpawner";
+		sgvars.EVITERNITY_BadSnow = "JOM5_SnowFlakeSpawner";
+		
+		sgvars.ADAPTER_RLEnemyBulletPuff = "RLEnemyBulletPuff";
+	}
+
+	// This will generate our desired item list
+	// we are going to blacklist things we shouldn't be awarded at level start
+	// under any circumstances, such as keys, powerups, and keks shop items.
+	// -Dino
+	Void BuildGCInventoryList()
+	{
+		for ( int i = 0; i < AllActorClasses.Size(); i++)
+		{
+			if((AllActorClasses[i] is "Inventory") && !(AllActorClasses[i] is "PowerUp") && !(AllActorClasses[i] is "Key") && !(AllActorClasses[i] is "ControlToken"))
+			{
+				GCInventoryList.Push(AllActorClasses[i]);
+			}
+		}
+	}
+	
+	// I'm putting this here cuz I feel like it, haha.
+	// This is not to be used elsewhere without directly asking me first.
+	// -Dino
+	Void BuildJukeBoxStuff()
+	{
+		let sgvars = GC_StaticGlobalVariables.Get();
+		
+		int lump_num = -1;
+		
+		do {
+			lump_num = wads.FindLump("gr_jukebox", startlump: lump_num + 1);
+			
+			if(0 <= lump_num ) {
+				// console.printf("lump exists!");
+				let lump_data	= wads.ReadLump(lump_num);
+				// kd: The data is just a list of strings. We allow whitespaces or
+				// returns. This here should work fine.
+				Array <String> split_data;
+				lump_data.replace("\r\n", " ");
+				lump_data.replace("\n", " ");
+				lump_data.replace("\r", " ");
+				lump_data.split(split_data, " ");
+				
+				// console.printf("Split Data size is %i",split_data.Size());
+				
+				for(int i = split_data.size(); 0 <= --i; ) {
+					
+					// console.printf("Check Data was %s",split_data[i]);
+					
+					// kd: Just making sure (trailing names without newline would
+					// not be counted for some reason):
+					let check_data = split_data [i];
+					check_data.replace(" ", "");
+					
+					// console.printf("Check Data is %s",check_data);
+					
+					// Check if this is actually some actor.
+					if(wads.FindLump(check_data,0,1) &&
+						(musakz.Size() == musakz.find(check_data)))
+					{
+						// console.printf("no matches found, adding %s",check_data);
+						musakz.push(check_data);
+					}
+				}
+			}
+		} while(0 <= lump_num);
+		
+		if(!musakz.Size()) { Return; }
+		// console.printf("musakz was populated");
+		// if(random_builder.Size()) { console.printf("copy complete, build a playlist"); }
+		while(sgvars.this_playlist.Size() < 30)
+		{
+			random_builder.Copy(musakz);
+			// console.printf("This playlist size is %i",sgvars.this_playlist.Size());
+			while(random_builder.size())
+			{
+				int rng_tool = random[GCV_GhettoBlaster](0,random_builder.size() - 1);
+				// console.printf("lets add %s to the full playlist",random_builder[rng_tool]);
+				sgvars.this_playlist.Push(random_builder[rng_tool]);
+				random_builder.Delete(rng_tool);
+			}
+		}
+	}
+}

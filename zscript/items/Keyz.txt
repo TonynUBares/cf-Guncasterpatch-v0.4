@@ -1,0 +1,7 @@
+Class GC_UniversalKey : Inventory {}
+Class GC_RedCard : GenericToken {}
+Class GC_BlueCard : GenericToken {}
+Class GC_YellowCard : GenericToken {}
+Class GC_RedSkull : GenericToken {}
+Class GC_BlueSkull : GenericToken {}
+Class GC_YellowSkull : GenericToken {}

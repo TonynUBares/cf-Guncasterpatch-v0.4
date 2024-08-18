@@ -1,0 +1,293 @@
+//Barrels
+Actor ExplosiveBarrelSpawner : RandomSpawner //replaces ExplosiveBarrel
+{
+	DropItem PopBarrel, 256, 10
+	DropItem Propane, 256, 1
+}
+
+/*
+//Keys
+Actor RedCard2 		: GC_RedCard2 		replaces RedCard 		{}
+Actor YellowCard2 	: GC_YellowCard2 	replaces YellowCard 	{}
+Actor BlueCard2 	: GC_BlueCard2 		replaces BlueCard 		{}
+Actor RedSkull2 	: GC_RedSkull2 		replaces RedSkull 		{}
+Actor YellowSkull2 	: GC_YellowSkull2 	replaces YellowSkull 	{}
+Actor BlueSkull2 	: GC_BlueSkull2 	replaces BlueSkull 		{}
+*/
+
+//Bullets
+ACTOR Clip_Giver : RandomSpawner
+{
+	DropItem "LonghornAmmo"
+	Dropitem "PulverizerAmmo"
+}
+
+ACTOR ClipBox_Giver : RandomSpawner 
+{
+	DropItem "LonghornBox"
+	Dropitem "PulverizerBox"
+}
+
+//Shells
+ACTOR ShotgunAmmo2 : ShotgunAmmo
+{
+	Inventory.Amount 4 //4
+}
+
+ACTOR Shell_Giver : RandomSpawner
+{
+	DropItem "ShotgunAmmo2"
+}
+
+ACTOR ShotgunBandolier2 : ShotgunBandolier
+{
+	Inventory.Amount 20 //24
+}
+
+ACTOR ShellBox_Giver : RandomSpawner
+{
+	Dropitem "ShotgunBandolier2"
+}
+
+//Rockets
+ACTOR MatriarchAmmo2 : MatriarchAmmo
+{
+	Inventory.Amount 1
+	Inventory.PickupMessage "Picked up a ''Matriarch'' slug."
+	States
+	{
+	Spawn:
+	WINA C -1
+	Stop
+	}
+}
+
+ACTOR Rocket_Giver : RandomSpawner
+{
+	DropItem "MatriarchAmmo2", 256, 6
+	DropItem "TNTAmmo", 256, 1
+}
+
+actor MatriarchBox2 : MatriarchBox
+{
+	Inventory.Amount 10
+}
+
+ACTOR RocketBox_Giver : RandomSpawner
+{
+	Dropitem "MatriarchBox2", 256, 6
+	Dropitem "TNTBox", 256, 1
+}
+
+//Cells
+ACTOR Cell_Giver : RandomSpawner 
+{
+	DropItem "AugurAmmo", 256, 5
+	DropItem "TiberiumAmmo", 256, 1
+}
+
+ACTOR CellPack_Giver : RandomSpawner
+{
+	Dropitem "AugurBox", 256, 7
+	Dropitem "TiberiumBloat", 256, 1
+}
+
+//Weapons
+Actor BrimstoneSpawner : GauntletsSpawner //replaces Chainsaw
+{
+	//$Title Brimstone (Spawner)
+}
+
+Actor StruckerSpawner : RandomSpawner //replaces Shotgun
+{
+	//$Title Strucker (Spawner)
+	DropItem "Strucker", 256, 1
+}
+
+Actor IronblastSpawner : RandomSpawner //replaces Supershotgun
+{
+	//$Title Ironblast (Spawner)
+	DropItem "Ironblast", 256, 1
+}
+
+Actor GCShotgunSpawner : RandomSpawner 
+{
+	DropItem "Strucker", 256, 1
+	DropItem "IronBlast", 256, 1
+}
+
+Actor PulverizerSpawner : RandomSpawner //replaces Chaingun
+{
+	//$Title Pulverizer (Spawner)
+	DropItem "Pulverizer", 256, 1
+}
+
+Actor MatriarchSpawner : RandomSpawner //replaces RocketLauncher
+{
+	//$Title Matriarch (Spawner)
+	DropItem "Matriarch", 256, 1
+}
+
+Actor GCRocketLauncherSpawner : RandomSpawner
+{
+	DropItem "Matriarch" 256, 1
+	DropItem "DynamiteWeapon" 256, 1
+}
+
+
+Actor AugurSpawner : RandomSpawner //replaces PlasmaRifle
+{
+	//$Title Augur (Spawner)
+	DropItem "Augur", 256, 1
+}
+
+Actor GCBFG9000Spawner : RandomSpawner // PAY ATTENTION TO THIS ONE replaces BFG9000
+{
+	//$Title Old Dreadful, Draugh Tome or Bishop (Spawner)
+	DropItem "OldDreadful", 256, 2
+	DropItem "DraughTomeBringer", 256, 1
+	DropItem "PowersuitBringer", 256, 1
+}
+
+//Bonuses
+Actor HealthBonus_Giver : RandomSpawner //replaces HealthBonus
+{
+	//$Title Black Flame Sigil (2 HP)
+	DropItem "BlackBonus"
+}
+
+Actor ArmorBonus_Giver : RandomSpawner //replaces ArmorBonus
+{
+	//$Title Purple Scale (1 AP)
+	DropItem "PurpleBonus", 256, 1
+}
+
+//Armor
+Actor Armor_Giver : RandomSpawner //replaces GreenArmor
+{
+	//$Title Armor
+	DropItem "BasicArmorSpawner", 256, 1
+}
+
+Actor Armor_Giver2 : RandomSpawner //replaces BlueArmor
+{
+	//$Title Greater Armor
+	DropItem "AdvancedArmorSpawner", 256, 1
+}
+
+//Health
+Actor Stimpack_Giver : RandomSpawner //replaces Stimpack
+{
+	//$Title Stimpack
+	DropItem "MediCaps", 256, 1
+}
+
+Actor Medikit_Giver : RandomSpawner //replaces Medikit
+{
+	//$Title Medikit or Rejuvination Cap (Spawner)
+	DropItem "MediPod", 256, 15
+	//DropItem "RejuvCapsGiver", 256, 1
+}
+
+//Backpack
+Actor Backpack_Giver : RandomSpawner 
+{
+	//$Title Backpack (Spawner)
+	DropItem "BackpackSpawner", 256, 1
+}
+
+Actor GCBackpack : BackpackSpawner {} //solves the backpack on CF side
+
+//Radsuit
+Actor Radsuit_Giver : RandomSpawner
+{
+	//$Title Envirosuit or Bishop (Spawner)
+	DropItem "Envirosuit", 256, 39
+	DropItem "PowersuitBringer", 256, 1
+}
+
+//Powerups
+Actor Berserk_Giver : RandomSpawner 
+{
+	//$Title Berserk, Gunzerk, Surge, Booster, Stimulant or Lifter (Spawner)
+	DropItem "GunzerkGiver", 256, 20
+	DropItem "Berserk2Giver", 256, 20
+	//DropItem "WyvernIdolGiver", 256, 20
+	
+	DropItem "SurgeBringer", 256, 1
+	DropItem "BoosterBringer", 256, 1
+	DropItem "StimulantBringer", 256, 1
+	DropItem "LifterBringer", 256, 1
+}
+
+Actor Soulsphere_Giver : RandomSpawner
+{
+	//$Title Soulsphere, Medbag, Surge, Booster, Stimulant or Lifter (Spawner)
+	DropItem "Soulsphere2", 256, 20
+	DropItem "Medbag", 256, 15
+
+	DropItem "LifeSphere", 256, 5
+	
+	DropItem "SurgeBringer", 256, 1
+	DropItem "BoosterBringer", 256, 1
+	DropItem "StimulantBringer", 256, 1
+	DropItem "LifterBringer", 256, 1
+}
+
+Actor Megasphere_Giver : RandomSpawner
+{
+	//$Title Megasphere, Surge, Booster, Stimulant or Lifter (Spawner)
+	DropItem "Megasphere2", 256, 15
+
+	DropItem "UltraSphere", 256, 5
+		
+	DropItem "SurgeBringer", 256, 1
+	DropItem "BoosterBringer", 256, 1
+	DropItem "StimulantBringer", 256, 1
+	DropItem "LifterBringer", 256, 1
+}
+
+Actor Infrared_Giver : RandomSpawner replaces Infrared
+{
+	//$Title Wizard's Eye, Surge, Booster, Stimulant or Lifter (Spawner)
+	DropItem "WizardsEye", 256, 20
+	
+	DropItem "SurgeBringer", 256, 1
+	DropItem "BoosterBringer", 256, 1
+	DropItem "StimulantBringer", 256, 1
+	DropItem "LifterBringer", 256, 1
+}
+
+Actor Blursphere_Giver : RandomSpawner 
+{
+	//$Title Reaver, Quad, Surge, Booster, Stimulant or Lifter (Spawner)
+	DropItem "Reaversphere", 256, 15
+	DropItem "QuadDamage", 256, 15
+
+	DropItem "ModdedBlurSphere", 256, 5
+	DropItem "HasteSphere", 256, 5
+
+	DropItem "SurgeBringer", 256, 1
+	DropItem "BoosterBringer", 256, 1
+	DropItem "StimulantBringer", 256, 1
+	DropItem "LifterBringer", 256, 1
+}
+
+Actor Invulnerability_Giver : RandomSpawner
+{
+	//$Title Invulnerability or Extreme Sphere (Spawner)
+	DropItem "InvulnerabilitySphere2", 256, 10
+	DropItem "EXTREMESphere", 256, 1
+
+	DropItem "UnbelieveabilitySphere", 256, 1
+}
+
+Actor Allmap_Giver : RandomSpawner
+{
+	//$Title Full Map
+	DropItem "Fullmap", 256, 10
+
+	DropItem "ModdedAllMap", 256, 8
+	DropItem "CFMegaMap", 256, 2
+
+}

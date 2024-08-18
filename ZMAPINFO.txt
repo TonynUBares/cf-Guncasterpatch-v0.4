@@ -1,0 +1,8 @@
+gameinfo
+{
+ infopage = 	"Helpage1","Helpage2","Helpage3","Helpage4","Helpage5","Helpage6","Crewhlp1","Crewhlp2",
+		"Credit1","Credit2","Credit3","Credit4","Credit5"
+ statusbarclass = "Gc_DoomSbar"
+ NoRandomPlayerClass = true
+ AddEventHandlers = "ClusterCaster"
+}

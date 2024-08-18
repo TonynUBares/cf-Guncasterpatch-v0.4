@@ -1,0 +1,147 @@
+//can't replace decorate actors with zscript ones if they get loaded first.
+/*actor SandmanSpawnerDoom : Actor replaces PulverizerSpawner
+{
+	+NOINTERACTION
+	States
+	{
+	Spawn:
+		TNT1 A 0 NoDelay {
+			if(bDROPPED == false) { A_SpawnItemEx("SandmanDrop",0,0,0,0,0,0,0,SXF_TRANSFERSPECIAL); }
+			else 			  { A_DropItem("Pulverizer"); }
+		}
+		Stop
+	}
+}*/
+
+actor SandmanSpawnerDoom : Actor replaces PulverizerSpawner
+{
+	+NOINTERACTION
+	States
+	{
+	Spawn:
+		TNT1 A 0 NoDelay {
+			if(bDROPPED) { A_DropItem("Pulverizer"); }
+			else
+			{ 
+				A_SpawnItemEx("SandmanDrop",0,0,0,0,0,0,0,SXF_TRANSFERSPECIAL);
+			}
+		}
+		Stop
+	}
+}
+
+actor MourningSpawnerDoom : Actor replaces MatriarchSpawner
+{
+	+NOINTERACTION
+	States
+	{
+	Spawn:
+		TNT1 A 0 NoDelay {
+			if(bDROPPED) { A_DropItem("Matriarch"); }
+			else
+			{
+				A_SpawnItemEx("MourningDrop",0,0,0,0,0,0,0,SXF_TRANSFERSPECIAL);
+			}
+		}
+		Stop
+	}
+}
+
+//So it sticks around.
+actor SandmanDrop : RandomSpawner
+{
+	DropItem "Pulverizer", 255, 35
+	DropItem "Sandman", 255, 1
+}
+
+actor MourningDrop : RandomSpawner
+{
+	DropItem "Matriarch", 255, 35
+	DropItem "MourningGlory", 255, 1
+}
+
+/*
+Actor MourningReplacerDoom : RandomSpawner replaces MatriarchSpawner
+{
+	DropItem "MourningGlory"
+	DropItem "Matriarch"
+}
+
+Actor MourningReplacerHeretic : RandomSpawner replaces PhoenixRod
+{
+	DropItem "MourningGlory"
+	DropItem "Matriarch"
+}
+
+Actor MourningReplacerHexen : RandomSpawner replaces CWeapFlame
+{
+	DropItem "MourningGlory"
+	DropItem "Matriarch"
+}
+
+Actor MourningAmmoReplace
+{
+	+NOINTERACTION
+	States
+	{
+	Spawn:
+		TNT1 A 0 NoDelay {
+			A_DropItem("MourningAmmo",1,256);
+			A_SpawnItemEx("MourningAmmo",0,0,0,0,0,0,0,SXF_TRANSFERSPECIAL);
+		}
+		Stop
+	}
+}
+
+Actor Rocket_Giver2 : RandomSpawner replaces Rocket_Giver
+{
+	DropItem "MatriarchAmmo2" 255 3
+	DropItem "MourningAmmoReplace" 255 1
+	DropItem "TNTAmmo" 255 1
+}
+
+Actor RocketBox_Giver2 : RandomSpawner replaces RocketBox_Giver
+{
+	DropItem "MatriarchBox2" 255 3
+	Dropitem "MourningBox" 255 1
+	Dropitem "TNTBox" 255 1
+}
+
+Actor Phoenix_Giver2 : RandomSpawner replaces Phoenix_Giver
+{
+	DropItem "MatriarchAmmo" 255 3
+	DropItem "MourningAmmoReplace" 255 1
+	DropItem "TNTAmmo" 255 1
+}
+
+Actor PhoenixHefty_Giver2 : RandomSpawner replaces PhoenixHefty_Giver
+{
+	DropItem "MatriarchBox" 255 3
+	Dropitem "MourningBox" 255 1
+	Dropitem "TNTBox" 255 1
+}*/
+
+actor GCBFG9000Spawner2 : RandomSpawner replaces GCBFG9000Spawner
+{
+	DropItem "OldDreadful", 255, 2
+	DropItem "DraughTomeBringer", 255, 1
+	DropItem "PowersuitBringer", 255, 1
+	DropItem "DeadmakerMaskBringer", 255, 1
+	DropItem "GoldenEmperor", 255, 1
+	DropItem "Sandman", 255, 1
+	DropItem "MourningGlory", 255, 1
+}
+
+Actor ArtiHealingRadiusDropperAddon : RandomSpawner replaces ArtiHealingRadiusDropper
+{
+	DropItem "GunzerkPotGiver"
+	DropItem "BerserkPotGiver"
+	DropItem "IronLizardPotGiver"
+	DropItem "GemShower"
+	DropItem "SurgeBringer"
+	DropItem "TomeSpawner"
+	DropItem "TreasureChest"
+	DropItem "DraughTomeBringer"
+	DropItem "PowersuitBringer"
+	DropItem "DeadmakerMaskBringer"
+}

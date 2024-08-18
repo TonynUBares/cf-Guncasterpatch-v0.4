@@ -1,0 +1,72 @@
+[enu default]
+//don't touch these unless you REALLY know what you're doing
+BarrelCount = 10;
+Barrel1 = "ModdedExplosiveBarrel"; Barrel1Chance = 29;
+Barrel8 = "PopBarrel"; Barrel8Chance = 27;
+Barrel9 = "Propane"; Barrel9Chance = 3;
+
+
+//Touch these even less than the barrels
+GCExtraWeapon1 = "BrimstoneSpawner";
+GCExtraWeapon2 = "";
+GCExtraWeapon3 = "GCShotgunSpawner";
+GCExtraWeapon4 = "PulverizerSpawner";
+GCExtraWeapon5 = "GCRocketLauncherSpawner";
+GCExtraWeapon6 = "AugurSpawner";
+GCExtraWeapon7 = "GCBFG9000Spawner";
+GCExtraWeapon8 = "GCBFG9000Spawner";
+GCExtraWeapon9 = "GCBFG9000Spawner";
+
+
+Mod3Replacer0 = "Clip_Giver";
+Mod3Replacer1 = "ClipBox_Giver";
+Mod3Replacer2 = "ShotgunAmmo2";
+Mod3Replacer3 = "Shell_Giver";
+Mod3Replacer4 = "Rocket_Giver";
+Mod3Replacer5 = "RocketBox_Giver";
+Mod3Replacer6 = "Cell_Giver";
+Mod3Replacer7 = "CellPack_Giver";
+Mod3Replacer8 = "Megasphere_Giver";
+Mod3Replacer9 = "Soulsphere_Giver";
+Mod3Replacer10 = "Invulnerability_Giver";
+Mod3Replacer11 = "Blursphere_Giver";
+Mod3Replacer12 = "Berserk_Giver";
+Mod3Replacer13 = "Radsuit_Giver";
+Mod3Replacer14 = "BrimstoneSpawner";
+Mod3Replacer15 = "StruckerSpawner";
+Mod3Replacer16 = "IronblastSpawner";
+Mod3Replacer17 = "PulverizerSpawner";
+Mod3Replacer18 = "MatriarchSpawner";
+Mod3Replacer19 = "AugurSpawner";
+Mod3Replacer20 = "GCBFG9000Spawner";
+
+
+
+GCHUDStartingArmorGiver = "0";
+GCHUDGreenArmorGiver = "1";
+GCHUDVitalityRuneArmor = "2";
+GCHUDBlueArmorGiver = "3";
+GCHUDRedArmorGiver = "4";
+GCHUDPhaseArmorGiver = "5";
+GCHUDLegendaryArmorGiver = "6";
+GCHUDLegArmorRegenBonus = "6";
+GCHUDLegArmorRegenBonus2 = "6";
+GCHUDHellfireArmorGiver = "7";
+GCHUDEnragedLegendaryArmorGiver = "8";
+GCHUDNemesisArmorGiver = "9";
+GCHUDNemesisRegenArmorBonus = "9";
+GCHUDTrueLegendaryArmorGiver = "10";
+
+GCHUDComplexArmorBonus = "11";
+GCHUDArmorRegen250SphereGiver = "9";
+GCHUDArmorRegen425SphereGiver = "9";
+GCHUDArmorRegen600SphereGiver = "9";
+GCHUDCFArmorBonus = "12";
+GCHUDLegendaryArmorBonus = "6";
+GCHUDLightNemesisArmorGiver = "13";
+GCHUDLegCrystalArmorGiver = "3";
+GCHUDELegCrystalArmorGiver = "4";
+GCHUDNemesisArmorBonus = "9";
+
+GCHUDCrystalArmorGiver = "14";
+GCHUDHackroidArmorGiver = "15";

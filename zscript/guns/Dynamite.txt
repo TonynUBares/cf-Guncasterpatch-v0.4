@@ -1,0 +1,728 @@
+#region Gnus
+//$color 14
+
+/*
+fun fact: I never planned to add Dynamite, but after playing Blood, I fell in love
+with it so badly that I decided to add it anyway. Completely blew the weapon balance
+out the window and depraved Dreadful's feature of being sole super crowd control
+tool.
+*/
+
+class DynamiteSelected : Inventory { Default { Inventory.MaxAmount 1; } }
+class TossPower : Inventory { Default { Inventory.MaxAmount 999; } }
+class TossPower2 : Inventory { Default { Inventory.MaxAmount 999; } }
+class DynamiteTossTimer : Inventory { Default { Inventory.MaxAmount 350; } } //10 seconds.
+class DynamiteTossCounter : DynamiteSelected {}
+
+#include "Zscript/Guns/Projectile/Dynamite.txt"
+#include "Zscript/Guns/Projectile/DynamiteExp.txt"
+
+class DynamiteWeapon : GuncasterWeapon
+{	
+	Default
+	{
+		//$Title TNT
+		Inventory.PickupSound "misc/w_pkup";
+		Inventory.PickupMessage "Picked up a bundle of TNT.";
+		Obituary "%o was done extra-crispy, thanks to %k's TNT.";
+		//Weapon.UpSound "" ;
+		Weapon.SelectionOrder 7;
+		Weapon.AmmoGive 0;
+		Weapon.AmmoType "TNTAmmo";
+		Weapon.AmmoUse 1;
+		Weapon.SlotNumber 5;
+		Weapon.BobStyle 'InverseSmooth';
+		Weapon.BobSpeed 2.3;
+		Weapon.BobRangeY 0.7;
+		Weapon.BobRangeX 0.9;
+		Tag "Dynamite";
+		Scale 1.1;
+		+INVENTORY.UNDROPPABLE
+	}
+	
+	double GunzX; //A lil' positioning modifier when the gunzerk is on.
+	int FuseTime; //Fuse timer.
+	int FuseTime2;
+	
+	States
+	{
+	Spawn:
+		DYNG X -1;
+		Stop;
+		
+	SelectStuff:
+		TNT1 A 0 {
+			A_Overlay(-3,"DynamiteGrab");
+			A_Overlay(3,"DynamiteGrabLeft");
+			invoker.FuseTime = 0;
+			invoker.FuseTime2 = 0;
+			A_GiveInventory("DynamiteSelected",1);
+			ACS_NamedExecuteAlways("SbarinfoFix",0,0,1,2);
+			A_SetCrosshair(57);
+			let player_data = Guncaster(invoker.owner);
+			if(player_data.spellDelay < 5) { player_data.spellDelay += 5; }
+		}
+	SelectStuffGoOn:
+		TNT1 AAAAAAAA 0 A_Raise;
+		TNT1 A 1 A_Raise;
+		Loop;
+		
+	DeselectStuff:
+		TNT1 A 0 {
+			A_TakeInventory("DynamiteSelected",1);
+			A_TakeInventory("TossPower",0);
+			A_TakeInventory("TossPower2",0);
+			ACS_NamedExecuteAlways("SbarinfoFix",0,1,1,2);
+		}
+		Goto DeselectLoop;
+	
+	//READY UP
+	
+	DynamiteUp:
+		TNT1 A 0 { if(OverlayID() == 2) { A_OverlayFlags(OverlayID(),PSPF_MIRROR|PSPF_FLIP,1); } }
+		TSTG E 0 A_JumpIf(CountInv("DynamiteStratActive"), 2);
+		TNTG E 0;
+		"####" "#" 1 A_OverlayOffset(OverlayID(),211+invoker.GunzX,152);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),197+invoker.GunzX,131,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),177+invoker.GunzX,101,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),150+invoker.GunzX,74,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),131+invoker.GunzX,54,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),124+invoker.GunzX,50,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),119+invoker.GunzX,48,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),114+invoker.GunzX,50,WOF_INTERPOLATE);
+		"####" "#" 0 A_PlaySound("TNT/Grab",1,0.8);
+		Stop;
+	DynamiteGrabLeft:
+		TNT1 A 0 A_JumpIf(!(GC_Gunslinger || CountInv("PowerGunzerking")),"LeftActive");
+		TNT1 A 10;
+		TNT1 A 3 { A_Overlay(2,"DynamiteUp"); A_OverlayFlags(OverlayID(),PSPF_MIRROR|PSPF_FLIP,1); }
+		Goto DynamiteGrab+1;
+	DynamiteGrab:
+		TNT1 A 3 { if(OverlayID() == -3) { A_Overlay(-4,"DynamiteUp"); }
+				   else 				 { A_Overlay( 2,"DynamiteUp"); A_OverlayFlags(OverlayID(),PSPF_MIRROR|PSPF_FLIP,1); } }
+		CYOH F 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitToken"),7);
+		CYDH F 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitDraugh"),6);
+		CYNH F 0 A_JumpIf(CountInv("PowerDeadmaker"),5);
+		CYCH F 0 A_JumpIf(CountInv("PowerSuitToken"),4);
+		CYUH F 0 A_JumpIf(CountInv("PowerSuitProtect"),3);
+		CYYH F 0 A_JumpIf(CountInv("PowerSuitDraugh"),2);
+		CYGH F 0;
+		"####" "#" 1 A_OverlayOffset(OverlayID(),220+invoker.GunzX,142);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),195+invoker.GunzX,98,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),171+invoker.GunzX,70,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),150+invoker.GunzX,52,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),141+invoker.GunzX,50,WOF_INTERPOLATE);
+		TSOG B 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitToken"),7);
+		TSDG B 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitDraugh"),6);
+		TSNG B 0 A_JumpIf(CountInv("PowerDeadmaker"),5);
+		TSCG B 0 A_JumpIf(CountInv("PowerSuitToken"),4);
+		TSUG B 0 A_JumpIf(CountInv("PowerSuitProtect"),3);
+		TSYG B 0 A_JumpIf(CountInv("PowerSuitDraugh"),2);
+		TSTG B 0;
+		"####" "#" 0 A_JumpIf(CountInv("DynamiteStratActive"),8);
+		TNOG B 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitToken"),7);
+		TNDG B 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitDraugh"),6);
+		TNNG B 0 A_JumpIf(CountInv("PowerDeadmaker"),5);
+		TNCG B 0 A_JumpIf(CountInv("PowerSuitToken"),4);
+		TNUG B 0 A_JumpIf(CountInv("PowerSuitProtect"),3);
+		TNYG B 0 A_JumpIf(CountInv("PowerSuitDraugh"),2);
+		TNTG B 0;
+		"####" "#" 1 A_OverlayOffset(OverlayID(),108+invoker.GunzX,56);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),96+invoker.GunzX,68,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),85+invoker.GunzX,89,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),88+invoker.GunzX,96,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),98+invoker.GunzX,106,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),111+invoker.GunzX,110,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),131+invoker.GunzX,106,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),146+invoker.GunzX,102,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),150+invoker.GunzX,99,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),152+invoker.GunzX,97,WOF_INTERPOLATE);
+		"####" "#" 0 {
+			invoker.WeapAction--;
+			A_OverlayOffset(OverlayID(),0,0);
+			if(OverlayID() == 3) { invoker.LeftHand = 0; }
+		}
+		"####" "#" 0 A_JumpIf(OverlayID() == 3, "LeftActive");
+		Goto RightActive;
+	
+	//RIGHT SIDE
+	
+	RightActive:
+		"####" "#" 0 {
+			if(GC_Gunslinger || CountInv("PowerGunzerking")) {
+				invoker.GunzX = 20;
+			} else {
+				invoker.GunzX = 0;
+			}
+			
+			// Prevent jittering animation -Dino
+			if(invoker.GC_DeadCharging) { 
+				if(invoker.weapSwitch != 1) { invoker.weapSwitch = 1; }
+				Return ResolveState("DeadChargeAnimationOverride"); 
+			}
+			else { A_OverlayOffset(OverlayID(),invoker.GunzX,0); }
+			Return ResolveState(null);
+		}
+		TSOG A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitToken"),7);
+		TSDG A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitDraugh"),6);
+		TSNG A 0 A_JumpIf(CountInv("PowerDeadmaker"),5);
+		TSCG A 0 A_JumpIf(CountInv("PowerSuitToken"),4);
+		TSUG A 0 A_JumpIf(CountInv("PowerSuitProtect"),3);
+		TSYG A 0 A_JumpIf(CountInv("PowerSuitDraugh"),2);
+		TSTG A 0;
+		"####" "#" 0 A_JumpIf(CountInv("DynamiteStratActive"),8);
+		TNOG A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitToken"),7);
+		TNDG A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitDraugh"),6);
+		TNNG A 0 A_JumpIf(CountInv("PowerDeadmaker"),5);
+		TNCG A 0 A_JumpIf(CountInv("PowerSuitToken"),4);
+		TNUG A 0 A_JumpIf(CountInv("PowerSuitProtect"),3);
+		TNYG A 0 A_JumpIf(CountInv("PowerSuitDraugh"),2);
+		TNTG A 0;
+		"####" "#" 1; //You WANT this delay here or else when you run out of ammo - ker-crash due to infinite loop~
+        "####" "#" 0 {
+			//Fire.
+			If(!(GC_Gunslinger || CountInv("PowerGunzerking")) &&
+				!invoker.weapSwitch && !CountInv("GCCantFire") && //!invoker.LeftHand &&
+				GetPlayerInput(INPUT_BUTTONS) & BT_ATTACK) {
+				Return ResolveState("MainFire");
+			}
+			
+			//Strat switch.
+			If(CountInv("DynamiteStrat") &&
+				!invoker.weapSwitch && !CountInv("GCCantFire") && !invoker.LeftHand &&
+				GetPlayerInput(INPUT_BUTTONS) & BT_RELOAD) {
+				Return ResolveState("StratSwitch");
+			}
+			
+			//Gunzerk right.
+			If((GC_Gunslinger || CountInv("PowerGunzerking")) &&
+				!invoker.WeapSwitch && !CountInv("GCCantFire") && GetPlayerInput(INPUT_BUTTONS) & BT_ALTATTACK) {
+				Return ResolveState("MainFire");
+			}
+			Return ResolveState(Null);
+		}
+		Loop;
+		
+	//STRAT
+		
+	StratSwitch:
+		"####" "#" 0 {
+			if(CountInv("DynamiteStratActive")) { A_PlaySound("TNT/Strat2",1,0.8); }
+			else								{ A_PlaySound("TNT/Strat",1,0.8); }
+			if(CountInv("PowerGunzerking") || GC_Gunslinger) { A_Overlay(3,"LeftStratActivate2"); }
+			else 														{ A_Overlay(3,"LeftStratActivate"); }
+			invoker.WeapAction++;
+		}
+		TSOG A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitToken"),7);
+		TSDG A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitDraugh"),6);
+		TSNG A 0 A_JumpIf(CountInv("PowerDeadmaker"),5);
+		TSCG A 0 A_JumpIf(CountInv("PowerSuitToken"),4);
+		TSUG A 0 A_JumpIf(CountInv("PowerSuitProtect"),3);
+		TSYG A 0 A_JumpIf(CountInv("PowerSuitDraugh"),2);
+		TSTG A 0;
+		"####" "#" 0 A_JumpIf(CountInv("DynamiteStratActive"),8);
+		TNOG A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitToken"),7);
+		TNDG A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitDraugh"),6);
+		TNNG A 0 A_JumpIf(CountInv("PowerDeadmaker"),5);
+		TNCG A 0 A_JumpIf(CountInv("PowerSuitToken"),4);
+		TNUG A 0 A_JumpIf(CountInv("PowerSuitProtect"),3);
+		TNYG A 0 A_JumpIf(CountInv("PowerSuitDraugh"),2);
+		TNTG A 0;
+		"####" "#" 1;
+		"####" "#" 1 A_OverlayOffset(OverlayID(),invoker.GunzX+1,1,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),invoker.GunzX+2,2,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),invoker.GunzX+3,3,WOF_INTERPOLATE);
+		"####" "#" 1 {
+			A_OverlayOffset(OverlayID(),invoker.GunzX+5,5,WOF_INTERPOLATE);
+			if(!CountInv("DynamiteStratActive"))
+			{
+				A_Overlay(-2,"BlueOn");
+				if(CountInv("PowerGunzerking") || GC_Gunslinger) { A_Overlay(4,"BlueOn"); }
+				A_GiveInventory("DynamiteStratActive");
+			}
+			else
+			{
+				A_Overlay(-2,"BlueOff");
+				if(CountInv("PowerGunzerking") || GC_Gunslinger) { A_Overlay(4,"BlueOff"); }
+				A_TakeInventory("DynamiteStratActive");
+			}
+			A_OverlayFlags(4,PSPF_FLIP|PSPF_MIRROR,1);
+			A_Overlay(44,"PurifierSymbol");
+		}
+		"####" "#" 1 A_OverlayOffset(OverlayID(),invoker.GunzX+4,4,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),invoker.GunzX+3,3,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),invoker.GunzX+2,2,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),invoker.GunzX+1,1,WOF_INTERPOLATE);
+		TSOG A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitToken"),7);
+		TSDG A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitDraugh"),6);
+		TSNG A 0 A_JumpIf(CountInv("PowerDeadmaker"),5);
+		TSCG A 0 A_JumpIf(CountInv("PowerSuitToken"),4);
+		TSUG A 0 A_JumpIf(CountInv("PowerSuitProtect"),3);
+		TSYG A 0 A_JumpIf(CountInv("PowerSuitDraugh"),2);
+		TSTG A 0;
+		"####" "#" 0 A_JumpIf(CountInv("DynamiteStratActive"),8);
+		TNOG A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitToken"),7);
+		TNDG A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitDraugh"),6);
+		TNNG A 0 A_JumpIf(CountInv("PowerDeadmaker"),5);
+		TNCG A 0 A_JumpIf(CountInv("PowerSuitToken"),4);
+		TNUG A 0 A_JumpIf(CountInv("PowerSuitProtect"),3);
+		TNYG A 0 A_JumpIf(CountInv("PowerSuitDraugh"),2);
+		TNTG A 0;
+		"####" "#" 5 A_OverlayOffset(OverlayID(),invoker.GunzX,0,WOF_INTERPOLATE);
+		"####" "#" 0 { invoker.WeapAction--; }
+		Goto RightActive;
+		
+	LeftStratActivate:
+		CYOH C 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitToken"),7);
+		CYDH C 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitDraugh"),6);
+		CYNH C 0 A_JumpIf(CountInv("PowerDeadmaker"),5);
+		CYCH C 0 A_JumpIf(CountInv("PowerSuitToken"),4);
+		CYUH C 0 A_JumpIf(CountInv("PowerSuitProtect"),3);
+		CYYH C 0 A_JumpIf(CountInv("PowerSuitDraugh"),2);
+		CYGH C 0;
+		"####" "#" 0 A_JumpIf(CountInv("DynamiteStratActive"),"LeftStratDeactivate");
+		"####" "#" 1 A_OverlayOffset(OverlayID(),-19,168);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),-7,143,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),5,123,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),21,103,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),37,87,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),56,77,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),70,71,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),112,74,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),126,83,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),146,96,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),177,125,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),192,148,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),199,161,WOF_INTERPOLATE);
+		Goto LeftActive;
+	LeftStratDeactivate:
+		"####" "#" 1 A_OverlayOffset(OverlayID(),199,161);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),192,148,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),177,125,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),146,96,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),126,83,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),112,74,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),70,71,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),56,77,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),37,87,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),21,103,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),5,123,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),-7,143,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),-19,168,WOF_INTERPOLATE);
+		Goto LeftActive;
+	
+	LeftStratActivate2:
+		TSCG A 0 {
+			A_OverlayFlags(OverlayID(),PSPF_FLIP|PSPF_MIRROR,1);
+			A_OverlayOffset(OverlayID(),invoker.GunzX,0,WOF_INTERPOLATE);
+		}
+		TSOG A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitToken"),7);
+		TSDG A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitDraugh"),6);
+		TSNG A 0 A_JumpIf(CountInv("PowerDeadmaker"),5);
+		TSCG A 0 A_JumpIf(CountInv("PowerSuitToken"),4);
+		TSUG A 0 A_JumpIf(CountInv("PowerSuitProtect"),3);
+		TSYG A 0 A_JumpIf(CountInv("PowerSuitDraugh"),2);
+		TSTG A 0;
+		"####" "#" 0 A_JumpIf(CountInv("DynamiteStratActive"),8);
+		TNOG A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitToken"),7);
+		TNDG A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitDraugh"),6);
+		TNNG A 0 A_JumpIf(CountInv("PowerDeadmaker"),5);
+		TNCG A 0 A_JumpIf(CountInv("PowerSuitToken"),4);
+		TNUG A 0 A_JumpIf(CountInv("PowerSuitProtect"),3);
+		TNYG A 0 A_JumpIf(CountInv("PowerSuitDraugh"),2);
+		TNTG A 0;
+		"####" "#" 1; 
+		"####" "#" 1 A_OverlayOffset(OverlayID(),invoker.GunzX+1,1,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),invoker.GunzX+2,2,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),invoker.GunzX+3,3,WOF_INTERPOLATE);
+		"####" "#" 1 {
+			A_OverlayOffset(OverlayID(),invoker.GunzX+5,5,WOF_INTERPOLATE);
+			A_Overlay(42,"PurifierSymbol");
+			A_OverlayFlags(42,PSPF_FLIP|PSPF_MIRROR,1);
+		}
+		"####" "#" 1 A_OverlayOffset(OverlayID(),invoker.GunzX+4,4,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),invoker.GunzX+3,3,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),invoker.GunzX+2,2,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),invoker.GunzX+1,1,WOF_INTERPOLATE);
+		TSOG A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitToken"),7);
+		TSDG A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitDraugh"),6);
+		TSNG A 0 A_JumpIf(CountInv("PowerDeadmaker"),5);
+		TSCG A 0 A_JumpIf(CountInv("PowerSuitToken"),4);
+		TSUG A 0 A_JumpIf(CountInv("PowerSuitProtect"),3);
+		TSYG A 0 A_JumpIf(CountInv("PowerSuitDraugh"),2);
+		TSTG A 0;
+		"####" "#" 0 A_JumpIf(CountInv("DynamiteStratActive"),8);
+		TNOG A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitToken"),7);
+		TNDG A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitDraugh"),6);
+		TNNG A 0 A_JumpIf(CountInv("PowerDeadmaker"),5);
+		TNCG A 0 A_JumpIf(CountInv("PowerSuitToken"),4);
+		TNUG A 0 A_JumpIf(CountInv("PowerSuitProtect"),3);
+		TNYG A 0 A_JumpIf(CountInv("PowerSuitDraugh"),2);
+		TNTG A 0;
+		"####" "#" 5 A_OverlayOffset(OverlayID(),invoker.GunzX,0,WOF_INTERPOLATE);
+		Goto LeftActive;
+		
+	PurifierSymbol:
+		TNT1 A 0 A_OverlayOffset(OverlayID(),invoker.GunzX,0);
+		TNT1 A 0 A_JumpIf(CountInv("DynamiteStratActive"),10);
+		TVTG ABCDEFGHI 1 Bright;
+		Stop;
+		TVTG IHGFEDCBA 1 Bright;
+		Stop;
+		
+	BlueOn:
+		TBNG A 0 A_JumpIf(CountInv("PowerDeadmaker"),2);
+		TBTG A 0;
+		"####" A 1 A_OverlayOffset(OverlayID(),invoker.GunzX+5,5);
+		"####" A 1 A_OverlayOffset(OverlayID(),invoker.GunzX+4,4,WOF_INTERPOLATE);
+		"####" B 1 A_OverlayOffset(OverlayID(),invoker.GunzX+3,3,WOF_INTERPOLATE);
+		"####" B 1 A_OverlayOffset(OverlayID(),invoker.GunzX+2,2,WOF_INTERPOLATE);
+		"####" C 1 A_OverlayOffset(OverlayID(),invoker.GunzX+1,1,WOF_INTERPOLATE);
+		"####" C 1 A_OverlayOffset(OverlayID(),invoker.GunzX,0,WOF_INTERPOLATE);
+		"####" DD 1;
+		Stop;
+	BlueOff:
+		TBNG A 0 A_JumpIf(CountInv("PowerDeadmaker"),2);
+		TBTG A 0;
+		"####" D 1 A_OverlayOffset(OverlayID(),invoker.GunzX+5,5);
+		"####" D 1 A_OverlayOffset(OverlayID(),invoker.GunzX+4,4,WOF_INTERPOLATE);
+		"####" C 1 A_OverlayOffset(OverlayID(),invoker.GunzX+3,3,WOF_INTERPOLATE);
+		"####" C 1 A_OverlayOffset(OverlayID(),invoker.GunzX+2,2,WOF_INTERPOLATE);
+		"####" B 1 A_OverlayOffset(OverlayID(),invoker.GunzX+1,1,WOF_INTERPOLATE);
+		"####" B 1 A_OverlayOffset(OverlayID(),invoker.GunzX,0,WOF_INTERPOLATE);
+		"####" AA 1;
+		Stop;
+		
+	//LEFT SIDE
+	
+	LeftActive:
+		TNT1 A 0 {
+			if(GC_Gunslinger || CountInv("PowerGunzerking")) {
+				A_OverlayFlags(OverlayID(),PSPF_MIRROR|PSPF_FLIP,1);
+			} else {
+				A_OverlayFlags(OverlayID(),PSPF_MIRROR|PSPF_FLIP,0);
+			}
+			A_OverlayOffset(OverlayID(),invoker.GunzX,0);
+		}
+		TNT1 A 0 A_JumpIf(GC_Gunslinger || CountInv("PowerGunzerking"),3);
+		TNT1 A 1;
+		TNT1 A 0 {
+				If(!invoker.WeapSwitch && !CountInv("GCCantFire") && !invoker.LeftHand &&
+				!(GC_Gunslinger || CountInv("PowerGunzerking")) &&
+				GetPlayerInput(INPUT_BUTTONS) & BT_ALTATTACK) {
+					Return ResolveState("Cast");
+				}
+				If(!invoker.WeapSwitch && !CountInv("GCCantFire") && !invoker.LeftHand &&
+				!(GC_Gunslinger || CountInv("PowerGunzerking")) && GetCvar("GC_Trogdor") &&
+				GetPlayerInput(INPUT_BUTTONS) & BT_ZOOM) {
+					Return ResolveState("DeadPunchStart");
+				}
+				Return ResolveState(Null);
+		}
+		Loop;
+		TSOG A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitToken"),7);
+		TSDG A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitDraugh"),6);
+		TSNG A 0 A_JumpIf(CountInv("PowerDeadmaker"),5);
+		TSCG A 0 A_JumpIf(CountInv("PowerSuitToken"),4);
+		TSUG A 0 A_JumpIf(CountInv("PowerSuitProtect"),3);
+		TSYG A 0 A_JumpIf(CountInv("PowerSuitDraugh"),2);
+		TSTG A 0;
+		"####" "#" 0 A_JumpIf(CountInv("DynamiteStratActive"),8);
+		TNOG A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitToken"),7);
+		TNDG A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitDraugh"),6);
+		TNNG A 0 A_JumpIf(CountInv("PowerDeadmaker"),5);
+		TNCG A 0 A_JumpIf(CountInv("PowerSuitToken"),4);
+		TNUG A 0 A_JumpIf(CountInv("PowerSuitProtect"),3);
+		TNYG A 0 A_JumpIf(CountInv("PowerSuitDraugh"),2);
+		TNTG A 0;
+		"####" "#" 1;
+		"####" "#" 0 A_JumpIf(!invoker.WeapSwitch && !CountInv("GCCantFire") &&
+							  GetPlayerInput(INPUT_BUTTONS) & BT_ATTACK, "MainFire");
+        Loop;
+	
+	//FIRE
+	
+	MainFire:
+		"####" "#" 0 {
+			if(CountInv("DynamiteStratActive") && CountInv("Mana") < 75 && OverlayID() == 3) { Return ResolveState("LeftActive"); }
+			if(CountInv("DynamiteStratActive") && CountInv("Mana") < 75 && OverlayID() == -3) { Return ResolveState("RightActive"); }
+			Return State(Null);
+		}
+		"####" "#" 0 {
+			A_PlaySound("TNT/Ignition",5,0.9);
+			invoker.WeapAction++;
+			if(OverlayID() == 3) { invoker.LeftHand = 1; }
+		}
+		"####" "#" 1 A_SetPitch(Pitch - 0.25 * GetCvar("GC_WeaponRecoil"), SPF_INTERPOLATE);
+		"####" "#" 1 A_SetPitch(Pitch - 0.25 * GetCvar("GC_WeaponRecoil"), SPF_INTERPOLATE);
+		"####" "#" 1 A_SetPitch(Pitch - 0.5 * GetCvar("GC_WeaponRecoil"), SPF_INTERPOLATE);
+		"####" "#" 1 A_SetPitch(pitch - 1.0 * GetCvar("GC_WeaponRecoil"), SPF_INTERPOLATE);
+		"####" "#" 1 A_SetPitch(pitch - 2.0 * GetCvar("GC_WeaponRecoil"), SPF_INTERPOLATE);
+		"####" "###" 1 A_SetPitch(pitch - 2.5 * GetCvar("GC_WeaponRecoil"), SPF_INTERPOLATE);
+		"####" "#" 1 {
+			A_FireProjectile("IgnitionSnort",frandom(2.0,-2.0),0,0,0,0,frandom(2.0,-2.0));
+			for(invoker.Loopler = 0; invoker.Loopler <= 3; invoker.Loopler++)
+			{
+				A_FireProjectile("IgnitionSmoke",frandom(2.0,-2.0),0,0,0,0,frandom(4.0,-4.0));
+			}
+			A_SetPitch(Pitch + 6.0 * GetCvar("GC_WeaponRecoil"), SPF_INTERPOLATE);
+		}
+		"####" "#" 1 {
+			A_FireProjectile("IgnitionSnort",frandom(2.0,-2.0),0,0,0,0,frandom(2.0,-2.0));
+			for(invoker.Loopler = 0; invoker.Loopler <= 3; invoker.Loopler++)
+			{
+				A_FireProjectile("IgnitionSmoke",frandom(2.0,-2.0),0,0,0,0,frandom(4.0,-4.0));
+			}
+			A_SetPitch(Pitch + 5.0 * GetCvar("GC_WeaponRecoil"), SPF_INTERPOLATE);
+		}
+		"####" "#" 1 {
+			A_FireProjectile("IgnitionSnort",frandom(2.0,-2.0),0,0,0,0,frandom(2.0,-2.0));
+			for(invoker.Loopler = 0; invoker.Loopler <= 3; invoker.Loopler++)
+			{
+				A_FireProjectile("IgnitionSmoke",frandom(2.0,-2.0),0,0,0,0,frandom(4.0,-4.0));
+			}
+			A_SetPitch(Pitch + 3.0 * GetCvar("GC_WeaponRecoil"), SPF_INTERPOLATE);
+		}
+		"####" "#" 1 {
+			A_FireProjectile("IgnitionSnort",frandom(2.0,-2.0),0,0,0,0,frandom(2.0,-2.0));
+			for(invoker.Loopler = 0; invoker.Loopler <= 3; invoker.Loopler++)
+			{
+				A_FireProjectile("IgnitionSmoke",frandom(2.0,-2.0),0,0,0,0,frandom(4.0,-4.0));
+			}
+			A_SetPitch(Pitch + 2.0 * GetCvar("GC_WeaponRecoil"), SPF_INTERPOLATE);
+		}
+		"####" "#" 1 {
+			A_FireProjectile("IgnitionSnort",frandom(2.0,-2.0),0,0,0,0,frandom(2.0,-2.0));
+			for(invoker.Loopler = 0; invoker.Loopler <= 3; invoker.Loopler++)
+			{
+				A_FireProjectile("IgnitionSmoke",frandom(2.0,-2.0),0,0,0,0,frandom(4.0,-4.0));
+			}
+			A_SetPitch(Pitch + 1.0 * GetCvar("GC_WeaponRecoil"), SPF_INTERPOLATE);
+		}
+		"####" "#" 1 {
+			A_FireProjectile("IgnitionSnort",frandom(2.0,-2.0),0,0,0,0,frandom(2.0,-2.0));
+			for(invoker.Loopler = 0; invoker.Loopler <= 3; invoker.Loopler++)
+			{
+				A_FireProjectile("IgnitionSmoke",frandom(2.0,-2.0),0,0,0,0,frandom(4.0,-4.0));
+			}
+			A_SetPitch(Pitch + 0.5 * GetCvar("GC_WeaponRecoil"), SPF_INTERPOLATE);
+		}
+	GoingForFuse:
+		TSOG A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitToken"),7);
+		TSDG A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitDraugh"),6);
+		TSNG A 0 A_JumpIf(CountInv("PowerDeadmaker"),5);
+		TSCG A 0 A_JumpIf(CountInv("PowerSuitToken"),4);
+		TSUG A 0 A_JumpIf(CountInv("PowerSuitProtect"),3);
+		TSYG A 0 A_JumpIf(CountInv("PowerSuitDraugh"),2);
+		TSTG A 0;
+		"####" "#" 0 A_JumpIf(CountInv("DynamiteStratActive"),8);
+		TNOG A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitToken"),7);
+		TNDG A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitDraugh"),6);
+		TNNG A 0 A_JumpIf(CountInv("PowerDeadmaker"),5);
+		TNCG A 0 A_JumpIf(CountInv("PowerSuitToken"),4);
+		TNUG A 0 A_JumpIf(CountInv("PowerSuitProtect"),3);
+		TNYG A 0 A_JumpIf(CountInv("PowerSuitDraugh"),2);
+		TNTG A 0;
+		"####" A 0 A_PlaySound("TNT/Burn",1,0.8,1);
+		"####" "#" 0 { if(OverlayID() == -3) { A_Overlay(-2,"Fuse"); }
+					   else				   	 { A_Overlay( 4,"Fuse"); } }
+		"####" "#" 1 { 						   A_SetPitch(Pitch-0.5 * GetCvar("GC_WeaponRecoil"));
+											   A_OverlayOffset(OverlayID(),1+invoker.GunzX,1,WOF_INTERPOLATE);
+					   if(OverlayID() == -3) { A_OverlayOffset(-2,1+invoker.GunzX,1,WOF_INTERPOLATE); }
+					   else 			     { A_OverlayOffset(4,1+invoker.GunzX,1,WOF_INTERPOLATE); } }
+		"####" "#" 1 { 						   A_SetPitch(Pitch-1.0 * GetCvar("GC_WeaponRecoil"));
+											   A_OverlayOffset(OverlayID(),7+invoker.GunzX,7,WOF_INTERPOLATE);
+					   if(OverlayID() == -3) { A_OverlayOffset(-2,7+invoker.GunzX,7,WOF_INTERPOLATE); }
+					   else 			     { A_OverlayOffset(4,7+invoker.GunzX,7,WOF_INTERPOLATE); } }
+		"####" "#" 1 { 						   A_SetPitch(Pitch-1.0 * GetCvar("GC_WeaponRecoil"));
+											   A_OverlayOffset(OverlayID(),10+invoker.GunzX,15,WOF_INTERPOLATE);
+					   if(OverlayID() == -3) { A_OverlayOffset(-2,10+invoker.GunzX,15,WOF_INTERPOLATE); }
+					   else 				 { A_OverlayOffset(4,10+invoker.GunzX,15,WOF_INTERPOLATE); } }
+		"####" "#" 1 {						   A_SetPitch(Pitch-0.5 * GetCvar("GC_WeaponRecoil"));
+											   A_OverlayOffset(OverlayID(),12+invoker.GunzX,18,WOF_INTERPOLATE);
+					   if(OverlayID() == -3) { A_OverlayOffset(-2,12+invoker.GunzX,18,WOF_INTERPOLATE); }
+					   else 				 { A_OverlayOffset(4,12+invoker.GunzX,18,WOF_INTERPOLATE); } }
+		"####" "#" 1 { 						   A_SetPitch(Pitch-0.25 * GetCvar("GC_WeaponRecoil"));
+											   A_OverlayOffset(OverlayID(),14+invoker.GunzX,20,WOF_INTERPOLATE);
+					   if(OverlayID() == -3) { A_OverlayOffset(-2,14+invoker.GunzX,20,WOF_INTERPOLATE); }
+					   else 				 { A_OverlayOffset(4,14+invoker.GunzX,20,WOF_INTERPOLATE); } }
+		"####" "#" 0 { if(OverlayID() == -3) { invoker.FuseTime = 0; }
+					   else					 { invoker.FuseTime2 = 0; } }
+	FuseGoing:
+		"####" "#" 2 {
+			A_PlaySound("TNT/Burn",1,0.8,1);
+			if(OverlayID() == -3) {
+				invoker.FuseTime++;
+				if(invoker.FuseTime  % 4 == 0) { A_GiveInventory("TossPower",1); }
+			}
+			if(OverlayID() == 3) {
+				invoker.FuseTime2++;
+				if(invoker.FuseTime2 % 4 == 0) { A_GiveInventory("TossPower2",1); }
+			}
+		}
+		"####" "#" 0 {
+			//Fire.
+			If(!(GC_Gunslinger || CountInv("PowerGunzerking")) &&
+				!invoker.weapSwitch && !CountInv("GCCantFire") && //!invoker.LeftHand &&
+				GetPlayerInput(INPUT_BUTTONS) & BT_ATTACK) {
+				Return ResolveState("FuseGoing");
+			}
+			//Gunzerk right.
+			If(OverlayID() == -3 && (GC_Gunslinger || CountInv("PowerGunzerking")) &&
+				!invoker.WeapSwitch && !CountInv("GCCantFire") && GetPlayerInput(INPUT_BUTTONS) & BT_ALTATTACK) {
+				Return ResolveState("FuseGoing");
+			}
+			//Gunzerk left.
+			If(OverlayID() == 3 && (GC_Gunslinger || CountInv("PowerGunzerking")) &&
+				!invoker.WeapSwitch && !CountInv("GCCantFire") && GetPlayerInput(INPUT_BUTTONS) & BT_ATTACK) {
+				Return ResolveState("FuseGoing");
+			}
+			Return ResolveState(Null);
+		}
+		Goto GoingForThrow;
+
+	GoingForThrow:
+		TSOG A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitToken"),7);
+		TSDG A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitDraugh"),6);
+		TSNG A 0 A_JumpIf(CountInv("PowerDeadmaker"),5);
+		TSCG A 0 A_JumpIf(CountInv("PowerSuitToken"),4);
+		TSUG A 0 A_JumpIf(CountInv("PowerSuitProtect"),3);
+		TSYG A 0 A_JumpIf(CountInv("PowerSuitDraugh"),2);
+		TSTG A 0;
+		"####" "#" 0 A_JumpIf(CountInv("DynamiteStratActive"),8);
+		TNOG A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitToken"),7);
+		TNDG A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitDraugh"),6);
+		TNNG A 0 A_JumpIf(CountInv("PowerDeadmaker"),5);
+		TNCG A 0 A_JumpIf(CountInv("PowerSuitToken"),4);
+		TNUG A 0 A_JumpIf(CountInv("PowerSuitProtect"),3);
+		TNYG A 0 A_JumpIf(CountInv("PowerSuitDraugh"),2);
+		TNTG A 0;
+		"####" "#" 1 { A_OverlayOffset(OverlayID(),15+invoker.GunzX,22,WOF_INTERPOLATE); if(OverlayID() == -3) { A_OverlayOffset(-2,15+invoker.GunzX,22,WOF_INTERPOLATE); } else { A_OverlayOffset(4,15+invoker.GunzX,22,WOF_INTERPOLATE); } }
+		"####" "#" 1 { A_OverlayOffset(OverlayID(),23+invoker.GunzX,27,WOF_INTERPOLATE); if(OverlayID() == -3) { A_OverlayOffset(-2,23+invoker.GunzX,27,WOF_INTERPOLATE); } else { A_OverlayOffset(4,23+invoker.GunzX,27,WOF_INTERPOLATE); } }
+		"####" "#" 1 { A_OverlayOffset(OverlayID(),27+invoker.GunzX,34,WOF_INTERPOLATE); if(OverlayID() == -3) { A_OverlayOffset(-2,27+invoker.GunzX,34,WOF_INTERPOLATE); } else { A_OverlayOffset(4,27+invoker.GunzX,34,WOF_INTERPOLATE); } }
+		"####" "#" 1 { A_OverlayOffset(OverlayID(),32+invoker.GunzX,44,WOF_INTERPOLATE); if(OverlayID() == -3) { A_OverlayOffset(-2,32+invoker.GunzX,44,WOF_INTERPOLATE); } else { A_OverlayOffset(4,32+invoker.GunzX,44,WOF_INTERPOLATE); } }
+		"####" "#" 1 { A_OverlayOffset(OverlayID(),36+invoker.GunzX,53,WOF_INTERPOLATE); if(OverlayID() == -3) { A_OverlayOffset(-2,36+invoker.GunzX,53,WOF_INTERPOLATE); } else { A_OverlayOffset(4,36+invoker.GunzX,53,WOF_INTERPOLATE); } }
+		"####" "#" 1 { A_OverlayOffset(OverlayID(),40+invoker.GunzX,63,WOF_INTERPOLATE); if(OverlayID() == -3) { A_OverlayOffset(-2,40+invoker.GunzX,63,WOF_INTERPOLATE); } else { A_OverlayOffset(4,40+invoker.GunzX,63,WOF_INTERPOLATE); } }
+		"####" "#" 1 { A_OverlayOffset(OverlayID(),47+invoker.GunzX,80,WOF_INTERPOLATE); if(OverlayID() == -3) { A_OverlayOffset(-2,47+invoker.GunzX,80,WOF_INTERPOLATE); } else { A_OverlayOffset(4,47+invoker.GunzX,80,WOF_INTERPOLATE); } }
+		"####" "#" 1 { A_OverlayOffset(OverlayID(),50+invoker.GunzX,92,WOF_INTERPOLATE); if(OverlayID() == -3) { A_OverlayOffset(-2,50+invoker.GunzX,92,WOF_INTERPOLATE); } else { A_OverlayOffset(4,50+invoker.GunzX,92,WOF_INTERPOLATE); } }
+		"####" "#" 0 { if(OverlayID() == -3) { A_Overlay(-2,"Null"); }
+					   else				   	 { A_Overlay( 4,"Null"); } }
+		Goto Throw;
+		
+	Fuse:
+		TNT1 A 0 { if(OverlayID() == 4) { A_OverlayFlags(OverlayID(),PSPF_MIRROR|PSPF_FLIP,1); } }
+		DYN1 ABCDE 1 Bright;
+		DYN1 FGHIJKLMNOPQRSTUVWXYZ 2 Bright;
+		DYN2 ABCDEFGHIJKLMNOPQRSTUVWXYZ 2 Bright;
+		DYN3 ABCDEFGHIJKLMNOPQRSTUVWXYZ 2 Bright;
+		DYN4 ABCDEFGHIJKLMNOPQRSTUVW 2 Bright;
+		TNT1 A 0 { if(OverlayID() == -2) { A_Overlay(OverlayID(),"Null"); A_Overlay(-3,"Kaboom"); }
+				   else 				 { A_Overlay(OverlayID(),"Null"); A_Overlay( 3,"Kaboom"); } }
+		Stop;
+		
+	Kaboom:
+		TNT1 A 25 { //Maybe I should work in that blown up hand, hmm.
+			A_SetBlend("White",1.0,70);
+			A_FireProjectile("DynamiteTooLate",0,1,0);
+			A_StopSound(1);
+		}
+		Goto DynamiteGrab;
+
+	Throw:
+		"####" A 0 {
+			A_PlaySound("TNT/Toss",5,0.9);
+			A_StopSound(1);
+		}
+		TNT1 A 0 A_JumpIfInventory("TossPower",8,"PowerThrow");
+		CYOH I 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitToken"),7);
+		CYDH I 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitDraugh"),6);
+		CYNH I 0 A_JumpIf(CountInv("PowerDeadmaker"),5);
+		CYCH I 0 A_JumpIf(CountInv("PowerSuitToken"),4);
+		CYUH I 0 A_JumpIf(CountInv("PowerSuitProtect"),3);
+		CYYH I 0 A_JumpIf(CountInv("PowerSuitDraugh"),2);
+		CYGH I 0;
+		"####" "#" 1 A_OverlayOffset(OverlayID(),233+invoker.GunzX,124);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),210+invoker.GunzX,95,WOF_INTERPOLATE);
+		//"####" "#" 1 A_OverlayOffset(OverlayID(),190+invoker.GunzX,78,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),173+invoker.GunzX,63,WOF_INTERPOLATE);
+		//"####" "#" 1 A_OverlayOffset(OverlayID(),165+invoker.GunzX,54,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),162+invoker.GunzX,52,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),166+invoker.GunzX,57,WOF_INTERPOLATE);
+		"####" "#" 0 {
+			if(OverlayID() == -3) { if(!CountInv("DynamiteStratActive")) { A_FireProjectile("DynamiteProjectile",0,1,0,-4+(invoker.GunzX*0.2)); invoker.FuseTime = 0; }
+									else 								 { A_FireProjectile("PurifierDynamiteProjectile",0,1,0,-4+(invoker.GunzX*0.2)); invoker.FuseTime = 0; A_TakeInventory("Mana",75,TIF_NOTAKEINFINITE); }
+			}
+			else				  { if(!CountInv("DynamiteStratActive")) { A_FireProjectile("DynamiteProjectile2",0,1,0,-4-(invoker.GunzX*0.2)); invoker.FuseTime2 = 0; }
+									else								 { A_FireProjectile("PurifierDynamiteProjectile2",0,1,0,-4-(invoker.GunzX*0.2)); invoker.FuseTime2 = 0; A_TakeInventory("Mana",75,TIF_NOTAKEINFINITE); }
+			}
+		}
+		//"####" "#" 1 A_OverlayOffset(OverlayID(),177+invoker.GunzX,71,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),186+invoker.GunzX,85,WOF_INTERPOLATE);
+		//"####" "#" 1 A_OverlayOffset(OverlayID(),190+invoker.GunzX,78,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),195+invoker.GunzX,99,WOF_INTERPOLATE);
+		//"####" "#" 1 A_OverlayOffset(OverlayID(),204,115,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),217+invoker.GunzX,141,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),224+invoker.GunzX,154,WOF_INTERPOLATE);
+		TNT1 A 5 A_CheckReload;
+		TNT1 A 0 { If(!(GC_Gunslinger || CountInv("PowerGunzerking")) && OverlayID() == 3) { invoker.WeapAction--; Return ResolveState("LeftActive"); } Return ResolveState(Null); }
+		Goto DynamiteGrab;
+	PowerThrow:
+		"####" A 0 {
+			A_PlaySound("Guncaster/Kick",2);
+			if(CountInv("PowerDeadmaker") && CountInv("PowerSuitToken")) { A_StartSound("Prophet/Woosh",5,0,1.0); }
+			if(CountInv("PowerSuitToken") && !CountInv("PowerDeadmaker")) { A_PlaySound("Bishop/Fist",6,0.7); }
+			if(CountInv("PowerDeadmaker")) { A_PlaySound("Deadmaker/Woosh",6); }
+		}
+		CYOH H 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitToken"),7);
+		CYDH H 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitDraugh"),6);
+		CYNH H 0 A_JumpIf(CountInv("PowerDeadmaker"),5);
+		CYCH H 0 A_JumpIf(CountInv("PowerSuitToken"),4);
+		CYUH H 0 A_JumpIf(CountInv("PowerSuitProtect"),3);
+		CYYH H 0 A_JumpIf(CountInv("PowerSuitDraugh"),2);
+		CYGH H 0;
+		"####" "#" 1 A_OverlayOffset(OverlayID(),298+invoker.GunzX,47);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),249+invoker.GunzX,38,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),181+invoker.GunzX,36,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),127+invoker.GunzX,41,WOF_INTERPOLATE);
+		"####" "#" 0 {
+			if(OverlayID() == -3) { if(!CountInv("DynamiteStratActive")) { A_FireProjectile("DynamiteProjectile",0,1,0,-4+(invoker.GunzX*0.2)); invoker.FuseTime = 0; }
+									else 								 { A_FireProjectile("PurifierDynamiteProjectile",0,1,0,-4+(invoker.GunzX*0.2)); invoker.FuseTime = 0; A_TakeInventory("Mana",75,TIF_NOTAKEINFINITE); }
+			}
+			else				  { if(!CountInv("DynamiteStratActive")) { A_FireProjectile("DynamiteProjectile2",0,1,0,-4-(invoker.GunzX*0.2)); invoker.FuseTime2 = 0; }
+									else								 { A_FireProjectile("PurifierDynamiteProjectile2",0,1,0,-4-(invoker.GunzX*0.2)); invoker.FuseTime2 = 0; A_TakeInventory("Mana",75,TIF_NOTAKEINFINITE); }
+			}
+		}
+		"####" "#" 1 A_OverlayOffset(OverlayID(),82+invoker.GunzX,49,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),26+invoker.GunzX,59,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),-41+invoker.GunzX,68,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),-89+invoker.GunzX,84,WOF_INTERPOLATE);
+		TNT1 A 1;
+		TNT1 A 5 A_CheckReload;
+		TNT1 A 0 { If(!(GC_Gunslinger || CountInv("PowerGunzerking")) && OverlayID() == 3) { invoker.WeapAction--; Return ResolveState("LeftActive"); } Return ResolveState(Null); }
+		Goto DynamiteGrab;
+	
+	DeadChargeAnimationOverride:
+		TSOG A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitToken"),7);
+		TSDG A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitDraugh"),6);
+		TSNG A 0 A_JumpIf(CountInv("PowerDeadmaker"),5);
+		TSCG A 0 A_JumpIf(CountInv("PowerSuitToken"),4);
+		TSUG A 0 A_JumpIf(CountInv("PowerSuitProtect"),3);
+		TSYG A 0 A_JumpIf(CountInv("PowerSuitDraugh"),2);
+		TSTG A 0;
+		"####" "#" 0 A_JumpIf(CountInv("DynamiteStratActive"),8);
+		TNOG A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitToken"),7);
+		TNDG A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitDraugh"),6);
+		TNNG A 0 A_JumpIf(CountInv("PowerDeadmaker"),5);
+		TNCG A 0 A_JumpIf(CountInv("PowerSuitToken"),4);
+		TNUG A 0 A_JumpIf(CountInv("PowerSuitProtect"),3);
+		TNYG A 0 A_JumpIf(CountInv("PowerSuitDraugh"),2);
+		TNTG A 0;
+		"####" "#" 1 {
+			if(!invoker.weapSwitch) { Return ResolveState("RightActive"); }
+			Return ResolveState(null);
+		}
+		Loop;						 
+	}
+}
+
+#endregion

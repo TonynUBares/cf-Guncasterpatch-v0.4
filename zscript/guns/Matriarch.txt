@@ -1,0 +1,895 @@
+#region Gnus
+//$color 14
+
+/*
+fun fact: This gun was another two cannons before, some playing this mod may remember.
+The first instance had a silly name I don't even remember now, and then was Sovereign.
+Sovereign looked cool but that recoil anim was aggravating me, so I switched it up
+to maybe less impressive animated, but I think better looking variant nonetheless.
+*/
+
+class MatriarchSelected : Inventory { Default { Inventory.MaxAmount 1; } }
+
+#include "zscript/guns/projectile/Matriarch.txt"
+
+//Hexen version.
+class MatriarchHexen : RandomSpawner replaces CWeapFlame
+{
+	Default
+	{
+		DropItem "Matriarch";
+	}
+}
+
+//Heretic version.
+class MatriarchHeretic : RandomSpawner replaces PhoenixRod
+{
+	Default
+	{
+		DropItem "Matriarch";
+	}
+}
+
+class Matriarch : GuncasterWeapon 
+{
+    Default
+    {
+		Inventory.PickupSound "Guncaster/Laugh1";
+		Inventory.PickupMessage "$GOTMATRIARCH";
+		Weapon.UpSound "Matriarch/Up" ;
+		Weapon.SelectionOrder 7;
+		Weapon.AmmoGive 2;
+		Weapon.AmmoType "MatriarchAmmo";
+		Weapon.AmmoUse 1;
+		Weapon.SlotNumber 5;
+		Weapon.BobStyle 'InverseSmooth';
+		Weapon.BobSpeed 1.6;
+		Weapon.BobRangeY 0.8;
+		Weapon.BobRangeX 1.4;
+		GuncasterWeapon.twoHandedWeapon TRUE;
+		//+AMMO_OPTIONAL
+		Scale 0.9;
+	}
+	
+	//Strat drop.
+	override void PostBeginPlay()
+	{
+		if(!bDROPPED && random(0,20) == 0)
+		{
+			A_DropItem("MatriarchStratGiver",-1,256);
+		}
+		Super.PostBeginPlay();
+		Return;
+	}
+	
+	//Hexen handling.
+	override Void AttachToOwner (actor user) {
+		if(gameinfo.gametype == Game_HEXEN) {
+			AmmoGive1 = 30;
+			AmmoType1 = "GreenMana";
+			AmmoUse1 = 5;
+		}
+		Super.AttachToOwner(user);
+	}
+	
+	int GunzerkShot; //So the gun won't change the frames mid-through a firing anim.
+	int GunzerkShot2;
+	
+	double GunzX; //A lil' positioning modifier when the gunzerk is on.
+	double GunzY;
+	
+	double StratMod; //Strat recoil modifier.
+	
+	int RightMag; //Strat loading token.
+	int LeftMag;
+	
+	int RightSpent; //Casing tracker.
+	int LeftSpent;
+	
+
+	//Strat stuff.
+	Array<Actor> TargetList;
+	
+	/*action void BuildTargetList (int distance)
+	{
+		Actor CurrentTarget;
+		
+		ThinkerIterator TargetSearch = ThinkerIterator.Create("Actor", STAT_DEFAULT);
+		
+		// Create our list of valid targets.
+		while(CurrentTarget = Actor(TargetSearch.Next()))
+		{
+			// If it's a monster, shootable, not friendly, alive,
+			// reachable, and within range...
+			if(CurrentTarget.bIsMonster && CurrentTarget.bShootable &&
+				!CurrentTarget.bFriendly && CurrentTarget.health > 0 &&
+				Distance3D(CurrentTarget) <= distance &&
+				IsVisible(CurrentTarget, TRUE)) //FALSE
+			{
+				// Add it to the list.
+				target.TargetList.Push(CurrentTarget); //invoker.TargetList.Push(CurrentTarget);
+			}
+		}
+	}*/
+
+	States
+	{
+	Spawn:
+		MTRG X -1;
+		Stop;
+
+	SelectStuff:
+		TNT1 A 0 {
+			invoker.StratMod = 0;
+			invoker.RightMag = 0;
+			invoker.LeftMag = 0;
+			invoker.RightSpent = 0;
+			invoker.LeftSpent = 0;
+			invoker.GunzerkShot = 0;
+			invoker.GunzerkShot2 = 0;
+			A_Overlay(-2,"RightActive2"); //Hand.
+			//A_Overlay(99,"Debug");
+			A_GiveInventory("MatriarchSelected",1);
+			A_SetCrosshair(52);
+			ACS_NamedExecuteAlways("SbarinfoFix",0,0,1,2);
+		}
+		Goto SelectLoop;
+		
+	DeselectStuff:
+		TNT1 A 0 {
+			A_TakeInventory("MatriarchSelected",1);
+			ACS_NamedExecuteAlways("SbarinfoFix",0,1,1,2);
+		}
+		Goto DeselectLoop;
+
+	/*Debug:
+		TNT1 A 35 {
+			A_Log(String.Format("WeapAction %i", invoker.WeapAction));
+			A_Log(String.Format("LeftHand %i", invoker.LeftHand));
+		}
+		Loop;*/
+
+	//STRAT
+	
+	StratSwitch:
+		MTRG A 0 A_JumpIf(CountInv("MatriarchStratActive"),"StratSwitchOff");
+		MTRG A 0 {
+			invoker.LeftHand = 1;
+			A_GiveInventory("MatriarchStratActive");
+			A_PlaySound("Matriarch/Pull",5,0.7);
+			if(GC_Gunslinger || CountInv("PowerGunzerking")) { A_Overlay(3,"LeftStratSwitch"); }
+			else { A_Overlay(-2,"RightStrat2"); }
+			invoker.LoopRight = 0;
+		}
+		MTRG AAAAAAAAA 1 {
+			static const double x[] = {1.0, 3.0, 6.0, 10.0, 12.0,
+									   13.0, 14.0, 15.0, 14.0};
+			static const double y[] = {1.0, 2.0, 3.0, 5.0, 8.0,
+									   13.0, 14.0, 15.0, 14.0};
+			int g = invoker.LoopRight++;				
+			A_OverlayOffset(OverlayID(), x[g] + invoker.GunzX, y[g] + invoker.GunzY, WOF_INTERPOLATE);
+		}
+		MTRG A 0 { invoker.LoopRight = 0; }
+		MTSG AAAAA 1 {
+			static const double x[] = {13.0, 9.0, 4.0, 2.0, 1.0};
+			static const double y[] = {10.0, 6.0, 3.0, 2.0, 1.0};
+			int g = invoker.LoopRight++;
+			A_OverlayOffset(OverlayID(), x[g] + invoker.GunzX, y[g] + invoker.GunzY, WOF_INTERPOLATE);
+		}
+		MTSG A 0 {
+			A_OverlayOffset(OverlayID(),invoker.GunzX,invoker.GunzY,WOF_INTERPOLATE);
+			invoker.LoopRight = 0;
+			invoker.LeftHand = 0;
+			A_GiveInventory("MatriarchStratActive",1);
+		}
+		Goto RightActive;
+	LeftStratSwitch:
+		MTRG A 0 {
+			A_OverlayFlags(OverlayID(),PSPF_FLIP|PSPF_MIRROR,1);
+			A_OverlayOffset(OverlayID(),invoker.GunzX,invoker.GunzY);
+			invoker.LoopLeft = 0;
+		}
+		MTRG AAAAAAAAA 1 {
+			static const double x2[] = {1.0, 3.0, 6.0, 10.0, 12.0,
+										13.0, 14.0, 15.0, 14.0};
+			static const double y2[] = {1.0, 2.0, 3.0, 5.0, 8.0,
+										13.0, 14.0, 15.0, 14.0};
+			int g2 = invoker.LoopLeft++;
+			A_OverlayOffset(OverlayID(), x2[g2] + invoker.GunzX, y2[g2] + invoker.GunzY, WOF_INTERPOLATE);
+		}
+		MTSG A 0 { invoker.LoopLeft = 0; }
+		MTSG AAAAA 1 {
+			static const double x2[] = {13.0, 9.0, 4.0, 2.0, 1.0};
+			static const double y2[] = {10.0, 6.0, 3.0, 2.0, 1.0};
+			int g2 = invoker.LoopLeft++;
+			A_OverlayOffset(OverlayID(), x2[g2] + invoker.GunzX, y2[g2] + invoker.GunzY, WOF_INTERPOLATE);
+		}
+		MTSG A 0 {
+			A_OverlayOffset(OverlayID(),invoker.GunzX,invoker.GunzY,WOF_INTERPOLATE);
+			invoker.LoopLeft = 0;
+		}
+		Goto LeftActive;
+		
+	StratSwitchOff:
+		MTSG A 0 {
+			invoker.LeftHand = 1;
+			A_TakeInventory("MatriarchStratActive");
+			A_PlaySound("Matriarch/Pull",5,0.7);
+			if(GC_Gunslinger || CountInv("PowerGunzerking")) { A_Overlay(3,"LeftStratSwitchOff"); }
+			else { A_Overlay(-2,"RightStrat2"); }
+			invoker.LoopRight = 0;
+		}
+		MTSG AAAAAAAAA 1 {
+			static const double x[] = {1.0, 3.0, 6.0, 10.0, 12.0,
+									   13.0, 14.0, 15.0, 14.0};
+			static const double y[] = {1.0, 2.0, 3.0, 5.0, 8.0,
+									   13.0, 14.0, 15.0, 14.0};
+			int g = invoker.LoopRight++;
+			A_OverlayOffset(OverlayID(), x[g] + invoker.GunzX, y[g] + invoker.GunzY, WOF_INTERPOLATE);
+		}
+		MTSG A 0 { invoker.LoopRight = 0; }
+		MTRG AAAAA 1 {
+			static const double x[] = {13.0, 9.0, 4.0, 2.0, 1.0};
+			static const double y[] = {10.0, 6.0, 3.0, 2.0, 1.0};
+			int g = invoker.LoopRight++;
+			A_OverlayOffset(OverlayID(), x[g] + invoker.GunzX, y[g] + invoker.GunzY, WOF_INTERPOLATE);
+		}
+		MTRG A 0 {
+			A_OverlayOffset(OverlayID(),invoker.GunzX, invoker.GunzY, WOF_INTERPOLATE);
+			invoker.LeftHand = 0;
+			invoker.LoopRight = 0;
+			A_TakeInventory("MatriarchStratActive",1);
+		}
+		Goto RightActive;
+	LeftStratSwitchOff:
+		MTSG A 0 {
+			A_OverlayFlags(OverlayID(),PSPF_FLIP|PSPF_MIRROR,1);
+			A_OverlayOffset(OverlayID(),invoker.GunzX,invoker.GunzY);
+			invoker.LoopLeft = 0;
+		}
+		MTSG AAAAAAAAA 1 {
+			static const double x2[] = {1.0, 3.0, 6.0, 10.0, 12.0,
+										13.0, 14.0, 15.0, 14.0};
+			static const double y2[] = {1.0, 2.0, 3.0, 5.0, 8.0,
+										13.0, 14.0, 15.0, 14.0};
+			int g2 = invoker.LoopLeft++;
+			A_OverlayOffset(OverlayID(), x2[g2] + invoker.GunzX, y2[g2] + invoker.GunzY, WOF_INTERPOLATE);
+		}
+		MTRG A 0 { invoker.LoopLeft = 0; }
+		MTRG AAAAA 1 {
+			static const double x2[] = {13.0, 9.0, 4.0, 2.0, 1.0};
+			static const double y2[] = {10.0, 6.0, 3.0, 2.0, 1.0};
+			int g2 = invoker.LoopLeft++;
+			A_OverlayOffset(OverlayID(), x2[g2] + invoker.GunzX, y2[g2] + invoker.GunzY, WOF_INTERPOLATE);
+		}
+		MTRG A 0 {
+			A_OverlayOffset(OverlayID(),invoker.GunzX,invoker.GunzY,WOF_INTERPOLATE);
+			invoker.LoopLeft = 0;
+		}
+		Goto LeftActive;
+	
+	RightStrat2:
+		MTRO A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitToken"),7);
+		MTRD A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitDraugh"),6);
+		MTRN A 0 A_JumpIf(CountInv("PowerDeadmaker"),5);
+		MTRC A 0 A_JumpIf(CountInv("PowerSuitToken"),4);
+		MTRU A 0 A_JumpIf(CountInv("PowerSuitProtect"),3);
+		MTRY A 0 A_JumpIf(CountInv("PowerSuitDraugh"),2);
+		MTRH A 0;
+		"####" AAAAAAAAAAAAAA 1 {
+			static const double x[] = {1.0, 3.0, 6.0, 10.0, 12.0, 13.0, 14.0,
+									   15.0, 14.0, 13.0, 9.0, 4.0, 2.0, 1.0};
+			static const double y[] = {1.0, 2.0, 3.0, 5.0, 8.0, 13.0, 14.0,
+									   15.0, 14.0, 10.0, 6.0, 3.0, 2.0, 1.0};
+			int g2 = invoker.LoopLeft++;	
+			A_OverlayOffset(OverlayID(), x[g2] + invoker.GunzX, y[g2] + invoker.GunzY, WOF_INTERPOLATE);
+		}
+		"####" A 0 { invoker.LoopLeft = 0; }
+		Goto RightActive2;
+
+	//RIGHT SIDE
+	
+	RightActive:
+		"####" "#" 0 {
+			invoker.RightMag = 0;
+			if(GC_Gunslinger || CountInv("PowerGunzerking")) {
+				invoker.GunzX = 30;
+				invoker.GunzY = 5;
+			} else {
+				invoker.GunzX = 0;
+				invoker.GunzY = 0;
+			}
+			
+			// Prevent jittering animation -Dino
+			if(invoker.GC_DeadCharging) { 
+				if(invoker.weapSwitch != 1) { invoker.weapSwitch = 1; }
+				A_Overlay(-2,"CastUnhand");
+				Return ResolveState("DeadChargeAnimationOverride"); 
+			}
+			else { A_OverlayOffset(OverlayID(),invoker.GunzX,invoker.GunzY); }
+			Return ResolveState(null);
+		}
+		MTSG A 0 A_JumpIf(CountInv("MatriarchStratActive"),2);
+		MTRG A 0;
+		"####" "#" 1;
+        "####" "#" 0 {
+			//Strat switch.
+			If(CountInv("MatriarchStrat") &&
+				!invoker.weapSwitch && !CountInv("GCCantFire") && !invoker.LeftHand &&
+				GetPlayerInput(INPUT_BUTTONS) & BT_RELOAD) {
+				Return ResolveState("StratSwitch");
+			}
+			
+			//Fire.
+			If(!(GC_Gunslinger || CountInv("PowerGunzerking")) &&
+				!invoker.weapSwitch && !CountInv("GCCantFire") && !invoker.LeftHand &&
+				GetPlayerInput(INPUT_BUTTONS) & BT_ATTACK) {
+				Return ResolveState("MainFire");
+			}
+			
+			//Gunzerk fire.
+			If((GC_Gunslinger || CountInv("PowerGunzerking")) &&
+				!invoker.WeapSwitch && !CountInv("GCCantFire") &&
+				GetPlayerInput(INPUT_BUTTONS) & BT_ALTATTACK) {
+				Return ResolveState("MainFire");
+			}
+			Return ResolveState(Null);
+		}
+		Loop;
+	RightActive2:
+		TNT1 A 0 A_OverlayOffset(OverlayID(),0,0);
+		TNT1 A 0 A_JumpIf(GC_Gunslinger || CountInv("PowerGunzerking"),8);
+		MTRO A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitToken"),7);
+		MTRD A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitDraugh"),6);
+		MTRN A 0 A_JumpIf(CountInv("PowerDeadmaker"),5);
+		MTRC A 0 A_JumpIf(CountInv("PowerSuitToken"),4);
+		MTRU A 0 A_JumpIf(CountInv("PowerSuitProtect"),3);
+		MTRY A 0 A_JumpIf(CountInv("PowerSuitDraugh"),2);
+		MTRH A 0;
+		"####" "#" 1;
+		Loop;
+	
+	MainFire2:
+		TNT1 A 0 { invoker.LoopLeft = 0; }
+		TNT1 A 0 A_JumpIf(GC_Gunslinger || CountInv("PowerGunzerking"), "RightActive2");
+		MTRO A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitToken"),7);
+		MTRD A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitDraugh"),6);
+		MTRN A 0 A_JumpIf(CountInv("PowerDeadmaker"),5);
+		MTRC A 0 A_JumpIf(CountInv("PowerSuitToken"),4);
+		MTRU A 0 A_JumpIf(CountInv("PowerSuitProtect"),3);
+		MTRY A 0 A_JumpIf(CountInv("PowerSuitDraugh"),2);
+		MTRH A 0;
+		"####" "############" 1 {
+			//Position.
+			static const double pos[] = { 3.0, 9.0,
+										  14.0, 16.0, 21.0, 22.0, 23.0,
+									      18.0, 13.0, 9.0, 4.0, 1.0 };
+			//Gunzerk position.
+			static const double x[] = { 33.0, 39.0,
+										44.0, 46.0, 51.0, 52.0, 53.0,
+									    48.0, 43.0, 39.0, 34.0, 31.0 };
+			static const double y[] = { 8.0,  14.0,
+										19.0, 21.0, 26.0, 27.0, 28.0,
+									    23.0, 18.0, 14.0, 9.0, 6.0 };
+			//Increment arrays.
+			int qsize = 12;
+			if(invoker.LoopLeft + 1 < qsize) { invoker.LoopLeft++; } //Keep pumping.
+			int q = invoker.LoopLeft;
+			
+			//Apply position.
+			if(GC_Gunslinger || CountInv("PowerGunzerking"))
+				 { A_OverlayOffset(OverlayID(), x[q], y[q], WOF_INTERPOLATE); }
+			else { A_OverlayOffset(OverlayID(), pos[q], pos[q], WOF_INTERPOLATE); }
+		}
+		"####" "#" 0 {
+			invoker.LoopLeft = 0;
+			A_OverlayOffset(OverlayID(), invoker.GunzX, invoker.GunzY);
+		}
+		Goto RightActive2;
+		
+	//FIRE
+	StratFireActivate:
+		MTSG A 0 {
+			invoker.WeapAction++;
+			// I commented cvar and item check out of it before for some reason, so pay attention to it.
+			// Had to put it back because of weapon switch issue while gunzerking.
+			if(OverlayID() == -3 && !(GC_Gunslinger || CountInv("PowerGunzerking"))) {  invoker.LeftHand = 1; }
+		}
+	StratFire:
+		MTSG A 0 {
+			//If full, stop charging.
+			if((Invoker.RightMag >= 10 && OverlayID() == -3) ||
+				(Invoker.LeftMag >= 10 && OverlayID() == 3))
+			{
+				Return ResolveState("StratCharged");
+			}
+			//If not enough shells, stop loading.
+			if(
+			   Invoker.RightMag + Invoker.LeftMag >= CountInv("MatriarchAmmo")
+			  )
+			{
+				Return ResolveState("StratCharged");
+			}
+			if(OverlayID() == -3) { if(GetCvar("GC_Overclock")) { invoker.RightMag += 10; } else { invoker.RightMag++; } } //Charge up.
+			else 				  { if(GetCvar("GC_Overclock")) { invoker.LeftMag += 10; } else { invoker.LeftMag++; } invoker.LeftHand = 1; }
+			A_PlaySound("Matriarch/Load",6,0.5);
+			Return ResolveState(Null);
+		}
+		MTSG BCDEFGHIJK 1;
+		MTSG A 0 {
+			//Fire.
+			If(!(GC_Gunslinger || CountInv("PowerGunzerking")) &&
+				!invoker.weapSwitch && OverlayID() == -3 &&
+				GetPlayerInput(INPUT_BUTTONS) & BT_ATTACK) {
+				Return ResolveState("StratFire");
+			}
+			//Gunzerk left fire.
+			If((GC_Gunslinger || CountInv("PowerGunzerking")) &&
+				!invoker.WeapSwitch && OverlayID() == 3 &&
+				GetPlayerInput(INPUT_BUTTONS) & BT_ATTACK) {
+				Return ResolveState("StratFire");
+			}
+			//Gunzerk right fire.
+			If((GC_Gunslinger || CountInv("PowerGunzerking")) &&
+				!invoker.WeapSwitch && OverlayID() == -3 &&
+				GetPlayerInput(INPUT_BUTTONS) & BT_ALTATTACK) {
+				Return ResolveState("StratFire");
+			}
+			//Acquire list of targets for strat shot. 
+			if(CountInv("MatriarchStratActive")) { A_FireBullets(0,0,1,0,"MatriarchTrackshot",FBF_NORANDOMPUFFZ); } //BuildTargetList(2048);
+			Return ResolveState(Null);
+		}
+		MTSG A 1; //Grace period just in case, so it can pick up the target list off puff.
+		Goto StratMainFire;
+	StratCharged:
+		MTSG A 1;
+		MTSG A 0 {
+			//Fire.
+			If(!(GC_Gunslinger || CountInv("PowerGunzerking")) &&
+				!invoker.weapSwitch && OverlayID() == -3 &&
+				GetPlayerInput(INPUT_BUTTONS) & BT_ATTACK) {
+				Return ResolveState("StratCharged");
+			}
+			//Gunzerk left fire.
+			If((GC_Gunslinger || CountInv("PowerGunzerking")) &&
+				!invoker.WeapSwitch && OverlayID() == 3 &&
+				GetPlayerInput(INPUT_BUTTONS) & BT_ATTACK) {
+				Return ResolveState("StratCharged");
+			}
+			//Gunzerk right fire.
+			If((GC_Gunslinger || CountInv("PowerGunzerking")) &&
+				!invoker.WeapSwitch && OverlayID() == -3 &&
+				GetPlayerInput(INPUT_BUTTONS) & BT_ALTATTACK) {
+				Return ResolveState("StratCharged");
+			}
+			//Acquire list of targets for strat shot.
+			if(CountInv("MatriarchStratActive")) { A_FireBullets(0,0,1,0,"MatriarchTrackshot",FBF_NORANDOMPUFFZ); } //BuildTargetList(2048);
+			Return ResolveState(Null);
+		}
+		MTSG A 1; //Grace period just in case, so it can pick up the target list off puff.
+		Goto StratMainFire;
+	MainFire:
+		"####" A 0 A_JumpIf(CountInv("MatriarchStratActive"),"StratFireActivate");
+	StratMainFire:
+		"####" A 0 A_JumpIf(GC_Gunslinger || CountInv("PowerGunzerking"),2);
+		"####" A 0 A_CheckReload;
+		"####" A 0 A_JumpIf(OverlayID() == 3,3);
+		"####" A 0 A_JumpIfNoAmmo("RightActive");
+		"####" A 0 A_Jump(256,2);
+		"####" A 0 A_JumpIfNoAmmo("LeftActive");
+		"####" A 0 {
+			if(!CountInv("MatriarchStratActive")) {
+				invoker.WeapAction++;
+			}
+			if(OverlayID() == 3 || (OverlayID() == -3 && !(GC_Gunslinger || CountInv("PowerGunzerking")))) { invoker.LeftHand = 1; }
+			
+			//Gunzerk recoil modifier.
+			invoker.GMod = GC_Gunslinger || CountInv("PowerGunzerking") ? 0.5 : 1.0;
+			
+			//Strat fire modifier.
+			if(CountInv("MatriarchStratActive")) {
+				invoker.StratMod = 1.2;
+			} else {
+				invoker.StratMod = 1.0;
+			}
+			
+			//Casing non-strat.
+			if(!CountInv("MatriarchStratActive")) {
+				if(OverlayID() == 3)  { invoker.LeftSpent++; }
+				else 				  { invoker.RightSpent++; }
+			}
+			
+			//Projectile.
+			
+			if(!(GC_Gunslinger || CountInv("PowerGunzerking"))) { //Regular shot.
+				if(CountInv("MatriarchStratActive")) {
+					let ThisMissile = A_FireProjectile("MatriarchDrunkSlug",0,1,2);
+					if(ThisMissile && invoker.TargetList.Size())
+					{
+						ThisMissile.tracer = invoker.TargetList[random(0, invoker.TargetList.Size()-1)];
+					}
+				} else { A_FireProjectile("MatriarchSlug",0,1,2); } //A_FireBullets(0,0,1,(50*random(2,3)),"MatriarchPuff",FBF_USEAMMO|FBF_NORANDOM);
+				A_Overlay(-2,"MainFire2");
+				if((invoker.RightMag <= 1 && OverlayID() == -3) || (invoker.LeftMag <= 1 && OverlayID() == 3)) {
+				for(invoker.Loopler = 0; invoker.Loopler <= 15; invoker.Loopler++)
+				{
+					A_FireProjectile("Gunsmoke_Large",
+					frandom(12.0,-12.0),							//Angle.
+					0,												//Ammo use.
+					((GC_Gunslinger || CountInv("PowerGunzerking")) ? 12.0 : 0.0 + 3.0) * (OverlayID() == 3 ? -1.0 : 1.0) + frandom(2.0,-2.0), //Xpos.
+					-2.0 + frandom(2.0,-2.0),						//Ypos.
+					FPF_NOAUTOAIM,									//Flags.
+					frandom(4.0,-4.0));								//Pitch.
+				}
+				}
+			} 
+			
+			else if(OverlayID() == -3) { //Gunzerk right.
+				invoker.GunzerkShot = 1;
+				if(CountInv("MatriarchStratActive")) {
+					let ThisMissile = A_FireProjectile("MatriarchDrunkSlug",0,1,8,-2);
+					if(ThisMissile && invoker.TargetList.Size())
+					{
+						ThisMissile.tracer = invoker.TargetList[random(0, invoker.TargetList.Size()-1)];
+					}
+				} else { A_FireProjectile("MatriarchSlug",0,1,8,-2); }
+				if((invoker.RightMag <= 1 && OverlayID() == -3) || (invoker.LeftMag <= 1 && OverlayID() == 3)) {
+				for(invoker.Loopler = 0; invoker.Loopler <= 15; invoker.Loopler++)
+				{
+					A_FireProjectile("Gunsmoke_Large",
+					frandom(12.0,-12.0),							//Angle.
+					0,												//Ammo use.
+					((GC_Gunslinger || CountInv("PowerGunzerking")) ? 12.0 : 0.0 + 3.0) * (OverlayID() == 3 ? -1.0 : 1.0) + frandom(2.0,-2.0), //Xpos.
+					-2.0 + frandom(2.0,-2.0),						//Ypos.
+					FPF_NOAUTOAIM,									//Flags.
+					frandom(4.0,-4.0));								//Pitch.
+				}
+				}
+			}
+			
+			else {						//Gunzerk left.
+				invoker.GunzerkShot2 = 1;
+				if(CountInv("MatriarchStratActive")) {
+					let ThisMissile = A_FireProjectile("MatriarchDrunkSlug",0,1,-8,-2);
+					if(ThisMissile && invoker.TargetList.Size())
+					{
+						ThisMissile.tracer = invoker.TargetList[random(0, invoker.TargetList.Size()-1)];
+					}
+				} else { A_FireProjectile("MatriarchSlug",0,1,-8,-2); }
+				if((invoker.RightMag <= 1 && OverlayID() == -3) || (invoker.LeftMag <= 1 && OverlayID() == 3)) {
+				for(invoker.Loopler = 0; invoker.Loopler <= 15; invoker.Loopler++)
+				{
+					A_FireProjectile("Gunsmoke_Large",
+					frandom(12.0,-12.0),							//Angle.
+					0,												//Ammo use.
+					((GC_Gunslinger || CountInv("PowerGunzerking")) ? 12.0 : 0.0 + 3.0) * (OverlayID() == 3 ? -1.0 : 1.0) + frandom(2.0,-2.0), //Xpos.
+					-2.0 + frandom(2.0,-2.0),						//Ypos.
+					FPF_NOAUTOAIM,									//Flags.
+					frandom(4.0,-4.0));								//Pitch.
+				}
+				}
+			}						 
+			
+			//Cruft.
+			A_PlaySound("Matriarch/Fire",1,0.8);
+			if(CountInv("MatriarchStratActive"))  { A_PlaySound("Matriarch/DrunkFire",5,0.7); }
+			else 								  { A_PlaySound("Matriarch/Add",5,0.5); }
+			A_SetBlend("Yellow",0.15,12);
+			A_Recoil(7.0 * invoker.GMod * (CountInv("PowerDeadmaker") ? 0.0 : 1.0) * (CountInv("PowerSuitToken") ? 0.0 : 1.0) * GetCvar("GC_PhysicalRecoil"));
+			A_AlertMonsters();
+			if(GetCvar("GC_QuakeRecoil")) { A_QuakeEx(7, 7, 7, 7, 0, 16, "", QF_SCALEDOWN); }
+		
+			//Strat loaded remover.
+			if(OverlayID() == -3 && invoker.RightMag) 	 { invoker.RightMag--; invoker.RightSpent++; }
+			else if(OverlayID() == 3 && invoker.LeftMag) { invoker.LeftMag--; invoker.LeftSpent++; }
+			
+			//Looper
+			if(OverlayID() == -3 && invoker.RightMag) { Return ResolveState("StratMainFire"); }
+			if(OverlayID() == 3 && invoker.LeftMag)   { Return ResolveState("StratMainFire"); }
+			
+			//Clear target list once done firing.
+			invoker.TargetList.Clear();
+			Return ResolveState(Null);
+		}
+		
+		//Gunflash.
+		MESF A 0 A_JumpIf(!CountInv("MatriarchStratActive"),9);
+		MESF A 0 A_JumpIf(GC_Gunslinger || CountInv("PowerGunzerking") || invoker.LeftHand,16);
+		MOSF A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitToken"),15);
+		MDSF A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitDraugh"),14);
+		MNSF A 0 A_JumpIf(CountInv("PowerDeadmaker"),13);
+		MCSF A 0 A_JumpIf(CountInv("PowerSuitToken"),12);
+		MUSF A 0 A_JumpIf(CountInv("PowerSuitProtect"),11);
+		MYSF A 0 A_JumpIf(CountInv("PowerSuitDraugh"),10);
+		MTSF A 0 A_Jump(256,9);
+		MERF A 0 A_JumpIf(GC_Gunslinger || CountInv("PowerGunzerking") || invoker.LeftHand,8);
+		MORF A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitToken"),7);
+		MDRF A 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitDraugh"),6);
+		MNRF A 0 A_JumpIf(CountInv("PowerDeadmaker"),5);
+		MCRF A 0 A_JumpIf(CountInv("PowerSuitToken"),4);
+		MURF A 0 A_JumpIf(CountInv("PowerSuitProtect"),3);
+		MYRF A 0 A_JumpIf(CountInv("PowerSuitDraugh"),2);
+		MTRF A 0;
+		"####" A 1 Bright {
+			A_OverlayOffset(OverlayID(),3.0+invoker.GunzX,3.0+invoker.GunzY,WOF_INTERPOLATE);
+			if(GetCvar("GC_ZoomRecoil")) { A_ZoomFactor(0.99); }
+			A_SetPitch(pitch - 0.5 * GetCvar("GC_WeaponRecoil") * invoker.Gmod * invoker.StratMod, SPF_INTERPOLATE);
+			A_SetAngle(angle + (OverlayID() == -3 ? -0.5 : 0.5) * GetCvar("GC_WeaponRecoil") * invoker.Gmod * invoker.StratMod, SPF_INTERPOLATE);
+		}
+		"####" B 1 Bright {
+			A_OverlayOffset(OverlayID(),9.0+invoker.GunzX,9.0+invoker.GunzY,WOF_INTERPOLATE);
+			if(GetCvar("GC_ZoomRecoil")) { A_ZoomFactor(0.97); }
+			A_SetPitch(pitch - 2.0 * GetCvar("GC_WeaponRecoil") * invoker.Gmod * invoker.StratMod, SPF_INTERPOLATE);
+			A_SetAngle(angle + (OverlayID() == -3 ? -2.0 : 2.0) * GetCvar("GC_WeaponRecoil") * invoker.Gmod * invoker.StratMod, SPF_INTERPOLATE);
+		}
+		
+		//The rest.
+		MTSG A 0 A_JumpIf(CountInv("MatriarchStratActive"),2);
+		MTRG A 0;
+		"####" BCDEFGHIJK 1 {
+			//Position.
+			static const double pos[] = { 14.0, 16.0, 21.0, 22.0, 23.0,
+									      18.0, 13.0, 9.0, 4.0, 1.0 };
+			//Gunzerk position.
+			static const double x[] = { 44.0, 46.0, 51.0, 52.0, 53.0,
+									    48.0, 43.0, 39.0, 34.0, 31.0 };
+			static const double y[] = { 19.0, 21.0, 26.0, 27.0, 28.0,
+									    23.0, 18.0, 14.0, 9.0, 6.0 };
+			//Zoom.
+			static const double zoom[] = { 0.95, 0.94, 0.93, 0.94, 0.95,
+										   0.96, 0.97, 0.98, 0.99, 0.995 }; 
+			//Recoil.
+			static const double factor[] = { -3.0, -1.5, -0.5, 0.0, 0.5,
+											  0.75, 1.0, 0.75, 0.5, 0.25 };
+			
+			//Right side.
+			if(OverlayID() == -3) {
+			
+				//Increment array.
+				int rsize = 10;
+				if(invoker.LoopRight + 1 < rsize) { invoker.LoopRight++; }
+				int right = invoker.LoopRight;
+
+				//Apply position.
+				if(GC_Gunslinger || CountInv("PowerGunzerking"))
+					 { A_OverlayOffset(OverlayID(), x[right], y[right], WOF_INTERPOLATE); }
+				else { A_OverlayOffset(OverlayID(), pos[right], pos[right], WOF_INTERPOLATE); }
+
+				//Apply zoom.
+				if(GetCvar("GC_ZoomRecoil")) { A_ZoomFactor(zoom[right]); }
+				
+				//Apply recoil.
+				double shift = factor[right] * GetCVar("GC_WeaponRecoil") * invoker.GMod * invoker.StratMod;
+
+				A_SetPitch(pitch + shift, SPF_INTERPOLATE);
+				A_SetAngle(angle + shift, SPF_INTERPOLATE);
+			}
+			//Left side.
+			else
+			{
+				int lsize = 10;
+				if(invoker.LoopLeft + 1 < lsize) { invoker.LoopLeft++; }
+				int left = invoker.LoopLeft;
+				
+				if(GC_Gunslinger || CountInv("PowerGunzerking"))
+				{
+				
+				A_OverlayOffset(OverlayID(), x[left], y[left], WOF_INTERPOLATE);
+				if(GetCvar("GC_ZoomRecoil")) { A_ZoomFactor(zoom[left]); }
+				double shift2 = factor[left] * GetCVar("GC_WeaponRecoil") * invoker.GMod * invoker.StratMod;
+				A_SetPitch(pitch + shift2, SPF_INTERPOLATE);
+				A_SetAngle(angle - shift2, SPF_INTERPOLATE);  }
+			}
+	
+			//Ejector sound.
+			if(invoker.LoopRight == 2 || invoker.LoopLeft == 2) {
+				A_PlaySound("Matriarch/Reload",6,0.3);
+			}
+			
+			//Casing spender.
+			if(invoker.LoopRight == 7 && !(GC_Gunslinger || CountInv("PowerGunzerking"))) {
+				for(invoker.RightSpent; invoker.RightSpent > 0; invoker.RightSpent--) {
+				A_FireProjectile("TankShellCasingSpawner",0,0,8,-17,FPF_NOAUTOAIM);
+				}
+			}
+			if(invoker.LoopRight == 7 && OverlayID() == -3 && (GC_Gunslinger || CountInv("PowerGunzerking"))) {
+				for(invoker.RightSpent; invoker.RightSpent > 0; invoker.RightSpent--) {
+				A_FireProjectile("TankShellCasingSpawner",0,0,12,-17,FPF_NOAUTOAIM);
+				}
+			}
+			else if(invoker.LoopLeft == 7 && OverlayID() == 3) {
+				for(invoker.LeftSpent; invoker.LeftSpent > 0; Invoker.LeftSpent--) {
+				A_FireProjectile("TankShellCasingSpawnerLeft",0,0,-12,-17,FPF_NOAUTOAIM);
+				}
+			}
+			
+			//Strat fire.
+			/*if(OverlayID() == -3 && invoker.RightMag && invoker.LoopRight == 1) { invoker.LoopRight = 0; Return ResolveState("StratMainFire"); }
+			else if(OverlayID() == 3 && invoker.LeftMag && invoker.LoopLeft == 1) { invoker.LoopLeft = 0; Return ResolveState("StratMainFire"); }
+			Return ResolveState(Null);*/
+		}
+		"####" A 0 {
+			if(OverlayID() == -3) { invoker.LoopRight = 0; invoker.GunzerkShot = 0; }
+			else				  { invoker.LoopLeft = 0; invoker.GunzerkShot2 = 0; invoker.LeftHand = 0; }
+			A_OverlayOffset(OverlayID(), invoker.GunzX, invoker.GunzY, WOF_INTERPOLATE);
+			if(OverlayID() == -3 && !(GC_Gunslinger || CountInv("PowerGunzerking"))) { invoker.LeftHand = 0; }
+			invoker.WeapAction--;
+			A_ZoomFactor(1.0);
+		}
+		"####" A 0 A_JumpIf(OverlayID() == 3,"LeftActive");
+		Goto RightActive;
+		
+	//LEFT SIDE
+			
+	LeftActive:
+		TNT1 A 0 {
+			invoker.LeftMag = 0;
+			if(GC_Gunslinger || CountInv("PowerGunzerking")) {
+				A_OverlayFlags(3,PSPF_MIRROR|PSPF_FLIP,1);
+			} else {
+				A_OverlayFlags(3,PSPF_MIRROR|PSPF_FLIP,0);
+			}
+			A_OverlayOffset(OverlayID(),invoker.GunzX,invoker.GunzY);
+		}
+		TNT1 A 0 A_JumpIf(GC_Gunslinger || CountInv("PowerGunzerking"),3);
+		TNT1 A 1;
+		TNT1 A 0 {
+			If(!invoker.WeapSwitch && !CountInv("GCCantFire") && !invoker.LeftHand &&
+				!(GC_Gunslinger || CountInv("PowerGunzerking")) &&
+				GetPlayerInput(INPUT_BUTTONS) & BT_ALTATTACK) {
+					Return ResolveState("HandCast");
+			}
+			If(!invoker.WeapSwitch && !CountInv("GCCantFire") && !invoker.LeftHand &&
+				!(GC_Gunslinger || CountInv("PowerGunzerking")) && GetCvar("GC_Trogdor") &&
+				GetPlayerInput(INPUT_BUTTONS) & BT_ZOOM) {
+					Return ResolveState("DeadPunchEnter");
+				}
+			Return ResolveState(Null);
+		}		
+		Loop;
+		MTSG A 0 A_JumpIf(CountInv("MatriarchStratActive"),2);
+		MTRG A 0;
+		"####" A 1;
+		"####" A 0 A_JumpIf(!invoker.WeapSwitch && !CountInv("GCCantFire") &&
+							GetPlayerInput(INPUT_BUTTONS) & BT_ATTACK, "MainFire");
+        Loop;
+		
+	//CAST.
+		
+	CastHandLaunch:
+		TNT1 A 0 A_Overlay(-2,"CastUnhand");
+		TNT1 A 4 { invoker.LeftHand = 1; }
+		Goto CastLaunch+3;
+	CastUnhand:
+		TNT1 A 0 A_OverlayFlags(OverlayID(),PSPF_FLIP,1);
+		CYOH F 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitToken"),"MechaUnhand");
+		CYDH F 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitDraugh"),"DeadUnhand");
+		CYNH F 0 A_JumpIf(CountInv("PowerDeadmaker"),"DeadUnhand");
+		CYCH F 0 A_JumpIf(CountInv("PowerSuitToken"),"PowerUnhand"); //Had to split it to accomodate for flipped sprite that has different size.
+		CYUH F 0 A_JumpIf(CountInv("PowerSuitProtect"),"EnviroUnhand");
+		CYYH F 0 A_JumpIf(CountInv("PowerSuitDraugh"),2);
+		CYGH F 0;
+		"####" "#" 1 A_OverlayOffset(-2,46,130);
+		"####" "#" 1 A_OverlayOffset(-2,34,137,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(-2,26,151,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(-2,18,168,WOF_INTERPOLATE);
+		Stop;
+	PowerUnhand:
+		"####" "#" 1 A_OverlayOffset(-2,-65,130);
+		"####" "#" 1 A_OverlayOffset(-2,-77,137,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(-2,-85,151,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(-2,-93,168,WOF_INTERPOLATE);
+		Stop;
+	EnviroUnhand:
+		"####" "#" 1 A_OverlayOffset(-2,-5,130);
+		"####" "#" 1 A_OverlayOffset(-2,-17,137,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(-2,-25,151,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(-2,-33,168,WOF_INTERPOLATE);
+		Stop;
+	DeadUnhand:
+		"####" "#" 1 A_OverlayOffset(-2,66,133);
+		"####" "#" 1 A_OverlayOffset(-2,54,140,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(-2,46,154,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(-2,38,171,WOF_INTERPOLATE);
+		Stop;
+	MechaUnhand:
+		"####" "#" 1 A_OverlayOffset(-2,6,133);
+		"####" "#" 1 A_OverlayOffset(-2,-6,140,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(-2,-14,154,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(-2,-22,171,WOF_INTERPOLATE);
+		Stop;	
+	CastHandEnd:
+		"####" "#" 0 A_Overlay(-2,"CastUphand");
+		TNT1 A 4 A_OverlayOffset(3,0,0);
+		Goto LeftActive;
+	CastUphand:
+		"####" "#" 0 {
+			invoker.LeftHand = 1;
+			A_OverlayFlags(OverlayID(),PSPF_FLIP,1);
+		}
+		CYOH F 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitToken"),"MechaUphand");
+		CYDH F 0 A_JumpIf(CountInv("PowerDeadmaker") && CountInv("PowerSuitDraugh"),"DeadUphand");
+		CYNH F 0 A_JumpIf(CountInv("PowerDeadmaker"),"DeadUphand");
+		CYCH F 0 A_JumpIf(CountInv("PowerSuitToken"),"PowerUphand");
+		CYUH F 0 A_JumpIf(CountInv("PowerSuitProtect"),"EnviroUphand");
+		CYYH F 0 A_JumpIf(CountInv("PowerSuitDraugh"),2);
+		CYGH F 0;
+		"####" "#" 1 A_OverlayOffset(-2,18,168);
+		"####" "#" 1 A_OverlayOffset(-2,26,151,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(-2,34,137,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(-2,46,130,WOF_INTERPOLATE);
+		Goto CommonUphand;
+	PowerUphand:
+		"####" "#" 1 A_OverlayOffset(-2,-93,168);
+		"####" "#" 1 A_OverlayOffset(-2,-85,151,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(-2,-77,137,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(-2,-65,130,WOF_INTERPOLATE);
+		Goto CommonUphand;
+	EnviroUphand:
+		"####" "#" 1 A_OverlayOffset(-2,-33,168);
+		"####" "#" 1 A_OverlayOffset(-2,-25,151,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(-2,-17,137,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(-2,-5,130,WOF_INTERPOLATE);
+		Goto CommonUphand;
+	DeadUphand:
+		"####" "#" 1 A_OverlayOffset(-2,38,171);
+		"####" "#" 1 A_OverlayOffset(-2,46,154,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(-2,54,140,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(-2,66,133,WOF_INTERPOLATE);
+		Goto CommonUphand;
+	MechaUphand:
+		"####" "#" 1 A_OverlayOffset(-2,-42,171);
+		"####" "#" 1 A_OverlayOffset(-2,-24,154,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(-2,-26,140,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(-2,-14,133,WOF_INTERPOLATE);
+		Goto CommonUphand;
+	CommonUphand:
+		"####" "#" 0 { invoker.LeftHand = 0; A_Overlay(-2,"RightActive2"); } //Since a goto doesn't do what I want for whatever reasons.
+		Stop;
+		
+	//DEADMAKER PUNCH.
+	
+	DeadPunchEnter:
+		TNT1 A 7 { invoker.LeftHand = 1; A_Overlay(-2,"DeadPunchEnterAnim"); }
+		Goto DeadPunchStart;
+	DeadPunchEnterAnim:
+		CYOH F 0 A_JumpIf(CountInv("PowerSuitToken"),3);
+		CYDH F 0 A_JumpIf(CountInv("PowerSuitDraugh"),2);
+		CYNH F 0;
+		"####" "#" 0 A_OverlayFlags(OverlayID(),PSPF_FLIP,1);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),46,130);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),34,137,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),26,151,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),18,168,WOF_INTERPOLATE);
+		Stop;
+	DeadPunchExit:
+		TNT1 A 4 { invoker.LeftHand = 1; A_Overlay(-2,"DeadPunchExitAnim"); }
+		Goto LeftActive;
+	DeadPunchExitAnim:
+		CYOH F 0 A_JumpIf(CountInv("PowerSuitToken"),3);
+		CYDH F 0 A_JumpIf(CountInv("PowerSuitDraugh"),2);
+		CYNH F 0;
+		"####" "#" 0 A_OverlayFlags(OverlayID(),PSPF_FLIP,1);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),18,168);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),26,151,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),34,137,WOF_INTERPOLATE);
+		"####" "#" 1 A_OverlayOffset(OverlayID(),46,130,WOF_INTERPOLATE);
+		"####" "#" 0 { invoker.LeftHand = 0; A_Overlay(-2,"RightActive2"); }
+		Stop;
+	
+	// Dino's dummy animation
+	DeadChargeAnimationOverride:
+		MTSG A 0 A_JumpIf(CountInv("MatriarchStratActive"),2);
+		MTRG A 0;
+		"####" "#" 1 {
+			if(!invoker.weapSwitch) { 
+				A_Overlay(-2,"CastUphand");
+				Return ResolveState("RightActive"); 
+			}
+			Return ResolveState(null);
+		}
+		Loop;
+	}
+}
+
+#endregion

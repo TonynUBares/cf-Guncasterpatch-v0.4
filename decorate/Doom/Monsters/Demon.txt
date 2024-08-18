@@ -1,0 +1,33 @@
+ACTOR GuncastDemon : Demon 
+{
+	DropItem "Dosh1"
+	DropItem "Dosh5", 192
+	DropItem "Dosh10", 192
+}
+
+Actor GuncastSpectre: GuncastDemon {}
+
+ACTOR Midas_Statue_Demon : Midas_Statue
+{
+	Radius 30
+	Health 40
+	States
+	{
+	Spawn:
+		"####" "#" 1
+		Goto Super::Cycle
+	Death:
+	Crash:
+		TNT1 A 0 A_SetUserVar("User_GoldRange",12)
+		TNT1 A 0 A_SetUserVar("User_GoldAmount",8)
+		TNT1 A 0 A_SetUserVar("User_GoldCounter1",10)
+		TNT1 A 0 A_SetUserVar("User_GoldCounter2",0)
+		Goto Super::DeathInit
+	MidasReward:
+		TNT1 A 0 A_JumpIf(GC_MoneyShare,2)
+		TNT1 A 0 A_GiveToTarget("Dosh",25)
+		Stop
+		TNT1 A 0 ACS_NamedExecuteAlways("MoneySharing",0,25)
+		Stop
+	}
+}
