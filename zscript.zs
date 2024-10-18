@@ -50,7 +50,7 @@ Class ClusterCaster : EventHandler
 
   switch(e.DamageType)
    {
-    default: Case 'MidasCloseCombat':   Case 'SuperMidasCloseCombat':   
+    Case 'MidasCloseCombat':   Case 'SuperMidasCloseCombat':   
     Case 'MidasShoelaces':   Case 'SuperMidasShoelaces':  
       string s = "Midas_Statue_"..StatueNames[whichspecie-1];    bool b; actor a;
       [b,a] = e.thing.A_SpawnItemEx(s,0,0,0,e.thing.vel.x,e.thing.vel.y,e.thing.vel.z,0,spawnitemflags);
